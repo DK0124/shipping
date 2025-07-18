@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "BV SHOP 標籤機-出貨明細",
-  "description": "轉換出貨明細為10×15cm標籤格式，支援物流單整合列印",
-  "version": "3.0.0",
+  "name": "BV SHOP 出貨助手",
+  "description": "轉換出貨明細為10×15cm標籤格式，支援超商取貨與宅配物流單整合列印",
+  "version": "3.1.0",
   "author": "Derek Yu",
   
   "icons": {
@@ -25,7 +25,11 @@
         "*://*.famiport.com.tw/*",
         "*://*.hilife.com.tw/*",
         "*://*.okmart.com.tw/*",
-        "*://*.kerrytj.com/*"
+        "*://*.kerrytj.com/*",
+        "*://*.hct.com.tw/*",
+        "*://*.t-cat.com.tw/*",
+        "*://*.dhl.com/*",
+        "*://*.fedex.com/*"
       ],
       "js": ["pdf.js", "content.js"],
       "run_at": "document_idle"
@@ -34,7 +38,7 @@
   
   "web_accessible_resources": [
     {
-      "resources": ["pdf.worker.js", "pdf.js"],
+      "resources": ["pdf.worker.js"],
       "matches": ["<all_urls>"]
     }
   ]
