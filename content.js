@@ -1,4 +1,4 @@
-// BV SHOP 出貨助手 (完整整合版 v5.0)
+// BV SHOP 出貨助手 (完整整合版 v5.1)
 (function() {
   'use strict';
   
@@ -8,12 +8,21 @@
     pdfScript.src = chrome.runtime.getURL('pdf.js');
     pdfScript.onload = () => {
       console.log('PDF.js 載入完成');
-      // 設定 worker
       if (typeof pdfjsLib !== 'undefined') {
         pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
       }
     };
     document.head.appendChild(pdfScript);
+  }
+  
+  // 載入 html2canvas
+  if (typeof html2canvas === 'undefined') {
+    const h2cScript = document.createElement('script');
+    h2cScript.src = chrome.runtime.getURL('html2canvas.min.js');
+    h2cScript.onload = () => {
+      console.log('html2canvas 載入完成');
+    };
+    document.head.appendChild(h2cScript);
   }
   
   // 修正 Material Icons 載入
@@ -87,10 +96,10 @@
       DETAIL_SHIPPING: 'detail_shipping'    // 出貨明細-物流單
     },
     
-    // 排序方式
+    // 排序方式 (修正：對調名稱)
     SORT_ORDERS: {
-      ASC: 'asc',   // 新到舊
-      DESC: 'desc'  // 舊到新
+      ASC: 'asc',   // 舊到新
+      DESC: 'desc'  // 新到舊
     }
   };
   
@@ -123,7 +132,8 @@
     shippingSortOrder: CONFIG.SORT_ORDERS.ASC,
     reverseShipping: false,  // 物流單反序
     showOrderLabel: true,
-    isExtensionEnabled: true
+    isExtensionEnabled: true,
+    currentOpenSection: null  // 追蹤當前開啟的卡片
   };
 
   const fontLink = document.createElement('link');
@@ -2002,8 +2012,8 @@
                   <div class="bv-sort-group" id="bv-detail-sort-group">
                     <div class="bv-sort-label">排序方式</div>
                     <div class="bv-sort-buttons">
-                      <button class="bv-sort-button active" data-type="detail" data-order="asc">新到舊</button>
-                      <button class="bv-sort-button" data-type="detail" data-order="desc">舊到新</button>
+                      <button class="bv-sort-button active" data-type="detail" data-order="asc">舊到新</button>
+                      <button class="bv-sort-button" data-type="detail" data-order="desc">新到舊</button>
                     </div>
                   </div>
                   
@@ -2578,6 +2588,9 @@
     
     hideOriginalControls();
     
+    // 10×15cm 模式下設定原始系統選項
+    setOriginalSystemCheckboxes();
+    
     document.querySelectorAll('input[type="range"]').forEach(updateRangeProgress);
     
     initPresetSystem();
@@ -2586,6 +2599,40 @@
     
     // 初始化列印模式 UI
     updatePrintModeUI();
+  }
+  
+  function setOriginalSystemCheckboxes() {
+    // 10×15cm 狀態下，預設只勾選"顯示物流編號"
+    const checkboxesToUncheck = [
+      '#showRemark',
+      '#showManageRemark',
+      '#showPrintRemark',
+      '#showDeliveryTime',
+      '#hideInfo',
+      '#hidePrice',
+      '#showShippingTime',
+      '#showProductImage'
+    ];
+    
+    // 先取消所有勾選
+    checkboxesToUncheck.forEach(selector => {
+      const checkbox = document.querySelector(`.ignore-print ${selector}`);
+      if (checkbox && checkbox.checked) {
+        checkbox.checked = false;
+        if (typeof $ !== 'undefined') {
+          $(checkbox).trigger('change');
+        }
+      }
+    });
+    
+    // 只勾選物流編號
+    const showLogTraceId = document.querySelector('.ignore-print #showLogTraceId');
+    if (showLogTraceId && !showLogTraceId.checked) {
+      showLogTraceId.checked = true;
+      if (typeof $ !== 'undefined') {
+        $(showLogTraceId).trigger('change');
+      }
+    }
   }
   
   function resetPdfUploadArea() {
@@ -2600,7 +2647,7 @@
     if (pdfUploadArea) pdfUploadArea.classList.remove('has-file');
   }
   
-async function handlePdfUpload(file) {
+  async function handlePdfUpload(file) {
     const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
     const pdfInfo = document.getElementById('bv-pdf-info');
     const filenameEl = document.getElementById('bv-pdf-filename');
@@ -2731,6 +2778,21 @@ async function handlePdfUpload(file) {
   async function fetchShippingData() {
     const provider = CONFIG.PROVIDERS[state.currentProvider];
     if (!provider) return;
+    
+    // 檢查 html2canvas 是否已載入
+    if (typeof html2canvas === 'undefined') {
+      showNotification('html2canvas 尚未載入，正在載入...', 'warning');
+      
+      // 嘗試載入 html2canvas
+      const h2cScript = document.createElement('script');
+      h2cScript.src = chrome.runtime.getURL('html2canvas.min.js');
+      h2cScript.onload = () => {
+        console.log('html2canvas 載入完成');
+        showNotification('html2canvas 已載入，請重新點擊轉換', 'success');
+      };
+      document.head.appendChild(h2cScript);
+      return;
+    }
     
     const elements = document.querySelectorAll(provider.selector);
     if (elements.length === 0) {
@@ -2870,28 +2932,53 @@ async function handlePdfUpload(file) {
         const card = this.closest('.bv-settings-card');
         const sectionId = card.getAttribute('data-section');
         
-        if (card.classList.contains('collapsed')) {
-          card.classList.remove('collapsed');
-          state.collapsedSections[sectionId] = false;
-        } else {
+        // 如果點擊的是已展開的卡片，則收合它
+        if (!card.classList.contains('collapsed')) {
           card.classList.add('collapsed');
           state.collapsedSections[sectionId] = true;
+          state.currentOpenSection = null;
+        } else {
+          // 收合其他所有卡片
+          document.querySelectorAll('.bv-settings-card').forEach(otherCard => {
+            const otherSectionId = otherCard.getAttribute('data-section');
+            otherCard.classList.add('collapsed');
+            state.collapsedSections[otherSectionId] = true;
+          });
+          
+          // 展開當前卡片
+          card.classList.remove('collapsed');
+          state.collapsedSections[sectionId] = false;
+          state.currentOpenSection = sectionId;
         }
         
-        chrome.storage.local.set({ bvCollapsedSections: state.collapsedSections });
+        chrome.storage.local.set({ 
+          bvCollapsedSections: state.collapsedSections,
+          bvCurrentOpenSection: state.currentOpenSection
+        });
       });
     });
   }
   
   function restoreCollapsedStates() {
-    Object.keys(state.collapsedSections).forEach(sectionId => {
-      if (state.collapsedSections[sectionId]) {
-        const card = document.querySelector(`[data-section="${sectionId}"]`);
-        if (card) {
-          card.classList.add('collapsed');
-        }
-      }
+    // 先收合所有卡片
+    document.querySelectorAll('.bv-settings-card').forEach(card => {
+      card.classList.add('collapsed');
     });
+    
+    // 如果有記錄的開啟卡片，展開它
+    if (state.currentOpenSection) {
+      const openCard = document.querySelector(`[data-section="${state.currentOpenSection}"]`);
+      if (openCard) {
+        openCard.classList.remove('collapsed');
+      }
+    } else {
+      // 預設展開第一個卡片
+      const firstCard = document.querySelector('.bv-settings-card');
+      if (firstCard) {
+        firstCard.classList.remove('collapsed');
+        state.currentOpenSection = firstCard.getAttribute('data-section');
+      }
+    }
   }
   
   function initDragFunction() {
@@ -3446,10 +3533,10 @@ async function handlePdfUpload(file) {
       });
       
       if (!hasImageColumn) {
-        // 新增商品圖標題
+        // 新增商品圖標題（空白）
         const imageHeader = document.createElement('th');
         imageHeader.className = 'bv-product-image-col';
-        imageHeader.textContent = '商品圖';
+        imageHeader.textContent = '';  // 移除"商品圖"文字
         headerRow.insertBefore(imageHeader, headerRow.firstChild);
       }
     }
@@ -4283,7 +4370,7 @@ async function handlePdfUpload(file) {
   }
   
   function loadSettings() {
-    chrome.storage.local.get(['bvLabelSettings', 'lastSelectedPreset', 'bvPanelMinimized', 'bvCollapsedSections'], (result) => {
+    chrome.storage.local.get(['bvLabelSettings', 'lastSelectedPreset', 'bvPanelMinimized', 'bvCollapsedSections', 'bvCurrentOpenSection'], (result) => {
       if (result.bvLabelSettings) {
         const settings = result.bvLabelSettings;
         
@@ -4380,6 +4467,10 @@ async function handlePdfUpload(file) {
         state.collapsedSections = result.bvCollapsedSections;
       }
       
+      if (result.bvCurrentOpenSection) {
+        state.currentOpenSection = result.bvCurrentOpenSection;
+      }
+      
       if (result.lastSelectedPreset && state.isConverted) {
         chrome.storage.local.get([`bvPreset_${result.lastSelectedPreset}`], (presetResult) => {
           const presetSettings = presetResult[`bvPreset_${result.lastSelectedPreset}`];
@@ -4394,19 +4485,9 @@ async function handlePdfUpload(file) {
   function init() {
     console.log('=== BV SHOP 出貨助手初始化 ===');
     console.log('初始化時間:', new Date().toLocaleString());
+    console.log('版本: v5.1');
     
-    // 檢查是否需要載入 html2canvas
-    if (typeof html2canvas === 'undefined') {
-      const script = document.createElement('script');
-      script.src = chrome.runtime.getURL('html2canvas.min.js');
-      script.onload = () => {
-        console.log('html2canvas 載入完成');
-        detectCurrentPage();
-      };
-      document.head.appendChild(script);
-    } else {
-      detectCurrentPage();
-    }
+    detectCurrentPage();
     
     console.log('=== 初始化完成 ===');
   }
