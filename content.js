@@ -1,6 +1,10 @@
-// BV SHOP 出貨助手 (完整整合版 v5.1)
+// BV SHOP 出貨助手 (完整整合版 v5.2)
 (function() {
   'use strict';
+  
+  // 全域變數來追蹤載入狀態
+  let isHtml2CanvasLoaded = false;
+  let isPdfJsLoaded = false;
   
   // 載入 PDF.js
   if (typeof pdfjsLib === 'undefined') {
@@ -10,9 +14,12 @@
       console.log('PDF.js 載入完成');
       if (typeof pdfjsLib !== 'undefined') {
         pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
+        isPdfJsLoaded = true;
       }
     };
     document.head.appendChild(pdfScript);
+  } else {
+    isPdfJsLoaded = true;
   }
   
   // 載入 html2canvas
@@ -21,8 +28,11 @@
     h2cScript.src = chrome.runtime.getURL('html2canvas.min.js');
     h2cScript.onload = () => {
       console.log('html2canvas 載入完成');
+      isHtml2CanvasLoaded = true;
     };
     document.head.appendChild(h2cScript);
+  } else {
+    isHtml2CanvasLoaded = true;
   }
   
   // 修正 Material Icons 載入
@@ -133,7 +143,9 @@
     reverseShipping: false,  // 物流單反序
     showOrderLabel: true,
     isExtensionEnabled: true,
-    currentOpenSection: null  // 追蹤當前開啟的卡片
+    currentOpenSection: null,  // 追蹤當前開啟的卡片
+    pendingPdfFile: null,  // 暫存待處理的 PDF 檔案
+    pendingFetchAction: false  // 暫存待處理的抓取動作
   };
 
   const fontLink = document.createElement('link');
@@ -2491,7 +2503,28 @@
     const saveBtn = document.getElementById('bv-save-shipping');
     
     if (fetchBtn) {
-      fetchBtn.addEventListener('click', fetchShippingData);
+      fetchBtn.addEventListener('click', async function() {
+        // 檢查是否已載入 html2canvas
+        if (!isHtml2CanvasLoaded) {
+          showNotification('正在載入必要元件，請稍後...', 'warning');
+          
+          // 等待載入完成
+          let retries = 0;
+          const checkInterval = setInterval(() => {
+            retries++;
+            if (isHtml2CanvasLoaded) {
+              clearInterval(checkInterval);
+              showNotification('元件載入完成，開始轉換物流單', 'success');
+              fetchShippingData();
+            } else if (retries > 50) { // 5秒超時
+              clearInterval(checkInterval);
+              showNotification('元件載入失敗，請重新整理頁面', 'error');
+            }
+          }, 100);
+        } else {
+          fetchShippingData();
+        }
+      });
     }
     
     if (saveBtn) {
@@ -2567,10 +2600,34 @@
         pdfInput.click();
       });
       
-      pdfInput.addEventListener('change', function(e) {
+      pdfInput.addEventListener('change', async function(e) {
         const file = e.target.files[0];
         if (file && file.type === 'application/pdf') {
-          handlePdfUpload(file);
+          // 檢查是否已載入 PDF.js
+          if (!isPdfJsLoaded) {
+            showNotification('正在載入 PDF 處理元件，請稍後...', 'warning');
+            state.pendingPdfFile = file;
+            
+            // 等待載入完成
+            let retries = 0;
+            const checkInterval = setInterval(() => {
+              retries++;
+              if (isPdfJsLoaded) {
+                clearInterval(checkInterval);
+                showNotification('PDF 處理元件載入完成', 'success');
+                if (state.pendingPdfFile) {
+                  handlePdfUpload(state.pendingPdfFile);
+                  state.pendingPdfFile = null;
+                }
+              } else if (retries > 50) { // 5秒超時
+                clearInterval(checkInterval);
+                state.pendingPdfFile = null;
+                showNotification('PDF 處理元件載入失敗，請重新整理頁面', 'error');
+              }
+            }, 100);
+          } else {
+            handlePdfUpload(file);
+          }
         } else {
           showNotification('請上傳 PDF 檔案', 'warning');
         }
@@ -2656,24 +2713,6 @@
     const progressFill = document.getElementById('bv-conversion-progress-fill');
     const statusEl = document.getElementById('bv-conversion-status');
     const pdfUploadArea = document.getElementById('bv-pdf-upload-area');
-    
-    // 檢查 PDF.js 是否已載入
-    if (typeof pdfjsLib === 'undefined') {
-      showNotification('PDF.js 尚未載入，請稍後再試', 'warning');
-      
-      // 嘗試載入 PDF.js
-      const pdfScript = document.createElement('script');
-      pdfScript.src = chrome.runtime.getURL('pdf.js');
-      pdfScript.onload = () => {
-        console.log('PDF.js 載入完成');
-        if (typeof pdfjsLib !== 'undefined') {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
-        }
-        showNotification('PDF.js 已載入，請重新上傳檔案', 'success');
-      };
-      document.head.appendChild(pdfScript);
-      return;
-    }
     
     if (uploadPrompt) uploadPrompt.style.display = 'none';
     if (pdfInfo) {
@@ -2778,21 +2817,6 @@
   async function fetchShippingData() {
     const provider = CONFIG.PROVIDERS[state.currentProvider];
     if (!provider) return;
-    
-    // 檢查 html2canvas 是否已載入
-    if (typeof html2canvas === 'undefined') {
-      showNotification('html2canvas 尚未載入，正在載入...', 'warning');
-      
-      // 嘗試載入 html2canvas
-      const h2cScript = document.createElement('script');
-      h2cScript.src = chrome.runtime.getURL('html2canvas.min.js');
-      h2cScript.onload = () => {
-        console.log('html2canvas 載入完成');
-        showNotification('html2canvas 已載入，請重新點擊轉換', 'success');
-      };
-      document.head.appendChild(h2cScript);
-      return;
-    }
     
     const elements = document.querySelectorAll(provider.selector);
     if (elements.length === 0) {
@@ -4485,7 +4509,7 @@
   function init() {
     console.log('=== BV SHOP 出貨助手初始化 ===');
     console.log('初始化時間:', new Date().toLocaleString());
-    console.log('版本: v5.1');
+    console.log('版本: v5.2');
     
     detectCurrentPage();
     
