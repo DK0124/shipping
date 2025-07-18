@@ -2601,29 +2601,53 @@
   }
   
   async function handlePdfUpload(file) {
-    const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
-    const pdfInfo = document.getElementById('bv-pdf-info');
-    const filenameEl = document.getElementById('bv-pdf-filename');
-    const pagesEl = document.getElementById('bv-pdf-pages');
-    const progressEl = document.getElementById('bv-conversion-progress');
-    const progressFill = document.getElementById('bv-conversion-progress-fill');
-    const statusEl = document.getElementById('bv-conversion-status');
-    const pdfUploadArea = document.getElementById('bv-pdf-upload-area');
-    
-    if (uploadPrompt) uploadPrompt.style.display = 'none';
-    if (pdfInfo) {
-      pdfInfo.style.display = 'flex';
-      filenameEl.textContent = file.name;
-    }
-    if (pdfUploadArea) pdfUploadArea.classList.add('has-file');
-    if (progressEl) progressEl.classList.add('active');
-    
-    try {
-      statusEl.textContent = '載入 PDF...';
-      progressFill.style.width = '10%';
+      const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
+      const pdfInfo = document.getElementById('bv-pdf-info');
+      const filenameEl = document.getElementById('bv-pdf-filename');
+      const pagesEl = document.getElementById('bv-pdf-pages');
+      const progressEl = document.getElementById('bv-conversion-progress');
+      const progressFill = document.getElementById('bv-conversion-progress-fill');
+      const statusEl = document.getElementById('bv-conversion-status');
+      const pdfUploadArea = document.getElementById('bv-pdf-upload-area');
       
-      const arrayBuffer = await file.arrayBuffer();
-      const typedArray = new Uint8Array(arrayBuffer);
+      // 檢查 PDF.js 是否已載入
+      if (typeof pdfjsLib === 'undefined') {
+        showNotification('PDF.js 尚未載入，請稍後再試', 'warning');
+        
+        // 嘗試載入 PDF.js
+        const pdfScript = document.createElement('script');
+        pdfScript.src = chrome.runtime.getURL('pdf.js');
+        pdfScript.onload = () => {
+          console.log('PDF.js 載入完成');
+          if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
+          }
+          showNotification('PDF.js 已載入，請重新上傳檔案', 'success');
+        };
+        document.head.appendChild(pdfScript);
+        return;
+      }
+      
+      if (uploadPrompt) uploadPrompt.style.display = 'none';
+      if (pdfInfo) {
+        pdfInfo.style.display = 'flex';
+        filenameEl.textContent = file.name;
+      }
+      if (pdfUploadArea) pdfUploadArea.classList.add('has-file');
+      if (progressEl) progressEl.classList.add('active');
+      
+      try {
+        statusEl.textContent = '載入 PDF...';
+        progressFill.style.width = '10%';
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const typedArray = new Uint8Array(arrayBuffer);
+        
+        // 設定 PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
+        
+        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+        const numPages = pdf.numPages;
       
       if (typeof pdfjsLib !== 'undefined') {
         if (chrome && chrome.runtime && chrome.runtime.getURL) {
