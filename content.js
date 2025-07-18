@@ -1,4 +1,4 @@
-// BV SHOP 標籤機-出貨明細 (完整整合版)
+// BV SHOP 出貨助手 (完整整合版 v2.0)
 (function() {
   'use strict';
   
@@ -44,11 +44,40 @@
       SHIPPING: 'shipping'
     },
     PROVIDERS: {
-      SEVEN: { name: '7-11', domains: ['myship.7-11.com.tw', 'epayment.7-11.com.tw', 'eship.7-11.com.tw'], selector: '.div_frame' },
-      FAMILY: { name: '全家', domains: ['family.com.tw', 'famiport.com.tw'], selector: '.print-area' },
-      HILIFE: { name: '萊爾富', domains: ['hilife.com.tw'], selector: '.print_area' },
-      OKMART: { name: 'OK超商', domains: ['okmart.com.tw'], selector: '.printarea' },
-      KERRY: { name: '嘉里大榮', domains: ['kerrytj.com'], selector: 'iframe' }
+      // 超商取貨
+      SEVEN: { name: '7-11', domains: ['myship.7-11.com.tw', 'epayment.7-11.com.tw', 'eship.7-11.com.tw'], selector: '.div_frame', type: 'store' },
+      FAMILY: { name: '全家', domains: ['family.com.tw', 'famiport.com.tw'], selector: '.print-area', type: 'store' },
+      HILIFE: { name: '萊爾富', domains: ['hilife.com.tw'], selector: '.print_area', type: 'store' },
+      OKMART: { name: 'OK超商', domains: ['okmart.com.tw'], selector: '.printarea', type: 'store' },
+      
+      // 宅配 (支援 PDF)
+      DELIVERY: { 
+        name: '宅配', 
+        domains: ['kerrytj.com', 'hct.com.tw', 't-cat.com.tw', 'dhl.com', 'fedex.com'], 
+        selector: 'iframe', 
+        type: 'delivery',
+        subTypes: {
+          KERRY: '嘉里大榮',
+          HCT: '新竹貨運',
+          TCAT: '黑貓宅急便',
+          DHL: 'DHL全球快遞',
+          FEDEX: 'FedEx'
+        }
+      }
+    },
+    
+    // 列印模式
+    PRINT_MODES: {
+      DETAIL_ONLY: 'detail_only',           // 純印出貨明細
+      SHIPPING_ONLY: 'shipping_only',       // 純印物流單
+      AUTO_MATCH: 'auto_match',             // 自動配對列印
+      MANUAL_MATCH: 'manual_match'          // 手動配對列印
+    },
+    
+    // 排序方式
+    SORT_ORDERS: {
+      ASC: 'asc',   // 正序（舊到新）
+      DESC: 'desc'  // 反序（新到舊）
     }
   };
   
@@ -68,7 +97,13 @@
     detailData: [],
     pdfShippingData: [],
     enableIntegration: false,
-    cachedProviderSettings: {}
+    cachedProviderSettings: {},
+    
+    // 新增：列印模式設定
+    printMode: CONFIG.PRINT_MODES.AUTO_MATCH,
+    detailSortOrder: CONFIG.SORT_ORDERS.ASC,
+    shippingSortOrder: CONFIG.SORT_ORDERS.ASC,
+    isExtensionEnabled: true
   };
 
   const fontLink = document.createElement('link');
@@ -86,9 +121,31 @@
     console.log('Pathname:', pathname);
     console.log('Full URL:', url);
     
-    // 物流單頁面檢測（優先）
+    // 檢查宅配頁面
+    if (CONFIG.PROVIDERS.DELIVERY.domains.some(domain => hostname.includes(domain))) {
+      state.currentProvider = 'DELIVERY';
+      state.currentPageType = CONFIG.PAGE_TYPES.SHIPPING;
+      
+      // 識別具體的宅配商
+      if (hostname.includes('kerrytj.com')) {
+        state.deliverySubType = 'KERRY';
+      } else if (hostname.includes('hct.com.tw')) {
+        state.deliverySubType = 'HCT';
+      } else if (hostname.includes('t-cat.com.tw')) {
+        state.deliverySubType = 'TCAT';
+      } else if (hostname.includes('dhl.com')) {
+        state.deliverySubType = 'DHL';
+      } else if (hostname.includes('fedex.com')) {
+        state.deliverySubType = 'FEDEX';
+      }
+      
+      console.log('✓ 偵測到宅配頁面:', CONFIG.PROVIDERS.DELIVERY.subTypes[state.deliverySubType]);
+      return;
+    }
+    
+    // 檢查超商頁面
     for (const [key, provider] of Object.entries(CONFIG.PROVIDERS)) {
-      if (provider.domains.some(domain => hostname.includes(domain))) {
+      if (key !== 'DELIVERY' && provider.domains.some(domain => hostname.includes(domain))) {
         state.currentProvider = key;
         state.currentPageType = CONFIG.PAGE_TYPES.SHIPPING;
         console.log('✓ 偵測到物流單頁面:', provider.name);
@@ -96,9 +153,8 @@
       }
     }
     
-    // 出貨明細頁面檢測（放寬條件）
+    // 出貨明細頁面檢測
     if (hostname.includes('bvshop')) {
-      // 檢查多種可能的路徑模式
       const orderPatterns = [
         'order_print',
         'orderprint',
@@ -120,7 +176,6 @@
         return;
       }
       
-      // 如果路徑不明確，檢查頁面內容
       setTimeout(() => {
         const hasOrderContent = document.querySelector('.order-content') || 
                               document.querySelector('[class*="order"]') ||
@@ -375,6 +430,16 @@
     
     .bv-glass-button.bv-primary:hover {
       background: rgba(81, 138, 255, 0.12);
+    }
+    
+    .bv-close-btn {
+      transition: all 0.2s ease;
+    }
+    
+    .bv-close-btn:hover {
+      background: rgba(255, 59, 48, 0.1);
+      border-color: rgba(255, 59, 48, 0.2);
+      color: #ff3b30;
     }
     
     .bv-panel-content-wrapper {
@@ -1131,7 +1196,8 @@
     
     @media print {
       #bv-label-control-panel,
-      .bv-floating-button {
+      .bv-floating-button,
+      .bv-reopen-button {
         display: none !important;
       }
       
@@ -1387,6 +1453,135 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       white-space: nowrap;
     }
+    
+    .bv-reopen-button {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      width: 56px;
+      height: 56px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 28px;
+      box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.08),
+        0 0 0 0.5px rgba(255, 255, 255, 0.8) inset;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    .bv-reopen-button:hover {
+      transform: scale(1.05) translateY(-2px);
+      box-shadow: 
+        0 8px 30px rgba(0, 0, 0, 0.12),
+        0 0 0 0.5px rgba(255, 255, 255, 0.9) inset;
+      background: rgba(255, 255, 255, 0.95);
+    }
+    
+    .bv-reopen-button:active {
+      transform: scale(0.98);
+    }
+    
+    .bv-reopen-button .material-icons {
+      font-size: 28px;
+      color: #518aff;
+    }
+    
+    .bv-print-mode-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .bv-mode-option {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-mode-option:hover {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: rgba(81, 138, 255, 0.2);
+    }
+    
+    .bv-mode-option.selected {
+      background: rgba(81, 138, 255, 0.08);
+      border-color: #518aff;
+    }
+    
+    .bv-mode-option input[type="radio"] {
+      margin-right: 12px;
+    }
+    
+    .bv-mode-info {
+      flex: 1;
+    }
+    
+    .bv-mode-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 2px;
+    }
+    
+    .bv-mode-desc {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .bv-sort-options {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    
+    .bv-sort-group {
+      flex: 1;
+    }
+    
+    .bv-sort-label {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+      margin-bottom: 4px;
+    }
+    
+    .bv-sort-buttons {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .bv-sort-button {
+      flex: 1;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-sort-button:hover {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(0, 0, 0, 0.12);
+    }
+    
+    .bv-sort-button.active {
+      background: rgba(81, 138, 255, 0.08);
+      border-color: #518aff;
+      color: #518aff;
+    }
     `;
   }
   
@@ -1417,9 +1612,14 @@
               <span class="bv-panel-subtitle">A4 格式模式</span>
             </div>
           </div>
-          <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
-            <span class="material-icons">remove</span>
-          </button>
+          <div style="display: flex; gap: 8px;">
+            <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
+              <span class="material-icons">remove</span>
+            </button>
+            <button class="bv-glass-button bv-close-btn" id="bv-close-btn">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
         </div>
         
         <div class="bv-panel-content-wrapper">
@@ -1477,9 +1677,14 @@
               <span class="bv-panel-subtitle">標籤格式模式</span>
             </div>
           </div>
-          <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
-            <span class="material-icons">remove</span>
-          </button>
+          <div style="display: flex; gap: 8px;">
+            <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
+              <span class="material-icons">remove</span>
+            </button>
+            <button class="bv-glass-button bv-close-btn" id="bv-close-btn">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
         </div>
         
         <div class="bv-panel-content-wrapper">
@@ -1496,10 +1701,72 @@
               </button>
             </div>
             
+            <div class="bv-settings-card" data-section="print-mode">
+              <h4 class="bv-card-title">
+                <span class="material-icons">print</span>
+                列印模式
+                ${collapseIcon}
+              </h4>
+              
+              <div class="bv-card-content">
+                <div class="bv-print-mode-selector">
+                  <label class="bv-mode-option">
+                    <input type="radio" name="print-mode" value="detail_only" checked>
+                    <div class="bv-mode-info">
+                      <div class="bv-mode-title">純印出貨明細</div>
+                      <div class="bv-mode-desc">只列印出貨明細資料</div>
+                    </div>
+                  </label>
+                  
+                  <label class="bv-mode-option">
+                    <input type="radio" name="print-mode" value="shipping_only">
+                    <div class="bv-mode-info">
+                      <div class="bv-mode-title">純印物流單</div>
+                      <div class="bv-mode-desc">只列印物流單資料</div>
+                    </div>
+                  </label>
+                  
+                  <label class="bv-mode-option">
+                    <input type="radio" name="print-mode" value="auto_match">
+                    <div class="bv-mode-info">
+                      <div class="bv-mode-title">自動配對列印</div>
+                      <div class="bv-mode-desc">明細後接物流單（自動對應）</div>
+                    </div>
+                  </label>
+                  
+                  <label class="bv-mode-option">
+                    <input type="radio" name="print-mode" value="manual_match">
+                    <div class="bv-mode-info">
+                      <div class="bv-mode-title">手動配對列印</div>
+                      <div class="bv-mode-desc">自訂明細與物流單排序</div>
+                    </div>
+                  </label>
+                </div>
+                
+                <div class="bv-sort-options" id="bv-sort-options" style="display:none;">
+                  <div class="bv-sort-group">
+                    <div class="bv-sort-label">出貨明細排序</div>
+                    <div class="bv-sort-buttons">
+                      <button class="bv-sort-button active" data-type="detail" data-order="asc">正序</button>
+                      <button class="bv-sort-button" data-type="detail" data-order="desc">反序</button>
+                    </div>
+                  </div>
+                  
+                  <div class="bv-sort-group" id="bv-shipping-sort" style="display:none;">
+                    <div class="bv-sort-label">物流單排序</div>
+                    <div class="bv-sort-buttons">
+                      <button class="bv-sort-button active" data-type="shipping" data-order="asc">正序</button>
+                      <button class="bv-sort-button" data-type="shipping" data-order="desc">反序</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             <div class="bv-settings-card" data-section="integration">
               <h4 class="bv-card-title">
                 <span class="material-icons">merge_type</span>
-                物流單整合
+                物流單資料
                 ${collapseIcon}
               </h4>
               
@@ -1512,25 +1779,11 @@
                   </div>
                 </div>
                 
-                <div class="bv-setting-item" id="bv-integration-toggle" style="display:none;">
-                  <div class="bv-setting-info">
-                    <span class="material-icons">print</span>
-                    <div class="bv-setting-text">
-                      <span class="bv-setting-label">整合列印</span>
-                      <span class="bv-setting-desc">物流單與明細配對列印</span>
-                    </div>
-                  </div>
-                  <label class="bv-glass-switch">
-                    <input type="checkbox" id="bv-enable-integration">
-                    <span class="bv-switch-slider"></span>
-                  </label>
-                </div>
-                
                 <div class="bv-pdf-upload-area" id="bv-pdf-upload-area" style="margin-top: 16px;">
                   <input type="file" id="bv-pdf-input" accept="application/pdf" style="display:none;">
                   <div id="bv-pdf-upload-prompt">
                     <span class="material-icons" style="font-size:48px; color: #f44336;">picture_as_pdf</span>
-                    <div class="bv-upload-hint">點擊上傳嘉里大榮物流單 PDF</div>
+                    <div class="bv-upload-hint">點擊上傳宅配物流單 PDF</div>
                   </div>
                   <div id="bv-pdf-info" class="bv-pdf-info" style="display:none;">
                     <span class="material-icons">check_circle</span>
@@ -1617,7 +1870,7 @@
                     </label>
                   </div>
                   
-                  <div class="bv-setting-item" id="bv-shipping-order-container" style="display:none;">
+                  <div class="bv-setting-item">
                     <div class="bv-setting-info">
                       <span class="material-icons">label</span>
                       <div class="bv-setting-text">
@@ -1743,8 +1996,10 @@
   }
   
   function getShippingPanelContent() {
-    const providerName = CONFIG.PROVIDERS[state.currentProvider]?.name || '物流單';
-    const isKerry = state.currentProvider === 'KERRY';
+    const isDelivery = state.currentProvider === 'DELIVERY';
+    const providerName = isDelivery ? 
+      CONFIG.PROVIDERS.DELIVERY.subTypes[state.deliverySubType] || '宅配' :
+      CONFIG.PROVIDERS[state.currentProvider]?.name || '物流單';
     
     return `
       <div class="bv-glass-panel">
@@ -1758,33 +2013,40 @@
               <span class="bv-panel-subtitle">${providerName}</span>
             </div>
           </div>
-          <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
-            <span class="material-icons">remove</span>
-          </button>
+          <div style="display: flex; gap: 8px;">
+            <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
+              <span class="material-icons">remove</span>
+            </button>
+            <button class="bv-glass-button bv-close-btn" id="bv-close-btn">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
         </div>
         
         <div class="bv-panel-content-wrapper">
           <div class="bv-panel-body">
-            ${isKerry ? getKerryContent() : getGeneralShippingContent()}
+            ${isDelivery ? getDeliveryContent() : getGeneralShippingContent()}
           </div>
         </div>
       </div>
     `;
   }
   
-  function getKerryContent() {
+  function getDeliveryContent() {
+    const deliveryName = CONFIG.PROVIDERS.DELIVERY.subTypes[state.deliverySubType] || '宅配';
+    
     return `
       <div class="bv-shipping-status">
-        <h4 style="margin: 0 0 16px 0; color: #ff9800;">嘉里大榮物流單</h4>
+        <h4 style="margin: 0 0 16px 0; color: #ff9800;">${deliveryName}物流單</h4>
         <p style="color: #666; font-size: 14px; line-height: 1.6;">
-          偵測到嘉里大榮網站<br>
+          偵測到${deliveryName}網站<br>
           請使用瀏覽器的列印功能<br>
           選擇「另存為 PDF」儲存檔案<br>
           再到出貨明細頁面上傳使用
         </p>
       </div>
       
-      <button class="bv-primary-button" id="bv-kerry-print" style="width: 100%;">
+      <button class="bv-primary-button" id="bv-delivery-print" style="width: 100%;">
         <div class="bv-button-icon">
           <span class="material-icons">print</span>
         </div>
@@ -1826,15 +2088,545 @@
   }
   
   function initShippingMode() {
-    if (state.currentProvider === 'KERRY') {
-      const kerryPrintBtn = document.getElementById('bv-kerry-print');
-      if (kerryPrintBtn) {
-        kerryPrintBtn.addEventListener('click', () => {
+    if (state.currentProvider === 'DELIVERY') {
+      const deliveryPrintBtn = document.getElementById('bv-delivery-print');
+      if (deliveryPrintBtn) {
+        deliveryPrintBtn.addEventListener('click', () => {
           window.print();
         });
       }
     } else {
       loadShippingData();
+    }
+  }
+  
+  function setupEventListeners() {
+    const convertBtn = document.getElementById('bv-convert-btn');
+    const revertBtn = document.getElementById('bv-revert-btn');
+    const minimizeBtn = document.getElementById('bv-minimize-btn');
+    const closeBtn = document.getElementById('bv-close-btn');
+    const floatingPrint = document.getElementById('bv-floating-print');
+    const highlightQty = document.getElementById('bv-highlight-qty');
+    const applyPrint = document.getElementById('bv-apply-print');
+    
+    if (convertBtn) {
+      convertBtn.addEventListener('click', convertToLabelFormat);
+    }
+    
+    if (revertBtn) {
+      revertBtn.addEventListener('click', revertToOriginal);
+    }
+    
+    if (minimizeBtn) {
+      minimizeBtn.addEventListener('click', function() {
+        const panel = document.getElementById('bv-label-control-panel');
+        const icon = this.querySelector('.material-icons');
+        
+        if (state.isPanelMinimized) {
+          panel.classList.remove('minimized');
+          icon.textContent = 'remove';
+          state.isPanelMinimized = false;
+        } else {
+          panel.classList.add('minimized');
+          icon.textContent = 'add';
+          state.isPanelMinimized = true;
+        }
+        
+        chrome.storage.local.set({ bvPanelMinimized: state.isPanelMinimized });
+      });
+    }
+    
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function() {
+        const panel = document.getElementById('bv-label-control-panel');
+        if (panel) {
+          panel.style.display = 'none';
+          state.isExtensionEnabled = false;
+          
+          chrome.storage.local.set({ 
+            bvExtensionEnabled: false,
+            bvClosedTime: new Date().toISOString()
+          });
+          
+          showReopenButton();
+        }
+      });
+    }
+    
+    if (floatingPrint) {
+      floatingPrint.addEventListener('click', function() {
+        preparePrintStyles();
+        window.print();
+      });
+    }
+    
+    if (highlightQty) {
+      highlightQty.addEventListener('change', toggleQuantityHighlight);
+    }
+    
+    if (applyPrint) {
+      applyPrint.addEventListener('click', function() {
+        if (!state.isConverted) {
+          if (state.highlightQuantity) {
+            applyQuantityHighlight();
+          }
+          window.print();
+        } else {
+          preparePrintWithMode();
+        }
+      });
+    }
+    
+    // 列印模式選擇
+    document.querySelectorAll('input[name="print-mode"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        state.printMode = this.value;
+        updatePrintModeUI();
+        saveSettings();
+      });
+    });
+    
+    // 排序按鈕
+    document.querySelectorAll('.bv-sort-button').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const type = this.dataset.type;
+        const order = this.dataset.order;
+        
+        // 更新按鈕狀態
+        document.querySelectorAll(`.bv-sort-button[data-type="${type}"]`).forEach(b => {
+          b.classList.remove('active');
+        });
+        this.classList.add('active');
+        
+        // 更新狀態
+        if (type === 'detail') {
+          state.detailSortOrder = order;
+        } else {
+          state.shippingSortOrder = order;
+        }
+        
+        saveSettings();
+      });
+    });
+    
+    if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
+      setupShippingEventListeners();
+    }
+    
+    if (state.isConverted) {
+      setupLabelModeEventListeners();
+    }
+    
+    setupCollapsibleCards();
+  }
+  
+  function updatePrintModeUI() {
+    const sortOptions = document.getElementById('bv-sort-options');
+    const shippingSort = document.getElementById('bv-shipping-sort');
+    
+    switch(state.printMode) {
+      case CONFIG.PRINT_MODES.DETAIL_ONLY:
+        sortOptions.style.display = 'block';
+        shippingSort.style.display = 'none';
+        break;
+        
+      case CONFIG.PRINT_MODES.SHIPPING_ONLY:
+        sortOptions.style.display = 'block';
+        shippingSort.style.display = 'none';
+        break;
+        
+      case CONFIG.PRINT_MODES.AUTO_MATCH:
+        sortOptions.style.display = 'block';
+        shippingSort.style.display = 'none';
+        break;
+        
+      case CONFIG.PRINT_MODES.MANUAL_MATCH:
+        sortOptions.style.display = 'block';
+        shippingSort.style.display = 'block';
+        break;
+        
+      default:
+        sortOptions.style.display = 'none';
+    }
+  }
+  
+  function preparePrintWithMode() {
+    // 根據列印模式準備頁面
+    switch(state.printMode) {
+      case CONFIG.PRINT_MODES.DETAIL_ONLY:
+        prepareDetailOnlyPrint();
+        break;
+        
+      case CONFIG.PRINT_MODES.SHIPPING_ONLY:
+        prepareShippingOnlyPrint();
+        break;
+        
+      case CONFIG.PRINT_MODES.AUTO_MATCH:
+        prepareAutoMatchPrint();
+        break;
+        
+      case CONFIG.PRINT_MODES.MANUAL_MATCH:
+        prepareManualMatchPrint();
+        break;
+    }
+    
+    preparePrintStyles();
+    
+    setTimeout(() => {
+      window.print();
+      
+      // 列印後恢復原始狀態
+      setTimeout(() => {
+        handlePagination();
+        if (state.highlightQuantity) {
+          applyQuantityHighlight();
+        }
+      }, 100);
+    }, 100);
+  }
+  
+  function prepareDetailOnlyPrint() {
+    // 隱藏所有物流單頁面
+    document.querySelectorAll('.bv-shipping-page').forEach(page => {
+      page.closest('.bv-page-container').style.display = 'none';
+    });
+    
+    // 根據排序重新排列明細頁面
+    sortDetailPages();
+  }
+  
+  function prepareShippingOnlyPrint() {
+    // 隱藏所有明細頁面
+    document.querySelectorAll('.bv-label-page:not(.bv-shipping-page)').forEach(page => {
+      page.closest('.bv-page-container').style.display = 'none';
+    });
+    
+    // 根據排序重新排列物流單頁面
+    sortShippingPages();
+  }
+  
+  function prepareAutoMatchPrint() {
+    // 自動配對：明細後接物流單
+    sortDetailPages();
+    // 物流單保持原始順序，緊跟在對應的明細後面
+  }
+  
+  function prepareManualMatchPrint() {
+    // 手動配對：分別排序明細和物流單
+    sortDetailPages();
+    sortShippingPages();
+  }
+  
+  function sortDetailPages() {
+    const containers = Array.from(document.querySelectorAll('.bv-page-container'))
+      .filter(c => c.querySelector('.bv-label-page:not(.bv-shipping-page)'));
+    
+    if (state.detailSortOrder === CONFIG.SORT_ORDERS.DESC) {
+      containers.reverse();
+    }
+    
+    const parent = containers[0]?.parentNode;
+    if (parent) {
+      containers.forEach(container => {
+        parent.appendChild(container);
+      });
+    }
+  }
+  
+  function sortShippingPages() {
+    const containers = Array.from(document.querySelectorAll('.bv-page-container'))
+      .filter(c => c.querySelector('.bv-shipping-page'));
+    
+    if (state.shippingSortOrder === CONFIG.SORT_ORDERS.DESC) {
+      containers.reverse();
+    }
+    
+    const parent = containers[0]?.parentNode;
+    if (parent) {
+      containers.forEach(container => {
+        parent.appendChild(container);
+      });
+    }
+  }
+  
+  function showReopenButton() {
+    if (document.getElementById('bv-reopen-button')) return;
+    
+    const reopenButton = document.createElement('button');
+    reopenButton.id = 'bv-reopen-button';
+    reopenButton.className = 'bv-reopen-button';
+    reopenButton.innerHTML = '<span class="material-icons">apps</span>';
+    reopenButton.title = '開啟 BV SHOP 出貨助手';
+    
+    document.body.appendChild(reopenButton);
+    
+    reopenButton.addEventListener('click', function() {
+      state.isExtensionEnabled = true;
+      chrome.storage.local.set({ bvExtensionEnabled: true });
+      
+      const panel = document.getElementById('bv-label-control-panel');
+      if (panel) {
+        panel.style.display = 'block';
+      } else {
+        createControlPanel();
+      }
+      
+      reopenButton.remove();
+    });
+  }
+  
+  function checkAutoReenable() {
+    chrome.storage.local.get(['bvExtensionEnabled', 'bvClosedTime'], (result) => {
+      if (result.bvExtensionEnabled === false && result.bvClosedTime) {
+        const closedTime = new Date(result.bvClosedTime);
+        const now = new Date();
+        const hoursPassed = (now - closedTime) / (1000 * 60 * 60);
+        
+        // 關閉超過 24 小時，自動重新啟用
+        if (hoursPassed > 24) {
+          chrome.storage.local.set({ bvExtensionEnabled: true });
+          state.isExtensionEnabled = true;
+          init();
+        }
+      }
+    });
+  }
+  
+  // 從 PDF 中嘗試提取物流編號
+  async function extractShippingNumberFromPDF(pdfData) {
+    try {
+      // 這裡可以使用 OCR 或其他方式提取文字
+      // 暫時使用模擬資料
+      const patterns = {
+        KERRY: /配送單號[：:]\s*([A-Z0-9]+)/i,
+        HCT: /託運單號[：:]\s*([A-Z0-9]+)/i,
+        TCAT: /黑貓單號[：:]\s*([A-Z0-9]+)/i,
+        DHL: /運單號碼[：:]\s*([A-Z0-9]+)/i,
+        FEDEX: /追蹤號碼[：:]\s*([A-Z0-9]+)/i
+      };
+      
+      // 返回模擬的物流編號
+      return `${state.deliverySubType}_${Date.now()}`;
+    } catch (error) {
+      console.error('提取物流編號失敗:', error);
+      return null;
+    }
+  }
+  
+  // 其餘的函數保持不變...
+  function setupShippingEventListeners() {
+    const fetchBtn = document.getElementById('bv-fetch-shipping');
+    const saveBtn = document.getElementById('bv-save-shipping');
+    
+    if (fetchBtn) {
+      fetchBtn.addEventListener('click', fetchShippingData);
+    }
+    
+    if (saveBtn) {
+      saveBtn.addEventListener('click', saveShippingData);
+    }
+  }
+  
+  function setupLabelModeEventListeners() {
+    const hideExtraInfoCheckbox = document.getElementById('bv-hide-extra-info');
+    if (hideExtraInfoCheckbox) {
+      hideExtraInfoCheckbox.addEventListener('change', function(e) {
+        state.hideExtraInfo = e.target.checked;
+        saveSettings();
+        
+        setTimeout(() => {
+          handlePagination();
+          if (state.highlightQuantity) {
+            applyQuantityHighlight();
+          }
+        }, 100);
+      });
+    }
+    
+    const hideTableHeaderCheckbox = document.getElementById('bv-hide-table-header');
+    if (hideTableHeaderCheckbox) {
+      hideTableHeaderCheckbox.addEventListener('change', function(e) {
+        state.hideTableHeader = e.target.checked;
+        saveSettings();
+        updateLabelStyles();
+        setTimeout(() => {
+          handlePagination();
+          if (state.highlightQuantity) {
+            applyQuantityHighlight();
+          }
+        }, 100);
+      });
+    }
+    
+    const fontSizeSlider = document.getElementById('bv-font-size');
+    if (fontSizeSlider) {
+      fontSizeSlider.addEventListener('input', function() {
+        document.getElementById('bv-font-size-value').textContent = parseFloat(this.value).toFixed(1);
+        updateRangeProgress(this);
+        
+        const originalFontSize = document.querySelector('.ignore-print #fontSize');
+        if (originalFontSize) {
+          const closestSize = Math.round(parseFloat(this.value));
+          originalFontSize.value = closestSize + 'px';
+          if (typeof $ !== 'undefined') {
+            $(originalFontSize).trigger('change');
+          }
+        }
+        
+        saveSettings();
+        updateLabelStyles();
+        setTimeout(() => {
+          handlePagination();
+          if (state.highlightQuantity) {
+            applyQuantityHighlight();
+          }
+        }, 100);
+      });
+    }
+    
+    const clearShippingBtn = document.getElementById('bv-clear-shipping');
+    if (clearShippingBtn) {
+      clearShippingBtn.addEventListener('click', function() {
+        chrome.storage.local.remove(['shippingData', 'pdfShippingData', 'shippingProvider', 'shippingTimestamp'], () => {
+          state.shippingData = [];
+          state.pdfShippingData = [];
+          checkShippingDataStatus();
+          showNotification('已清除物流單資料');
+        });
+      });
+    }
+    
+    const pdfUploadArea = document.getElementById('bv-pdf-upload-area');
+    const pdfInput = document.getElementById('bv-pdf-input');
+    
+    if (pdfUploadArea && pdfInput) {
+      pdfUploadArea.addEventListener('click', function() {
+        pdfInput.click();
+      });
+      
+      pdfInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file && file.type === 'application/pdf') {
+          handlePdfUpload(file);
+        } else {
+          showNotification('請上傳 PDF 檔案', 'warning');
+        }
+      });
+    }
+    
+    hideOriginalControls();
+    
+    document.querySelectorAll('input[type="range"]').forEach(updateRangeProgress);
+    
+    initPresetSystem();
+    initLogoUpload();
+    observeOriginalControls();
+    
+    // 初始化列印模式 UI
+    updatePrintModeUI();
+  }
+  
+  async function handlePdfUpload(file) {
+    const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
+    const pdfInfo = document.getElementById('bv-pdf-info');
+    const filenameEl = document.getElementById('bv-pdf-filename');
+    const pagesEl = document.getElementById('bv-pdf-pages');
+    const progressEl = document.getElementById('bv-conversion-progress');
+    const progressFill = document.getElementById('bv-conversion-progress-fill');
+    const statusEl = document.getElementById('bv-conversion-status');
+    
+    if (uploadPrompt) uploadPrompt.style.display = 'none';
+    if (pdfInfo) {
+      pdfInfo.style.display = 'flex';
+      filenameEl.textContent = file.name;
+    }
+    if (progressEl) progressEl.classList.add('active');
+    
+    try {
+      statusEl.textContent = '載入 PDF...';
+      progressFill.style.width = '10%';
+      
+      const arrayBuffer = await file.arrayBuffer();
+      const typedArray = new Uint8Array(arrayBuffer);
+      
+      if (typeof pdfjsLib !== 'undefined') {
+        if (chrome && chrome.runtime && chrome.runtime.getURL) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
+        } else {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+          pdfjsLib.GlobalWorkerOptions.isEvalSupported = false;
+        }
+      } else {
+        console.error('PDF.js 尚未載入');
+        throw new Error('PDF.js library not loaded');
+      }
+      
+      const pdf = await pdfjsLib.getDocument(typedArray).promise;
+      const numPages = pdf.numPages;
+      
+      if (pagesEl) pagesEl.textContent = `共 ${numPages} 頁`;
+      
+      state.pdfShippingData = [];
+      
+      for (let i = 1; i <= numPages; i++) {
+        statusEl.textContent = `處理第 ${i}/${numPages} 頁...`;
+        progressFill.style.width = `${10 + (i / numPages * 80)}%`;
+        
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2 });
+        
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+        
+        const imageData = canvas.toDataURL('image/png');
+        
+        // 嘗試提取物流編號
+        const shippingNo = await extractShippingNumberFromPDF({ page, pageNumber: i });
+        
+        state.pdfShippingData.push({
+          provider: 'DELIVERY',
+          subType: state.deliverySubType || 'UNKNOWN',
+          orderNo: shippingNo || `PDF_${i}`,
+          pageNumber: i,
+          imageData: imageData,
+          width: viewport.width,
+          height: viewport.height,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      progressFill.style.width = '100%';
+      statusEl.textContent = '轉換完成！';
+      
+      chrome.storage.local.set({
+        pdfShippingData: state.pdfShippingData,
+        shippingProvider: 'DELIVERY',
+        shippingSubType: state.deliverySubType,
+        shippingTimestamp: new Date().toISOString()
+      }, () => {
+        showNotification(`成功轉換 ${numPages} 頁 PDF`);
+        checkShippingDataStatus();
+        
+        setTimeout(() => {
+          progressEl.classList.remove('active');
+          progressFill.style.width = '0%';
+        }, 1000);
+      });
+      
+    } catch (error) {
+      console.error('PDF 處理錯誤:', error);
+      showNotification('PDF 處理失敗: ' + error.message, 'error');
+      progressEl.classList.remove('active');
+      
+      if (uploadPrompt) uploadPrompt.style.display = 'block';
+      if (pdfInfo) pdfInfo.style.display = 'none';
     }
   }
   
@@ -1976,10 +2768,8 @@
   }
   
   function checkShippingDataStatus() {
-    chrome.storage.local.get(['shippingData', 'shippingProvider', 'pdfShippingData'], (result) => {
+    chrome.storage.local.get(['shippingData', 'shippingProvider', 'pdfShippingData', 'shippingSubType'], (result) => {
       const statusEl = document.getElementById('bv-integration-status');
-      const toggleEl = document.getElementById('bv-integration-toggle');
-      const orderLabelEl = document.getElementById('bv-shipping-order-container');
       
       if (!statusEl) return;
       
@@ -1991,336 +2781,37 @@
         state.pdfShippingData = result.pdfShippingData || [];
         
         const totalCount = state.shippingData.length + state.pdfShippingData.length;
-        const provider = result.shippingProvider ? 
-          CONFIG.PROVIDERS[result.shippingProvider]?.name : 
-          (hasPdfData ? '嘉里大榮' : '未知');
+        let providerName = '未知';
+        
+        if (result.shippingProvider) {
+          if (result.shippingProvider === 'DELIVERY' && result.shippingSubType) {
+            providerName = CONFIG.PROVIDERS.DELIVERY.subTypes[result.shippingSubType] || '宅配';
+          } else {
+            providerName = CONFIG.PROVIDERS[result.shippingProvider]?.name || '未知';
+          }
+        } else if (hasPdfData) {
+          providerName = '宅配';
+        }
         
         statusEl.className = 'bv-integration-status success';
         statusEl.innerHTML = `
           <span class="material-icons">check_circle</span>
           <div class="bv-status-info">
             <h4>已載入 ${totalCount} 張物流單</h4>
-            <p>${provider} - 可與明細整合列印</p>
+            <p>${providerName} - 可與明細整合列印</p>
           </div>
         `;
-        
-        if (toggleEl) toggleEl.style.display = 'block';
-        if (orderLabelEl) orderLabelEl.style.display = 'block';
       } else {
         statusEl.className = 'bv-integration-status warning';
         statusEl.innerHTML = `
           <span class="material-icons">warning</span>
           <div class="bv-status-info">
             <h4>尚無物流單資料</h4>
-            <p>請先前往物流單頁面抓取</p>
+            <p>請先前往物流單頁面抓取或上傳 PDF</p>
           </div>
         `;
-        
-        if (toggleEl) toggleEl.style.display = 'none';
-        if (orderLabelEl) orderLabelEl.style.display = 'none';
       }
     });
-  }
-  
-  function setupEventListeners() {
-    const convertBtn = document.getElementById('bv-convert-btn');
-    const revertBtn = document.getElementById('bv-revert-btn');
-    const minimizeBtn = document.getElementById('bv-minimize-btn');
-    const floatingPrint = document.getElementById('bv-floating-print');
-    const highlightQty = document.getElementById('bv-highlight-qty');
-    const applyPrint = document.getElementById('bv-apply-print');
-    
-    if (convertBtn) {
-      convertBtn.addEventListener('click', convertToLabelFormat);
-    }
-    
-    if (revertBtn) {
-      revertBtn.addEventListener('click', revertToOriginal);
-    }
-    
-    if (minimizeBtn) {
-      minimizeBtn.addEventListener('click', function() {
-        const panel = document.getElementById('bv-label-control-panel');
-        const icon = this.querySelector('.material-icons');
-        
-        if (state.isPanelMinimized) {
-          panel.classList.remove('minimized');
-          icon.textContent = 'remove';
-          state.isPanelMinimized = false;
-        } else {
-          panel.classList.add('minimized');
-          icon.textContent = 'add';
-          state.isPanelMinimized = true;
-        }
-        
-        chrome.storage.local.set({ bvPanelMinimized: state.isPanelMinimized });
-      });
-    }
-    
-    if (floatingPrint) {
-      floatingPrint.addEventListener('click', function() {
-        if (!state.isConverted) {
-          window.print();
-        } else {
-          preparePrintStyles();
-          window.print();
-        }
-      });
-    }
-    
-    if (highlightQty) {
-      highlightQty.addEventListener('change', toggleQuantityHighlight);
-    }
-    
-    if (applyPrint) {
-      applyPrint.addEventListener('click', function() {
-        if (!state.isConverted) {
-          if (state.highlightQuantity) {
-            applyQuantityHighlight();
-          }
-          window.print();
-        } else {
-          preparePrintStyles();
-          window.print();
-        }
-      });
-    }
-    
-    if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
-      setupShippingEventListeners();
-    }
-    
-    if (state.isConverted) {
-      setupLabelModeEventListeners();
-    }
-    
-    setupCollapsibleCards();
-  }
-  
-  function setupShippingEventListeners() {
-    const fetchBtn = document.getElementById('bv-fetch-shipping');
-    const saveBtn = document.getElementById('bv-save-shipping');
-    
-    if (fetchBtn) {
-      fetchBtn.addEventListener('click', fetchShippingData);
-    }
-    
-    if (saveBtn) {
-      saveBtn.addEventListener('click', saveShippingData);
-    }
-  }
-  
-  function setupLabelModeEventListeners() {
-    const hideExtraInfoCheckbox = document.getElementById('bv-hide-extra-info');
-    if (hideExtraInfoCheckbox) {
-      hideExtraInfoCheckbox.addEventListener('change', function(e) {
-        state.hideExtraInfo = e.target.checked;
-        saveSettings();
-        
-        setTimeout(() => {
-          handlePagination();
-          if (state.highlightQuantity) {
-            applyQuantityHighlight();
-          }
-        }, 100);
-      });
-    }
-    
-    const hideTableHeaderCheckbox = document.getElementById('bv-hide-table-header');
-    if (hideTableHeaderCheckbox) {
-      hideTableHeaderCheckbox.addEventListener('change', function(e) {
-        state.hideTableHeader = e.target.checked;
-        saveSettings();
-        updateLabelStyles();
-        setTimeout(() => {
-          handlePagination();
-          if (state.highlightQuantity) {
-            applyQuantityHighlight();
-          }
-        }, 100);
-      });
-    }
-    
-    const fontSizeSlider = document.getElementById('bv-font-size');
-    if (fontSizeSlider) {
-      fontSizeSlider.addEventListener('input', function() {
-        document.getElementById('bv-font-size-value').textContent = parseFloat(this.value).toFixed(1);
-        updateRangeProgress(this);
-        
-        const originalFontSize = document.querySelector('.ignore-print #fontSize');
-        if (originalFontSize) {
-          const closestSize = Math.round(parseFloat(this.value));
-          originalFontSize.value = closestSize + 'px';
-          if (typeof $ !== 'undefined') {
-            $(originalFontSize).trigger('change');
-          }
-        }
-        
-        saveSettings();
-        updateLabelStyles();
-        setTimeout(() => {
-          handlePagination();
-          if (state.highlightQuantity) {
-            applyQuantityHighlight();
-          }
-        }, 100);
-      });
-    }
-    
-    const enableIntegrationCheckbox = document.getElementById('bv-enable-integration');
-    if (enableIntegrationCheckbox) {
-      enableIntegrationCheckbox.addEventListener('change', function(e) {
-        state.enableIntegration = e.target.checked;
-        saveSettings();
-        setTimeout(() => {
-          handlePagination();
-          if (state.highlightQuantity) {
-            applyQuantityHighlight();
-          }
-        }, 100);
-      });
-    }
-    
-    const clearShippingBtn = document.getElementById('bv-clear-shipping');
-    if (clearShippingBtn) {
-      clearShippingBtn.addEventListener('click', function() {
-        chrome.storage.local.remove(['shippingData', 'pdfShippingData', 'shippingProvider', 'shippingTimestamp'], () => {
-          state.shippingData = [];
-          state.pdfShippingData = [];
-          checkShippingDataStatus();
-          showNotification('已清除物流單資料');
-        });
-      });
-    }
-    
-    const pdfUploadArea = document.getElementById('bv-pdf-upload-area');
-    const pdfInput = document.getElementById('bv-pdf-input');
-    
-    if (pdfUploadArea && pdfInput) {
-      pdfUploadArea.addEventListener('click', function() {
-        pdfInput.click();
-      });
-      
-      pdfInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file && file.type === 'application/pdf') {
-          handlePdfUpload(file);
-        } else {
-          showNotification('請上傳 PDF 檔案', 'warning');
-        }
-      });
-    }
-    
-    hideOriginalControls();
-    
-    document.querySelectorAll('input[type="range"]').forEach(updateRangeProgress);
-    
-    initPresetSystem();
-    initLogoUpload();
-    observeOriginalControls();
-  }
-  
-  async function handlePdfUpload(file) {
-    const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
-    const pdfInfo = document.getElementById('bv-pdf-info');
-    const filenameEl = document.getElementById('bv-pdf-filename');
-    const pagesEl = document.getElementById('bv-pdf-pages');
-    const progressEl = document.getElementById('bv-conversion-progress');
-    const progressFill = document.getElementById('bv-conversion-progress-fill');
-    const statusEl = document.getElementById('bv-conversion-status');
-    
-    if (uploadPrompt) uploadPrompt.style.display = 'none';
-    if (pdfInfo) {
-      pdfInfo.style.display = 'flex';
-      filenameEl.textContent = file.name;
-    }
-    if (progressEl) progressEl.classList.add('active');
-    
-    try {
-      statusEl.textContent = '載入 PDF...';
-      progressFill.style.width = '10%';
-      
-      const arrayBuffer = await file.arrayBuffer();
-      const typedArray = new Uint8Array(arrayBuffer);
-      
-      // 修正：正確設定 PDF.js Worker 路徑
-      if (typeof pdfjsLib !== 'undefined') {
-        // 方案 1：使用 Chrome Extension API 取得正確路徑
-        if (chrome && chrome.runtime && chrome.runtime.getURL) {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
-        } else {
-          // 方案 2：停用 Worker（降級方案）
-          pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-          pdfjsLib.GlobalWorkerOptions.isEvalSupported = false;
-        }
-      } else {
-        console.error('PDF.js 尚未載入');
-        throw new Error('PDF.js library not loaded');
-      }
-      
-      const pdf = await pdfjsLib.getDocument(typedArray).promise;
-      const numPages = pdf.numPages;
-      
-      if (pagesEl) pagesEl.textContent = `共 ${numPages} 頁`;
-      
-      state.pdfShippingData = [];
-      
-      for (let i = 1; i <= numPages; i++) {
-        statusEl.textContent = `處理第 ${i}/${numPages} 頁...`;
-        progressFill.style.width = `${10 + (i / numPages * 80)}%`;
-        
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2 });
-        
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        
-        await page.render({
-          canvasContext: context,
-          viewport: viewport
-        }).promise;
-        
-        const imageData = canvas.toDataURL('image/png');
-        
-        state.pdfShippingData.push({
-          provider: 'KERRY',
-          orderNo: `KERRY_${i}`,
-          pageNumber: i,
-          imageData: imageData,
-          width: viewport.width,
-          height: viewport.height,
-          timestamp: new Date().toISOString()
-        });
-      }
-      
-      progressFill.style.width = '100%';
-      statusEl.textContent = '轉換完成！';
-      
-      chrome.storage.local.set({
-        pdfShippingData: state.pdfShippingData,
-        shippingProvider: 'KERRY',
-        shippingTimestamp: new Date().toISOString()
-      }, () => {
-        showNotification(`成功轉換 ${numPages} 頁 PDF`);
-        checkShippingDataStatus();
-        
-        setTimeout(() => {
-          progressEl.classList.remove('active');
-          progressFill.style.width = '0%';
-        }, 1000);
-      });
-      
-    } catch (error) {
-      console.error('PDF 處理錯誤:', error);
-      showNotification('PDF 處理失敗: ' + error.message, 'error');
-      progressEl.classList.remove('active');
-      
-      // 恢復 UI 狀態
-      if (uploadPrompt) uploadPrompt.style.display = 'block';
-      if (pdfInfo) pdfInfo.style.display = 'none';
-    }
   }
   
   function setupCollapsibleCards() {
@@ -2377,7 +2868,7 @@
     }
     
     function dragStart(e) {
-      if (e.target.closest('.bv-glass-button') || e.target.closest('.bv-minimize-btn')) return;
+      if (e.target.closest('.bv-glass-button') || e.target.closest('.bv-minimize-btn') || e.target.closest('.bv-close-btn')) return;
       
       if (e.type === "touchstart") {
         initialX = e.touches[0].clientX - xOffset;
@@ -2788,76 +3279,108 @@
     const orderContents = document.querySelectorAll('.order-content');
     const showOrderLabel = document.getElementById('bv-show-order-label')?.checked ?? true;
     
-    orderContents.forEach((orderContent, orderIndex) => {
-      orderContent.classList.add('bv-original');
-      
-      const orderNo = extractOrderNumber(orderContent);
-      
-      if (state.enableIntegration) {
-        const shippingData = findMatchingShippingData(orderNo, orderIndex);
-        if (shippingData) {
-          const shippingPage = createShippingPage(shippingData, orderNo, showOrderLabel);
-          if (shippingPage) {
-            orderContent.parentNode.insertBefore(shippingPage, orderContent.nextSibling);
+    // 根據列印模式處理
+    if (state.printMode === CONFIG.PRINT_MODES.SHIPPING_ONLY) {
+      // 純印物流單模式
+      createShippingOnlyPages();
+    } else {
+      // 其他模式：處理出貨明細
+      orderContents.forEach((orderContent, orderIndex) => {
+        orderContent.classList.add('bv-original');
+        
+        const orderNo = extractOrderNumber(orderContent);
+        
+        // 根據列印模式決定是否插入物流單
+        if (state.printMode === CONFIG.PRINT_MODES.AUTO_MATCH || 
+            state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
+          const shippingData = findMatchingShippingData(orderNo, orderIndex);
+          if (shippingData) {
+            const shippingPage = createShippingPage(shippingData, orderNo, showOrderLabel);
+            if (shippingPage) {
+              orderContent.parentNode.insertBefore(shippingPage, orderContent.nextSibling);
+            }
           }
         }
-      }
-      
-      const orderContentClone = orderContent.cloneNode(true);
-      
-      if (state.hideExtraInfo) {
-        processExtraInfoHiding(orderContentClone);
-      }
-      
-      const elements = Array.from(orderContentClone.children);
-      let currentPage = null;
-      let currentPageContent = null;
-      let currentHeight = 0;
-      
-      const pageContainer = document.createElement('div');
-      pageContainer.className = 'bv-page-container';
-      orderContent.parentNode.insertBefore(pageContainer, orderContent.nextSibling);
-      
-      elements.forEach((element, index) => {
-        if (state.hideTableHeader && element.classList.contains('list-title')) {
-          return;
-        }
         
-        const clone = element.cloneNode(true);
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = `
-          position: absolute;
-          visibility: hidden;
-          width: ${377 - paddingPx * 2}px;
-        `;
-        wrapper.appendChild(clone);
-        document.body.appendChild(wrapper);
-        
-        const elementHeight = wrapper.offsetHeight;
-        document.body.removeChild(wrapper);
-        
-        if (elementHeight === 0) return;
-        
-        if (!currentPage || (currentHeight + elementHeight > contentHeight && currentHeight > 0)) {
-          currentPage = document.createElement('div');
-          currentPage.className = 'bv-label-page';
-          currentPage.style.padding = `${paddingMm}mm`;
+        // 處理明細分頁
+        if (state.printMode !== CONFIG.PRINT_MODES.SHIPPING_ONLY) {
+          const orderContentClone = orderContent.cloneNode(true);
           
-          currentPageContent = document.createElement('div');
-          currentPageContent.className = 'bv-page-content';
-          currentPage.appendChild(currentPageContent);
+          if (state.hideExtraInfo) {
+            processExtraInfoHiding(orderContentClone);
+          }
           
-          pageContainer.appendChild(currentPage);
-          currentHeight = 0;
+          const elements = Array.from(orderContentClone.children);
+          let currentPage = null;
+          let currentPageContent = null;
+          let currentHeight = 0;
+          
+          const pageContainer = document.createElement('div');
+          pageContainer.className = 'bv-page-container';
+          orderContent.parentNode.insertBefore(pageContainer, orderContent.nextSibling);
+          
+          elements.forEach((element, index) => {
+            if (state.hideTableHeader && element.classList.contains('list-title')) {
+              return;
+            }
+            
+            const clone = element.cloneNode(true);
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = `
+              position: absolute;
+              visibility: hidden;
+              width: ${377 - paddingPx * 2}px;
+            `;
+            wrapper.appendChild(clone);
+            document.body.appendChild(wrapper);
+            
+            const elementHeight = wrapper.offsetHeight;
+            document.body.removeChild(wrapper);
+            
+            if (elementHeight === 0) return;
+            
+            if (!currentPage || (currentHeight + elementHeight > contentHeight && currentHeight > 0)) {
+              currentPage = document.createElement('div');
+              currentPage.className = 'bv-label-page';
+              currentPage.style.padding = `${paddingMm}mm`;
+              
+              currentPageContent = document.createElement('div');
+              currentPageContent.className = 'bv-page-content';
+              currentPage.appendChild(currentPageContent);
+              
+              pageContainer.appendChild(currentPage);
+              currentHeight = 0;
+            }
+            
+            const elementClone = element.cloneNode(true);
+            currentPageContent.appendChild(elementClone);
+            currentHeight += elementHeight;
+          });
         }
-        
-        const elementClone = element.cloneNode(true);
-        currentPageContent.appendChild(elementClone);
-        currentHeight += elementHeight;
       });
-    });
+    }
     
     updateLogos();
+  }
+  
+  function createShippingOnlyPages() {
+    // 創建純物流單頁面
+    const allShippingData = [...state.shippingData, ...state.pdfShippingData];
+    const showOrderLabel = document.getElementById('bv-show-order-label')?.checked ?? true;
+    
+    allShippingData.forEach((data, index) => {
+      const shippingInfo = {
+        type: data.imageData ? 'pdf' : 'html',
+        data: data
+      };
+      
+      const orderNo = data.orderNo || `單號_${index + 1}`;
+      const shippingPage = createShippingPage(shippingInfo, orderNo, showOrderLabel);
+      
+      if (shippingPage) {
+        document.body.appendChild(shippingPage);
+      }
+    });
   }
   
   function extractOrderNumber(orderContent) {
@@ -3457,8 +3980,10 @@
       logoX: document.getElementById('logo-x-slider')?.value || '50',
       logoY: document.getElementById('logo-y-slider')?.value || '50',
       logoOpacity: document.getElementById('logo-opacity-slider')?.value || '20',
-      enableIntegration: document.getElementById('bv-enable-integration')?.checked,
-      showOrderLabel: document.getElementById('bv-show-order-label')?.checked
+      showOrderLabel: document.getElementById('bv-show-order-label')?.checked,
+      printMode: state.printMode,
+      detailSortOrder: state.detailSortOrder,
+      shippingSortOrder: state.shippingSortOrder
     };
   }
   
@@ -3490,15 +4015,40 @@
       }
     }
     
-    if (settings.enableIntegration !== undefined) {
-      const integrationCheckbox = document.getElementById('bv-enable-integration');
-      if (integrationCheckbox) integrationCheckbox.checked = settings.enableIntegration;
-      state.enableIntegration = settings.enableIntegration;
-    }
-    
     if (settings.showOrderLabel !== undefined) {
       const orderLabelCheckbox = document.getElementById('bv-show-order-label');
       if (orderLabelCheckbox) orderLabelCheckbox.checked = settings.showOrderLabel;
+    }
+    
+    if (settings.printMode !== undefined) {
+      state.printMode = settings.printMode;
+      const modeRadio = document.querySelector(`input[name="print-mode"][value="${settings.printMode}"]`);
+      if (modeRadio) {
+        modeRadio.checked = true;
+        updatePrintModeUI();
+      }
+    }
+    
+    if (settings.detailSortOrder !== undefined) {
+      state.detailSortOrder = settings.detailSortOrder;
+      const sortBtn = document.querySelector(`.bv-sort-button[data-type="detail"][data-order="${settings.detailSortOrder}"]`);
+      if (sortBtn) {
+        document.querySelectorAll('.bv-sort-button[data-type="detail"]').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        sortBtn.classList.add('active');
+      }
+    }
+    
+    if (settings.shippingSortOrder !== undefined) {
+      state.shippingSortOrder = settings.shippingSortOrder;
+      const sortBtn = document.querySelector(`.bv-sort-button[data-type="shipping"][data-order="${settings.shippingSortOrder}"]`);
+      if (sortBtn) {
+        document.querySelectorAll('.bv-sort-button[data-type="shipping"]').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        sortBtn.classList.add('active');
+      }
     }
     
     if (settings.logoDataUrl) {
@@ -3562,8 +4112,10 @@
       logoX: document.getElementById('logo-x-slider')?.value || '50',
       logoY: document.getElementById('logo-y-slider')?.value || '50',
       logoOpacity: document.getElementById('logo-opacity-slider')?.value || '20',
-      enableIntegration: state.enableIntegration,
-      showOrderLabel: document.getElementById('bv-show-order-label')?.checked ?? true
+      showOrderLabel: document.getElementById('bv-show-order-label')?.checked ?? true,
+      printMode: state.printMode,
+      detailSortOrder: state.detailSortOrder,
+      shippingSortOrder: state.shippingSortOrder
     };
     
     chrome.storage.local.set({ bvLabelSettings: settings });
@@ -3591,13 +4143,40 @@
           const hideHeaderCheckbox = document.getElementById('bv-hide-table-header');
           if (hideHeaderCheckbox) hideHeaderCheckbox.checked = state.hideTableHeader;
           
-          state.enableIntegration = settings.enableIntegration !== undefined ? settings.enableIntegration : false;
-          const integrationCheckbox = document.getElementById('bv-enable-integration');
-          if (integrationCheckbox) integrationCheckbox.checked = state.enableIntegration;
-          
           const orderLabelCheckbox = document.getElementById('bv-show-order-label');
           if (orderLabelCheckbox && settings.showOrderLabel !== undefined) {
             orderLabelCheckbox.checked = settings.showOrderLabel;
+          }
+          
+          if (settings.printMode !== undefined) {
+            state.printMode = settings.printMode;
+            const modeRadio = document.querySelector(`input[name="print-mode"][value="${settings.printMode}"]`);
+            if (modeRadio) {
+              modeRadio.checked = true;
+              updatePrintModeUI();
+            }
+          }
+          
+          if (settings.detailSortOrder !== undefined) {
+            state.detailSortOrder = settings.detailSortOrder;
+            const sortBtn = document.querySelector(`.bv-sort-button[data-type="detail"][data-order="${settings.detailSortOrder}"]`);
+            if (sortBtn) {
+              document.querySelectorAll('.bv-sort-button[data-type="detail"]').forEach(btn => {
+                btn.classList.remove('active');
+              });
+              sortBtn.classList.add('active');
+            }
+          }
+          
+          if (settings.shippingSortOrder !== undefined) {
+            state.shippingSortOrder = settings.shippingSortOrder;
+            const sortBtn = document.querySelector(`.bv-sort-button[data-type="shipping"][data-order="${settings.shippingSortOrder}"]`);
+            if (sortBtn) {
+              document.querySelectorAll('.bv-sort-button[data-type="shipping"]').forEach(btn => {
+                btn.classList.remove('active');
+              });
+              sortBtn.classList.add('active');
+            }
           }
           
           if (settings.fontSize) {
@@ -3661,120 +4240,140 @@
   }
   
   function init() {
-    console.log('=== BV SHOP 標籤機初始化 ===');
+    console.log('=== BV SHOP 出貨助手初始化 ===');
     console.log('初始化時間:', new Date().toLocaleString());
     
-    detectCurrentPage();
+    // 檢查自動重新啟用
+    checkAutoReenable();
     
-    // 建立面板的主要函數
-    const tryCreatePanel = () => {
-      if (!document.getElementById('bv-label-control-panel')) {
-        if (state.currentPageType || window.location.hostname.includes('bvshop')) {
-          console.log('嘗試建立控制面板...');
-          createControlPanel();
-        }
-      }
-    };
-    
-    // 立即嘗試建立
-    if (document.readyState === 'loading') {
-      console.log('文檔載入中，等待 DOMContentLoaded...');
-      document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOMContentLoaded 事件觸發');
-        detectCurrentPage(); // 再次偵測
-        tryCreatePanel();
-      });
-    } else {
-      console.log('文檔已載入，立即建立面板');
-      tryCreatePanel();
-    }
-    
-    // 監聽頁面變化（針對 SPA）
-    const observer = new MutationObserver((mutations) => {
-      if (!document.getElementById('bv-label-control-panel') && 
-          (state.currentPageType || window.location.hostname.includes('bvshop'))) {
-        console.log('偵測到頁面變化，重新檢查...');
-        detectCurrentPage();
-        tryCreatePanel();
-      }
-    });
-    
-    // 開始觀察
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-    
-    // 延遲檢查（備用方案）
-    const delayedCheck = () => {
-      if (!document.getElementById('bv-label-control-panel')) {
-        console.log('延遲檢查：面板尚未建立');
+    // 檢查擴充功能是否被關閉
+    chrome.storage.local.get(['bvExtensionEnabled', 'bvClosedTime'], (result) => {
+      if (result.bvExtensionEnabled === false) {
+        console.log('擴充功能已關閉，顯示重新開啟按鈕');
+        state.isExtensionEnabled = false;
         
-        // 檢查是否在 BV SHOP 網站
-        if (window.location.hostname.includes('bvshop')) {
-          console.log('確認為 BV SHOP 網站，強制建立面板');
-          
-          // 再次偵測頁面類型
-          detectCurrentPage();
-          
-          // 如果還是沒有類型，但確定是 BV SHOP，就設定為出貨明細
-          if (!state.currentPageType) {
-            console.log('強制設定為出貨明細頁面');
-            state.currentPageType = CONFIG.PAGE_TYPES.ORDER_PRINT;
+        // 如果是在支援的網站上，顯示重新開啟按鈕
+        if (window.location.hostname.includes('bvshop') || 
+            Object.values(CONFIG.PROVIDERS).some(p => 
+              p.domains.some(d => window.location.hostname.includes(d)))) {
+          showReopenButton();
+        }
+        return;
+      }
+      
+      // 正常初始化流程
+      detectCurrentPage();
+      
+      // 建立面板的主要函數
+      const tryCreatePanel = () => {
+        if (!document.getElementById('bv-label-control-panel')) {
+          if (state.currentPageType || window.location.hostname.includes('bvshop')) {
+            console.log('嘗試建立控制面板...');
+            createControlPanel();
           }
+        }
+      };
+      
+      // 立即嘗試建立
+      if (document.readyState === 'loading') {
+        console.log('文檔載入中，等待 DOMContentLoaded...');
+        document.addEventListener('DOMContentLoaded', () => {
+          console.log('DOMContentLoaded 事件觸發');
+          detectCurrentPage(); // 再次偵測
+          tryCreatePanel();
+        });
+      } else {
+        console.log('文檔已載入，立即建立面板');
+        tryCreatePanel();
+      }
+      
+      // 監聽頁面變化（針對 SPA）
+      const observer = new MutationObserver((mutations) => {
+        if (!document.getElementById('bv-label-control-panel') && 
+            (state.currentPageType || window.location.hostname.includes('bvshop'))) {
+          console.log('偵測到頁面變化，重新檢查...');
+          detectCurrentPage();
+          tryCreatePanel();
+        }
+      });
+      
+      // 開始觀察
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+      
+      // 延遲檢查（備用方案）
+      const delayedCheck = () => {
+        if (!document.getElementById('bv-label-control-panel')) {
+          console.log('延遲檢查：面板尚未建立');
           
-          createControlPanel();
-        } else {
-          // 物流單頁面
-          for (const [key, provider] of Object.entries(CONFIG.PROVIDERS)) {
-            if (provider.domains.some(domain => window.location.hostname.includes(domain))) {
-              console.log('確認為物流單頁面:', provider.name);
-              if (!state.currentPageType) {
-                state.currentProvider = key;
-                state.currentPageType = CONFIG.PAGE_TYPES.SHIPPING;
+          // 檢查是否在 BV SHOP 網站
+          if (window.location.hostname.includes('bvshop')) {
+            console.log('確認為 BV SHOP 網站，強制建立面板');
+            
+            // 再次偵測頁面類型
+            detectCurrentPage();
+            
+            // 如果還是沒有類型，但確定是 BV SHOP，就設定為出貨明細
+            if (!state.currentPageType) {
+              console.log('強制設定為出貨明細頁面');
+              state.currentPageType = CONFIG.PAGE_TYPES.ORDER_PRINT;
+            }
+            
+            createControlPanel();
+          } else {
+            // 物流單頁面
+            for (const [key, provider] of Object.entries(CONFIG.PROVIDERS)) {
+              if (provider.domains.some(domain => window.location.hostname.includes(domain))) {
+                console.log('確認為物流單頁面:', provider.name);
+                if (!state.currentPageType) {
+                  state.currentProvider = key;
+                  state.currentPageType = CONFIG.PAGE_TYPES.SHIPPING;
+                }
+                createControlPanel();
+                break;
               }
-              createControlPanel();
-              break;
             }
           }
+        } else {
+          console.log('✓ 面板已成功建立');
         }
-      } else {
-        console.log('✓ 面板已成功建立');
-      }
-    };
-    
-    // 多次延遲檢查
-    setTimeout(delayedCheck, 1000);
-    setTimeout(delayedCheck, 2000);
-    setTimeout(delayedCheck, 3000);
-    
-    // 監聽網址變化（針對 SPA）
-    let lastUrl = location.href;
-    new MutationObserver(() => {
-      const url = location.href;
-      if (url !== lastUrl) {
-        lastUrl = url;
-        console.log('網址變化偵測:', url);
-        detectCurrentPage();
-        tryCreatePanel();
-      }
-    }).observe(document, { subtree: true, childList: true });
-    
-    // 全域錯誤捕獲
-    window.addEventListener('error', (e) => {
-      if (e.filename && e.filename.includes('content.js')) {
-        console.error('BV SHOP 標籤機錯誤:', e.message, e.lineno, e.colno);
-      }
+      };
+      
+      // 多次延遲檢查
+      setTimeout(delayedCheck, 1000);
+      setTimeout(delayedCheck, 2000);
+      setTimeout(delayedCheck, 3000);
+      
+      // 監聽網址變化（針對 SPA）
+      let lastUrl = location.href;
+      new MutationObserver(() => {
+        const url = location.href;
+        if (url !== lastUrl) {
+          lastUrl = url;
+          console.log('網址變化偵測:', url);
+          detectCurrentPage();
+          tryCreatePanel();
+        }
+      }).observe(document, { subtree: true, childList: true });
+      
+      // 全域錯誤捕獲
+      window.addEventListener('error', (e) => {
+        if (e.filename && e.filename.includes('content.js')) {
+          console.error('BV SHOP 出貨助手錯誤:', e.message, e.lineno, e.colno);
+        }
+      });
+      
+      console.log('=== 初始化完成 ===');
     });
-    
-    console.log('=== 初始化完成 ===');
   }
   
   // 啟動擴充功能
   try {
     init();
   } catch (error) {
-    console.error('BV SHOP 標籤機初始化失敗:', error);
+    console.error('BV SHOP 出貨助手初始化失敗:', error);
   }
   
-  })();
+})();
