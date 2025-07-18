@@ -44,13 +44,6 @@
   // 強制載入 Material Icons 樣式
   const iconStyle = document.createElement('style');
   iconStyle.textContent = `
-    @font-face {
-      font-family: 'Material Icons';
-      font-style: normal;
-      font-weight: 400;
-      src: url(https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
-    }
-    
     .material-icons {
       font-family: 'Material Icons' !important;
       font-weight: normal;
@@ -147,12 +140,7 @@
     pendingPdfFile: null,  // 暫存待處理的 PDF 檔案
     pendingFetchAction: false  // 暫存待處理的抓取動作
   };
-
-  const fontLink = document.createElement('link');
-  fontLink.rel = 'stylesheet';
-  fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap';
-  document.head.appendChild(fontLink);
-  
+ 
   // 初始化 Lazy Load
   function initLazyLoad() {
     if ('IntersectionObserver' in window) {
@@ -2730,7 +2718,11 @@
       const typedArray = new Uint8Array(arrayBuffer);
       
       // 設定 PDF.js worker
-      pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
+      if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
+      } else {
+        throw new Error('PDF.js 尚未載入');
+      }
       
       const pdf = await pdfjsLib.getDocument(typedArray).promise;
       const numPages = pdf.numPages;
