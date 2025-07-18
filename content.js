@@ -2,6 +2,20 @@
 (function() {
   'use strict';
   
+  // 載入 PDF.js
+  if (typeof pdfjsLib === 'undefined') {
+    const pdfScript = document.createElement('script');
+    pdfScript.src = chrome.runtime.getURL('pdf.js');
+    pdfScript.onload = () => {
+      console.log('PDF.js 載入完成');
+      // 設定 worker
+      if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
+      }
+    };
+    document.head.appendChild(pdfScript);
+  }
+  
   // 修正 Material Icons 載入
   const iconLink = document.createElement('link');
   iconLink.rel = 'stylesheet';
