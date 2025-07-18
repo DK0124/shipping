@@ -1,26 +1,40 @@
 {
   "manifest_version": 3,
   "name": "BV SHOP 出貨助手",
-  "description": "轉換出貨明細為10×15cm標籤格式，支援超商取貨與宅配物流單整合列印",
-  "version": "2.5.0",
-  "author": "Derek Yu",
-  
+  "version": "5.0.0",
+  "description": "優化 BV SHOP 出貨明細列印功能，支援10×15cm標籤格式及物流單整合列印",
+  "author": "DK0124",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  
   "permissions": [
-    "storage"
+    "storage",
+    "activeTab"
   ],
-  
+  "host_permissions": [
+    "*://*.bvshop.tw/*",
+    "*://*.myship.7-11.com.tw/*",
+    "*://*.epayment.7-11.com.tw/*",
+    "*://*.eship.7-11.com.tw/*",
+    "*://*.family.com.tw/*",
+    "*://*.famiport.com.tw/*",
+    "*://*.hilife.com.tw/*",
+    "*://*.okmart.com.tw/*",
+    "*://*.kerrytj.com/*",
+    "*://*.hct.com.tw/*",
+    "*://*.t-cat.com.tw/*",
+    "*://*.global-business.com.tw/*",
+    "*://*.fedex.com/*"
+  ],
   "content_scripts": [
     {
       "matches": [
-        "*://bvshop-manage.bvshop.tw/*",
         "*://*.bvshop.tw/*",
-        "*://*.7-11.com.tw/*",
+        "*://*.myship.7-11.com.tw/*",
+        "*://*.epayment.7-11.com.tw/*",
+        "*://*.eship.7-11.com.tw/*",
         "*://*.family.com.tw/*",
         "*://*.famiport.com.tw/*",
         "*://*.hilife.com.tw/*",
@@ -28,18 +42,29 @@
         "*://*.kerrytj.com/*",
         "*://*.hct.com.tw/*",
         "*://*.t-cat.com.tw/*",
-        "*://*.dhl.com/*",
+        "*://*.global-business.com.tw/*",
         "*://*.fedex.com/*"
       ],
-      "js": ["pdf.js", "content.js"],
-      "run_at": "document_idle"
+      "js": ["content.js"],
+      "run_at": "document_end"
     }
   ],
-  
   "web_accessible_resources": [
     {
-      "resources": ["pdf.worker.js"],
+      "resources": [
+        "pdf.js",
+        "pdf.worker.js",
+        "html2canvas.min.js"
+      ],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    },
+    "default_title": "BV SHOP 出貨助手"
+  }
 }
