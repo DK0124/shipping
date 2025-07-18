@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "BV SHOP 出貨助手",
   "description": "轉換出貨明細為10×15cm標籤格式，支援超商取貨與宅配物流單整合列印",
-  "version": "3.1.0",
+  "version": "2.5.0",
   "author": "Derek Yu",
   
   "icons": {
