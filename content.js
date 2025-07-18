@@ -1,4 +1,4 @@
-// BV SHOP 出貨助手 (完整整合版 v2.0)
+// BV SHOP 出貨助手 (完整整合版 v3.0)
 (function() {
   'use strict';
   
@@ -53,14 +53,14 @@
       // 宅配 (支援 PDF)
       DELIVERY: { 
         name: '宅配', 
-        domains: ['kerrytj.com', 'hct.com.tw', 't-cat.com.tw', 'dhl.com', 'fedex.com'], 
+        domains: ['kerrytj.com', 'hct.com.tw', 't-cat.com.tw', 'global-business.com.tw', 'fedex.com'], 
         selector: 'iframe', 
         type: 'delivery',
         subTypes: {
           KERRY: '嘉里大榮',
           HCT: '新竹貨運',
           TCAT: '黑貓宅急便',
-          DHL: 'DHL全球快遞',
+          GLOBAL: '全球快遞Global Express',
           FEDEX: 'FedEx'
         }
       }
@@ -98,6 +98,7 @@
     pdfShippingData: [],
     enableIntegration: false,
     cachedProviderSettings: {},
+    previewCache: new Map(),
     
     // 新增：列印模式設定
     printMode: CONFIG.PRINT_MODES.AUTO_MATCH,
@@ -133,13 +134,14 @@
         state.deliverySubType = 'HCT';
       } else if (hostname.includes('t-cat.com.tw')) {
         state.deliverySubType = 'TCAT';
-      } else if (hostname.includes('dhl.com')) {
-        state.deliverySubType = 'DHL';
+      } else if (hostname.includes('global-business.com.tw')) {
+        state.deliverySubType = 'GLOBAL';
       } else if (hostname.includes('fedex.com')) {
         state.deliverySubType = 'FEDEX';
       }
       
       console.log('✓ 偵測到宅配頁面:', CONFIG.PROVIDERS.DELIVERY.subTypes[state.deliverySubType]);
+      createControlPanel();
       return;
     }
     
@@ -149,6 +151,7 @@
         state.currentProvider = key;
         state.currentPageType = CONFIG.PAGE_TYPES.SHIPPING;
         console.log('✓ 偵測到物流單頁面:', provider.name);
+        createControlPanel();
         return;
       }
     }
@@ -170,9 +173,10 @@
         url.toLowerCase().includes(pattern)
       );
       
-      if (hasOrderPath) {
+      if (hasOrderPath || pathname.includes('order')) {
         state.currentPageType = CONFIG.PAGE_TYPES.ORDER_PRINT;
         console.log('✓ 偵測到出貨明細頁面');
+        createControlPanel();
         return;
       }
       
@@ -194,6 +198,9 @@
   }
   
   function createControlPanel() {
+    // 只在支援的頁面創建面板
+    if (!state.currentPageType) return;
+    
     if (document.getElementById('bv-label-control-panel')) return;
     
     const panel = document.createElement('div');
@@ -205,12 +212,13 @@
     document.head.appendChild(style);
     document.body.appendChild(panel);
     
-    const floatingButton = document.createElement('button');
-    floatingButton.className = 'bv-floating-button';
-    floatingButton.id = 'bv-floating-print';
-    floatingButton.title = '快速列印';
-    floatingButton.innerHTML = '<span class="material-icons">print</span>';
-    document.body.appendChild(floatingButton);
+    // 最小化按鈕
+    const minimizedButton = document.createElement('button');
+    minimizedButton.className = 'bv-minimized-button';
+    minimizedButton.id = 'bv-minimized-button';
+    minimizedButton.innerHTML = '<span class="material-icons">apps</span>';
+    minimizedButton.style.display = 'none';
+    document.body.appendChild(minimizedButton);
     
     setupEventListeners();
     loadSettings();
@@ -266,29 +274,19 @@
     }
     
     #bv-label-control-panel.minimized {
-      height: auto;
-      bottom: auto;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      display: none !important;
     }
     
-    #bv-label-control-panel.minimized .bv-glass-panel {
-      height: auto;
-    }
-    
-    #bv-label-control-panel.minimized .bv-panel-content-wrapper {
-      display: none;
-    }
-    
-    .bv-floating-button {
+    .bv-minimized-button {
       position: fixed;
       bottom: 32px;
       right: 32px;
-      width: 60px;
-      height: 60px;
+      width: 56px;
+      height: 56px;
       background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
       color: white;
       border: none;
-      border-radius: 30px;
+      border-radius: 28px;
       box-shadow: 
         0 4px 24px rgba(81, 138, 255, 0.3),
         0 0 0 0.5px rgba(255, 255, 255, 0.2),
@@ -301,7 +299,7 @@
       transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
     
-    .bv-floating-button:hover {
+    .bv-minimized-button:hover {
       transform: scale(1.05) translateY(-2px);
       box-shadow: 
         0 8px 32px rgba(81, 138, 255, 0.4),
@@ -309,15 +307,15 @@
         inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
     }
     
-    .bv-floating-button:active {
+    .bv-minimized-button:active {
       transform: scale(0.98);
     }
     
-    .bv-floating-button .material-icons {
-      font-size: 26px;
+    .bv-minimized-button .material-icons {
+      font-size: 28px;
     }
     
-    #bv-label-control-panel.minimized ~ .bv-floating-button {
+    #bv-label-control-panel.minimized ~ .bv-minimized-button {
       display: flex;
     }
     
@@ -432,14 +430,8 @@
       background: rgba(81, 138, 255, 0.12);
     }
     
-    .bv-close-btn {
+    .bv-minimize-btn {
       transition: all 0.2s ease;
-    }
-    
-    .bv-close-btn:hover {
-      background: rgba(255, 59, 48, 0.1);
-      border-color: rgba(255, 59, 48, 0.2);
-      color: #ff3b30;
     }
     
     .bv-panel-content-wrapper {
@@ -1196,8 +1188,7 @@
     
     @media print {
       #bv-label-control-panel,
-      .bv-floating-button,
-      .bv-reopen-button {
+      .bv-minimized-button {
         display: none !important;
       }
       
@@ -1340,6 +1331,10 @@
       border: 2px dashed #f44336;
       border-color: rgba(244, 67, 54, 0.3);
       background: rgba(255, 245, 245, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
     }
     
     .bv-pdf-upload-area:hover {
@@ -1351,6 +1346,13 @@
       border-style: solid;
       border-color: #4caf50;
       background: rgba(241, 248, 233, 0.5);
+    }
+    
+    #bv-pdf-upload-prompt {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
     }
     
     .bv-pdf-info {
@@ -1452,44 +1454,6 @@
       z-index: 1000;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       white-space: nowrap;
-    }
-    
-    .bv-reopen-button {
-      position: fixed;
-      bottom: 32px;
-      right: 32px;
-      width: 56px;
-      height: 56px;
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      border-radius: 28px;
-      box-shadow: 
-        0 4px 20px rgba(0, 0, 0, 0.08),
-        0 0 0 0.5px rgba(255, 255, 255, 0.8) inset;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    .bv-reopen-button:hover {
-      transform: scale(1.05) translateY(-2px);
-      box-shadow: 
-        0 8px 30px rgba(0, 0, 0, 0.12),
-        0 0 0 0.5px rgba(255, 255, 255, 0.9) inset;
-      background: rgba(255, 255, 255, 0.95);
-    }
-    
-    .bv-reopen-button:active {
-      transform: scale(0.98);
-    }
-    
-    .bv-reopen-button .material-icons {
-      font-size: 28px;
-      color: #518aff;
     }
     
     .bv-print-mode-selector {
@@ -1616,9 +1580,6 @@
             <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
               <span class="material-icons">remove</span>
             </button>
-            <button class="bv-glass-button bv-close-btn" id="bv-close-btn">
-              <span class="material-icons">close</span>
-            </button>
           </div>
         </div>
         
@@ -1681,9 +1642,6 @@
             <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
               <span class="material-icons">remove</span>
             </button>
-            <button class="bv-glass-button bv-close-btn" id="bv-close-btn">
-              <span class="material-icons">close</span>
-            </button>
           </div>
         </div>
         
@@ -1710,32 +1668,32 @@
               
               <div class="bv-card-content">
                 <div class="bv-print-mode-selector">
-                  <label class="bv-mode-option">
-                    <input type="radio" name="print-mode" value="detail_only" checked>
+                  <label class="bv-mode-option ${state.printMode === 'detail_only' ? 'selected' : ''}">
+                    <input type="radio" name="print-mode" value="detail_only" ${state.printMode === 'detail_only' ? 'checked' : ''}>
                     <div class="bv-mode-info">
                       <div class="bv-mode-title">純印出貨明細</div>
                       <div class="bv-mode-desc">只列印出貨明細資料</div>
                     </div>
                   </label>
                   
-                  <label class="bv-mode-option">
-                    <input type="radio" name="print-mode" value="shipping_only">
+                  <label class="bv-mode-option ${state.printMode === 'shipping_only' ? 'selected' : ''}">
+                    <input type="radio" name="print-mode" value="shipping_only" ${state.printMode === 'shipping_only' ? 'checked' : ''}>
                     <div class="bv-mode-info">
                       <div class="bv-mode-title">純印物流單</div>
                       <div class="bv-mode-desc">只列印物流單資料</div>
                     </div>
                   </label>
                   
-                  <label class="bv-mode-option">
-                    <input type="radio" name="print-mode" value="auto_match">
+                  <label class="bv-mode-option ${state.printMode === 'auto_match' ? 'selected' : ''}">
+                    <input type="radio" name="print-mode" value="auto_match" ${state.printMode === 'auto_match' ? 'checked' : ''}>
                     <div class="bv-mode-info">
                       <div class="bv-mode-title">自動配對列印</div>
                       <div class="bv-mode-desc">明細後接物流單（自動對應）</div>
                     </div>
                   </label>
                   
-                  <label class="bv-mode-option">
-                    <input type="radio" name="print-mode" value="manual_match">
+                  <label class="bv-mode-option ${state.printMode === 'manual_match' ? 'selected' : ''}">
+                    <input type="radio" name="print-mode" value="manual_match" ${state.printMode === 'manual_match' ? 'checked' : ''}>
                     <div class="bv-mode-info">
                       <div class="bv-mode-title">手動配對列印</div>
                       <div class="bv-mode-desc">自訂明細與物流單排序</div>
@@ -1866,20 +1824,6 @@
                     </div>
                     <label class="bv-glass-switch">
                       <input type="checkbox" id="bv-hide-table-header">
-                      <span class="bv-switch-slider"></span>
-                    </label>
-                  </div>
-                  
-                  <div class="bv-setting-item">
-                    <div class="bv-setting-info">
-                      <span class="material-icons">label</span>
-                      <div class="bv-setting-text">
-                        <span class="bv-setting-label">物流單訂單編號</span>
-                        <span class="bv-setting-desc">在物流單上顯示訂單編號</span>
-                      </div>
-                    </div>
-                    <label class="bv-glass-switch">
-                      <input type="checkbox" id="bv-show-order-label" checked>
                       <span class="bv-switch-slider"></span>
                     </label>
                   </div>
@@ -2017,9 +1961,6 @@
             <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
               <span class="material-icons">remove</span>
             </button>
-            <button class="bv-glass-button bv-close-btn" id="bv-close-btn">
-              <span class="material-icons">close</span>
-            </button>
           </div>
         </div>
         
@@ -2104,8 +2045,7 @@
     const convertBtn = document.getElementById('bv-convert-btn');
     const revertBtn = document.getElementById('bv-revert-btn');
     const minimizeBtn = document.getElementById('bv-minimize-btn');
-    const closeBtn = document.getElementById('bv-close-btn');
-    const floatingPrint = document.getElementById('bv-floating-print');
+    const minimizedButton = document.getElementById('bv-minimized-button');
     const highlightQty = document.getElementById('bv-highlight-qty');
     const applyPrint = document.getElementById('bv-apply-print');
     
@@ -2120,43 +2060,27 @@
     if (minimizeBtn) {
       minimizeBtn.addEventListener('click', function() {
         const panel = document.getElementById('bv-label-control-panel');
-        const icon = this.querySelector('.material-icons');
+        const minButton = document.getElementById('bv-minimized-button');
         
-        if (state.isPanelMinimized) {
-          panel.classList.remove('minimized');
-          icon.textContent = 'remove';
-          state.isPanelMinimized = false;
-        } else {
-          panel.classList.add('minimized');
-          icon.textContent = 'add';
-          state.isPanelMinimized = true;
+        panel.classList.add('minimized');
+        if (minButton) {
+          minButton.style.display = 'flex';
         }
+        state.isPanelMinimized = true;
         
         chrome.storage.local.set({ bvPanelMinimized: state.isPanelMinimized });
       });
     }
     
-    if (closeBtn) {
-      closeBtn.addEventListener('click', function() {
+    if (minimizedButton) {
+      minimizedButton.addEventListener('click', function() {
         const panel = document.getElementById('bv-label-control-panel');
-        if (panel) {
-          panel.style.display = 'none';
-          state.isExtensionEnabled = false;
-          
-          chrome.storage.local.set({ 
-            bvExtensionEnabled: false,
-            bvClosedTime: new Date().toISOString()
-          });
-          
-          showReopenButton();
-        }
-      });
-    }
-    
-    if (floatingPrint) {
-      floatingPrint.addEventListener('click', function() {
-        preparePrintStyles();
-        window.print();
+        
+        panel.classList.remove('minimized');
+        this.style.display = 'none';
+        state.isPanelMinimized = false;
+        
+        chrome.storage.local.set({ bvPanelMinimized: state.isPanelMinimized });
       });
     }
     
@@ -2182,7 +2106,14 @@
       radio.addEventListener('change', function() {
         state.printMode = this.value;
         updatePrintModeUI();
+        updatePreview();
         saveSettings();
+        
+        // 更新選中狀態
+        document.querySelectorAll('.bv-mode-option').forEach(option => {
+          option.classList.remove('selected');
+        });
+        this.closest('.bv-mode-option').classList.add('selected');
       });
     });
     
@@ -2205,6 +2136,7 @@
           state.shippingSortOrder = order;
         }
         
+        updatePreview();
         saveSettings();
       });
     });
@@ -2220,33 +2152,52 @@
     setupCollapsibleCards();
   }
   
+  function updatePreview() {
+    if (!state.isConverted) return;
+    
+    // 使用防抖來避免頻繁更新
+    clearTimeout(state.previewTimeout);
+    state.previewTimeout = setTimeout(() => {
+      handlePagination();
+      if (state.highlightQuantity) {
+        applyQuantityHighlight();
+      }
+    }, 100);
+  }
+  
   function updatePrintModeUI() {
     const sortOptions = document.getElementById('bv-sort-options');
     const shippingSort = document.getElementById('bv-shipping-sort');
+    const orderLabelItem = document.querySelector('.bv-setting-item:has(#bv-show-order-label)');
     
     switch(state.printMode) {
       case CONFIG.PRINT_MODES.DETAIL_ONLY:
         sortOptions.style.display = 'block';
         shippingSort.style.display = 'none';
+        if (orderLabelItem) orderLabelItem.style.display = 'none';
         break;
         
       case CONFIG.PRINT_MODES.SHIPPING_ONLY:
         sortOptions.style.display = 'block';
         shippingSort.style.display = 'none';
+        if (orderLabelItem) orderLabelItem.style.display = 'flex';
         break;
         
       case CONFIG.PRINT_MODES.AUTO_MATCH:
         sortOptions.style.display = 'block';
         shippingSort.style.display = 'none';
+        if (orderLabelItem) orderLabelItem.style.display = 'flex';
         break;
         
       case CONFIG.PRINT_MODES.MANUAL_MATCH:
         sortOptions.style.display = 'block';
         shippingSort.style.display = 'block';
+        if (orderLabelItem) orderLabelItem.style.display = 'flex';
         break;
         
       default:
         sortOptions.style.display = 'none';
+        if (orderLabelItem) orderLabelItem.style.display = 'none';
     }
   }
   
@@ -2349,71 +2300,6 @@
     }
   }
   
-  function showReopenButton() {
-    if (document.getElementById('bv-reopen-button')) return;
-    
-    const reopenButton = document.createElement('button');
-    reopenButton.id = 'bv-reopen-button';
-    reopenButton.className = 'bv-reopen-button';
-    reopenButton.innerHTML = '<span class="material-icons">apps</span>';
-    reopenButton.title = '開啟 BV SHOP 出貨助手';
-    
-    document.body.appendChild(reopenButton);
-    
-    reopenButton.addEventListener('click', function() {
-      state.isExtensionEnabled = true;
-      chrome.storage.local.set({ bvExtensionEnabled: true });
-      
-      const panel = document.getElementById('bv-label-control-panel');
-      if (panel) {
-        panel.style.display = 'block';
-      } else {
-        createControlPanel();
-      }
-      
-      reopenButton.remove();
-    });
-  }
-  
-  function checkAutoReenable() {
-    chrome.storage.local.get(['bvExtensionEnabled', 'bvClosedTime'], (result) => {
-      if (result.bvExtensionEnabled === false && result.bvClosedTime) {
-        const closedTime = new Date(result.bvClosedTime);
-        const now = new Date();
-        const hoursPassed = (now - closedTime) / (1000 * 60 * 60);
-        
-        // 關閉超過 24 小時，自動重新啟用
-        if (hoursPassed > 24) {
-          chrome.storage.local.set({ bvExtensionEnabled: true });
-          state.isExtensionEnabled = true;
-          init();
-        }
-      }
-    });
-  }
-  
-  // 從 PDF 中嘗試提取物流編號
-  async function extractShippingNumberFromPDF(pdfData) {
-    try {
-      // 這裡可以使用 OCR 或其他方式提取文字
-      // 暫時使用模擬資料
-      const patterns = {
-        KERRY: /配送單號[：:]\s*([A-Z0-9]+)/i,
-        HCT: /託運單號[：:]\s*([A-Z0-9]+)/i,
-        TCAT: /黑貓單號[：:]\s*([A-Z0-9]+)/i,
-        DHL: /運單號碼[：:]\s*([A-Z0-9]+)/i,
-        FEDEX: /追蹤號碼[：:]\s*([A-Z0-9]+)/i
-      };
-      
-      // 返回模擬的物流編號
-      return `${state.deliverySubType}_${Date.now()}`;
-    } catch (error) {
-      console.error('提取物流編號失敗:', error);
-      return null;
-    }
-  }
-  
-  // 其餘的函數保持不變...
   function setupShippingEventListeners() {
     const fetchBtn = document.getElementById('bv-fetch-shipping');
     const saveBtn = document.getElementById('bv-save-shipping');
@@ -2433,13 +2319,7 @@
       hideExtraInfoCheckbox.addEventListener('change', function(e) {
         state.hideExtraInfo = e.target.checked;
         saveSettings();
-        
-        setTimeout(() => {
-          handlePagination();
-          if (state.highlightQuantity) {
-            applyQuantityHighlight();
-          }
-        }, 100);
+        updatePreview();
       });
     }
     
@@ -2449,12 +2329,7 @@
         state.hideTableHeader = e.target.checked;
         saveSettings();
         updateLabelStyles();
-        setTimeout(() => {
-          handlePagination();
-          if (state.highlightQuantity) {
-            applyQuantityHighlight();
-          }
-        }, 100);
+        updatePreview();
       });
     }
     
@@ -2475,12 +2350,7 @@
         
         saveSettings();
         updateLabelStyles();
-        setTimeout(() => {
-          handlePagination();
-          if (state.highlightQuantity) {
-            applyQuantityHighlight();
-          }
-        }, 100);
+        updatePreview();
       });
     }
     
@@ -2492,6 +2362,9 @@
           state.pdfShippingData = [];
           checkShippingDataStatus();
           showNotification('已清除物流單資料');
+          
+          // 自動重新整理預覽
+          updatePreview();
         });
       });
     }
@@ -2512,6 +2385,36 @@
           showNotification('請上傳 PDF 檔案', 'warning');
         }
       });
+    }
+    
+    // 將物流單訂單編號選項移到列印模式區塊
+    const showOrderLabelItem = `
+      <div class="bv-setting-item" style="margin-top: 12px; display: none;">
+        <div class="bv-setting-info">
+          <span class="material-icons">label</span>
+          <div class="bv-setting-text">
+            <span class="bv-setting-label">物流單訂單編號</span>
+            <span class="bv-setting-desc">在物流單上顯示訂單編號</span>
+          </div>
+        </div>
+        <label class="bv-glass-switch">
+          <input type="checkbox" id="bv-show-order-label" checked>
+          <span class="bv-switch-slider"></span>
+        </label>
+      </div>
+    `;
+    
+    const printModeContent = document.querySelector('[data-section="print-mode"] .bv-card-content');
+    if (printModeContent && !document.getElementById('bv-show-order-label')) {
+      printModeContent.insertAdjacentHTML('beforeend', showOrderLabelItem);
+      
+      const orderLabelCheckbox = document.getElementById('bv-show-order-label');
+      if (orderLabelCheckbox) {
+        orderLabelCheckbox.addEventListener('change', function() {
+          saveSettings();
+          updatePreview();
+        });
+      }
     }
     
     hideOriginalControls();
@@ -2613,6 +2516,7 @@
       }, () => {
         showNotification(`成功轉換 ${numPages} 頁 PDF`);
         checkShippingDataStatus();
+        updatePreview();
         
         setTimeout(() => {
           progressEl.classList.remove('active');
@@ -2627,6 +2531,27 @@
       
       if (uploadPrompt) uploadPrompt.style.display = 'block';
       if (pdfInfo) pdfInfo.style.display = 'none';
+    }
+  }
+  
+  // 從 PDF 中嘗試提取物流編號
+  async function extractShippingNumberFromPDF(pdfData) {
+    try {
+      // 這裡可以使用 OCR 或其他方式提取文字
+      // 暫時使用模擬資料
+      const patterns = {
+        KERRY: /配送單號[：:]\s*([A-Z0-9]+)/i,
+        HCT: /託運單號[：:]\s*([A-Z0-9]+)/i,
+        TCAT: /黑貓單號[：:]\s*([A-Z0-9]+)/i,
+        GLOBAL: /運單號碼[：:]\s*([A-Z0-9]+)/i,
+        FEDEX: /追蹤號碼[：:]\s*([A-Z0-9]+)/i
+      };
+      
+      // 返回模擬的物流編號
+      return `${state.deliverySubType}_${Date.now()}`;
+    } catch (error) {
+      console.error('提取物流編號失敗:', error);
+      return null;
     }
   }
   
@@ -2868,7 +2793,7 @@
     }
     
     function dragStart(e) {
-      if (e.target.closest('.bv-glass-button') || e.target.closest('.bv-minimize-btn') || e.target.closest('.bv-close-btn')) return;
+      if (e.target.closest('.bv-glass-button') || e.target.closest('.bv-minimize-btn')) return;
       
       if (e.type === "touchstart") {
         initialX = e.touches[0].clientX - xOffset;
@@ -2986,12 +2911,7 @@
               
               saveSettings();
               updateLabelStyles();
-              setTimeout(() => {
-                handlePagination();
-                if (state.highlightQuantity) {
-                  applyQuantityHighlight();
-                }
-              }, 100);
+              updatePreview();
             };
             img.src = state.logoDataUrl;
           };
@@ -3018,12 +2938,7 @@
         
         saveSettings();
         updateLabelStyles();
-        setTimeout(() => {
-          handlePagination();
-          if (state.highlightQuantity) {
-            applyQuantityHighlight();
-          }
-        }, 100);
+        updatePreview();
       });
     }
     
@@ -3071,13 +2986,7 @@
             applyPresetSettings(settings);
             chrome.storage.local.set({ lastSelectedPreset: selectedPreset });
             showNotification(`已載入預設「${selectedPreset}」`);
-            
-            setTimeout(() => {
-              handlePagination();
-              if (state.highlightQuantity) {
-                applyQuantityHighlight();
-              }
-            }, 100);
+            updatePreview();
           }
         });
       }
@@ -3191,7 +3100,6 @@
       
       allPresets.forEach(presetName => {
         const option = document.createElement('option');
-        option.value = presetName;
         option.textContent = presetName;
         presetSelect.appendChild(option);
         
@@ -3208,12 +3116,7 @@
       checkbox.addEventListener('change', () => {
         if (state.isConverted) {
           saveSettings();
-          setTimeout(() => {
-            handlePagination();
-            if (state.highlightQuantity) {
-              applyQuantityHighlight();
-            }
-          }, 100);
+          updatePreview();
         }
       });
     });
@@ -3267,7 +3170,31 @@
     showNotification('已成功轉換為10×15cm標籤格式');
   }
   
+  // 優化圖片處理效能
+  function optimizeImagePerformance(container) {
+    const images = container.querySelectorAll('img');
+    
+    images.forEach((img, index) => {
+      // 延遲載入
+      if (index > 5) {
+        img.loading = 'lazy';
+      }
+      
+      // 降低預覽品質
+      if (img.classList.contains('orderProductImage')) {
+        const src = img.src;
+        if (src && !src.includes('quality=')) {
+          // 如果支援，降低圖片品質
+          img.src = src + (src.includes('?') ? '&' : '?') + 'quality=60';
+        }
+      }
+    });
+  }
+  
   function handlePagination() {
+    // 清除現有快取
+    state.previewCache.clear();
+    
     document.querySelectorAll('.bv-page-container').forEach(container => container.remove());
     document.querySelectorAll('.bv-label-page').forEach(page => page.remove());
     
@@ -3290,18 +3217,6 @@
         
         const orderNo = extractOrderNumber(orderContent);
         
-        // 根據列印模式決定是否插入物流單
-        if (state.printMode === CONFIG.PRINT_MODES.AUTO_MATCH || 
-            state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
-          const shippingData = findMatchingShippingData(orderNo, orderIndex);
-          if (shippingData) {
-            const shippingPage = createShippingPage(shippingData, orderNo, showOrderLabel);
-            if (shippingPage) {
-              orderContent.parentNode.insertBefore(shippingPage, orderContent.nextSibling);
-            }
-          }
-        }
-        
         // 處理明細分頁
         if (state.printMode !== CONFIG.PRINT_MODES.SHIPPING_ONLY) {
           const orderContentClone = orderContent.cloneNode(true);
@@ -3309,6 +3224,9 @@
           if (state.hideExtraInfo) {
             processExtraInfoHiding(orderContentClone);
           }
+          
+          // 優化圖片效能
+          optimizeImagePerformance(orderContentClone);
           
           const elements = Array.from(orderContentClone.children);
           let currentPage = null;
@@ -3357,6 +3275,21 @@
             currentHeight += elementHeight;
           });
         }
+        
+        // 根據列印模式決定是否插入物流單
+        if (state.printMode === CONFIG.PRINT_MODES.AUTO_MATCH || 
+            state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
+          const shippingData = findMatchingShippingData(orderNo, orderIndex);
+          if (shippingData) {
+            const shippingPage = createShippingPage(shippingData, orderNo, showOrderLabel);
+            if (shippingPage) {
+              const pageContainer = document.querySelector('.bv-page-container:last-of-type');
+              if (pageContainer) {
+                pageContainer.appendChild(shippingPage);
+              }
+            }
+          }
+        }
       });
     }
     
@@ -3369,6 +3302,9 @@
     const showOrderLabel = document.getElementById('bv-show-order-label')?.checked ?? true;
     
     allShippingData.forEach((data, index) => {
+      const pageContainer = document.createElement('div');
+      pageContainer.className = 'bv-page-container';
+      
       const shippingInfo = {
         type: data.imageData ? 'pdf' : 'html',
         data: data
@@ -3378,7 +3314,8 @@
       const shippingPage = createShippingPage(shippingInfo, orderNo, showOrderLabel);
       
       if (shippingPage) {
-        document.body.appendChild(shippingPage);
+        pageContainer.appendChild(shippingPage);
+        document.body.appendChild(pageContainer);
       }
     });
   }
@@ -3421,9 +3358,6 @@
   }
   
   function createShippingPage(shippingInfo, orderNo, showOrderLabel) {
-    const pageContainer = document.createElement('div');
-    pageContainer.className = 'bv-page-container';
-    
     const page = document.createElement('div');
     page.className = 'bv-label-page bv-shipping-page';
     page.style.padding = '5mm';
@@ -3464,9 +3398,8 @@
     }
     
     page.appendChild(content);
-    pageContainer.appendChild(page);
     
-    return pageContainer;
+    return page;
   }
   
   function processExtraInfoHiding(container) {
@@ -3916,10 +3849,7 @@
     
     if (wasMinimized) {
       panel.classList.add('minimized');
-      const minimizeBtn = panel.querySelector('#bv-minimize-btn .material-icons');
-      if (minimizeBtn) {
-        minimizeBtn.textContent = 'add';
-      }
+      document.getElementById('bv-minimized-button').style.display = 'flex';
     }
     
     panel.style.transform = currentTransform;
@@ -4216,11 +4146,11 @@
       if (result.bvPanelMinimized !== undefined) {
         state.isPanelMinimized = result.bvPanelMinimized;
         const panel = document.getElementById('bv-label-control-panel');
-        const minimizeBtn = document.getElementById('bv-minimize-btn');
+        const minimizedBtn = document.getElementById('bv-minimized-button');
         
-        if (state.isPanelMinimized && panel && minimizeBtn) {
+        if (state.isPanelMinimized && panel && minimizedBtn) {
           panel.classList.add('minimized');
-          minimizeBtn.querySelector('.material-icons').textContent = 'add';
+          minimizedBtn.style.display = 'flex';
         }
       }
       
@@ -4243,130 +4173,10 @@
     console.log('=== BV SHOP 出貨助手初始化 ===');
     console.log('初始化時間:', new Date().toLocaleString());
     
-    // 檢查自動重新啟用
-    checkAutoReenable();
+    // 偵測頁面類型
+    detectCurrentPage();
     
-    // 檢查擴充功能是否被關閉
-    chrome.storage.local.get(['bvExtensionEnabled', 'bvClosedTime'], (result) => {
-      if (result.bvExtensionEnabled === false) {
-        console.log('擴充功能已關閉，顯示重新開啟按鈕');
-        state.isExtensionEnabled = false;
-        
-        // 如果是在支援的網站上，顯示重新開啟按鈕
-        if (window.location.hostname.includes('bvshop') || 
-            Object.values(CONFIG.PROVIDERS).some(p => 
-              p.domains.some(d => window.location.hostname.includes(d)))) {
-          showReopenButton();
-        }
-        return;
-      }
-      
-      // 正常初始化流程
-      detectCurrentPage();
-      
-      // 建立面板的主要函數
-      const tryCreatePanel = () => {
-        if (!document.getElementById('bv-label-control-panel')) {
-          if (state.currentPageType || window.location.hostname.includes('bvshop')) {
-            console.log('嘗試建立控制面板...');
-            createControlPanel();
-          }
-        }
-      };
-      
-      // 立即嘗試建立
-      if (document.readyState === 'loading') {
-        console.log('文檔載入中，等待 DOMContentLoaded...');
-        document.addEventListener('DOMContentLoaded', () => {
-          console.log('DOMContentLoaded 事件觸發');
-          detectCurrentPage(); // 再次偵測
-          tryCreatePanel();
-        });
-      } else {
-        console.log('文檔已載入，立即建立面板');
-        tryCreatePanel();
-      }
-      
-      // 監聽頁面變化（針對 SPA）
-      const observer = new MutationObserver((mutations) => {
-        if (!document.getElementById('bv-label-control-panel') && 
-            (state.currentPageType || window.location.hostname.includes('bvshop'))) {
-          console.log('偵測到頁面變化，重新檢查...');
-          detectCurrentPage();
-          tryCreatePanel();
-        }
-      });
-      
-      // 開始觀察
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-      
-      // 延遲檢查（備用方案）
-      const delayedCheck = () => {
-        if (!document.getElementById('bv-label-control-panel')) {
-          console.log('延遲檢查：面板尚未建立');
-          
-          // 檢查是否在 BV SHOP 網站
-          if (window.location.hostname.includes('bvshop')) {
-            console.log('確認為 BV SHOP 網站，強制建立面板');
-            
-            // 再次偵測頁面類型
-            detectCurrentPage();
-            
-            // 如果還是沒有類型，但確定是 BV SHOP，就設定為出貨明細
-            if (!state.currentPageType) {
-              console.log('強制設定為出貨明細頁面');
-              state.currentPageType = CONFIG.PAGE_TYPES.ORDER_PRINT;
-            }
-            
-            createControlPanel();
-          } else {
-            // 物流單頁面
-            for (const [key, provider] of Object.entries(CONFIG.PROVIDERS)) {
-              if (provider.domains.some(domain => window.location.hostname.includes(domain))) {
-                console.log('確認為物流單頁面:', provider.name);
-                if (!state.currentPageType) {
-                  state.currentProvider = key;
-                  state.currentPageType = CONFIG.PAGE_TYPES.SHIPPING;
-                }
-                createControlPanel();
-                break;
-              }
-            }
-          }
-        } else {
-          console.log('✓ 面板已成功建立');
-        }
-      };
-      
-      // 多次延遲檢查
-      setTimeout(delayedCheck, 1000);
-      setTimeout(delayedCheck, 2000);
-      setTimeout(delayedCheck, 3000);
-      
-      // 監聽網址變化（針對 SPA）
-      let lastUrl = location.href;
-      new MutationObserver(() => {
-        const url = location.href;
-        if (url !== lastUrl) {
-          lastUrl = url;
-          console.log('網址變化偵測:', url);
-          detectCurrentPage();
-          tryCreatePanel();
-        }
-      }).observe(document, { subtree: true, childList: true });
-      
-      // 全域錯誤捕獲
-      window.addEventListener('error', (e) => {
-        if (e.filename && e.filename.includes('content.js')) {
-          console.error('BV SHOP 出貨助手錯誤:', e.message, e.lineno, e.colno);
-        }
-      });
-      
-      console.log('=== 初始化完成 ===');
-    });
+    console.log('=== 初始化完成 ===');
   }
   
   // 啟動擴充功能
