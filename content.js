@@ -3394,11 +3394,17 @@
         if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
           const shippingData = findMatchingShippingData(orderNo, orderIndex);
           if (shippingData) {
+            // 確保 pageContainer 已經定義
+            if (!pageContainer) {
+              pageContainer = document.createElement('div');
+              pageContainer.className = 'bv-page-container';
+              pageContainer.setAttribute('data-order-index', orderIndex);
+              pageContainer.setAttribute('data-order-no', orderNo || '');
+              orderContent.parentNode.insertBefore(pageContainer, orderContent.nextSibling);
+            }
             createShippingPages(shippingData, orderNo, showOrderLabel, orderIndex, pageContainer);
           }
         }
-      });
-    }
     
     updateLogos();
     applySortOrder();
