@@ -4,6 +4,7 @@
   
   // 修正 Material Icons 載入 - 只在出貨明細頁面載入
   function loadMaterialIcons() {
+    // 只在出貨明細頁面載入 Material Icons
     if (state.currentPageType === CONFIG.PAGE_TYPES.ORDER_PRINT) {
       const iconLink = document.createElement('link');
       iconLink.rel = 'stylesheet';
@@ -40,6 +41,22 @@
       `;
       document.head.appendChild(iconStyle);
     }
+  }
+  
+  // 修改 getPanelStyles 函數中的 bv-icon-text 樣式（約第 485 行附近）
+  .bv-icon-text {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-block;
+  }
+  
+  // 新增物流單頁面的文字圖標樣式
+  .bv-text-icon {
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-block;
+    line-height: 1;
   }
   
   const CONFIG = {
@@ -2429,16 +2446,12 @@
       CONFIG.PROVIDERS.DELIVERY.subTypes[state.deliverySubType] || '宅配' :
       CONFIG.PROVIDERS[state.currentProvider]?.name || '物流單';
     
-    const shipIcon = state.currentPageType === CONFIG.PAGE_TYPES.ORDER_PRINT ? 
-      '<span class="material-icons">local_shipping</span>' : 
-      '<span class="bv-icon-text">貨</span>';
-    
     return `
       <div class="bv-glass-panel">
         <div class="bv-panel-header">
           <div class="bv-header-content">
             <div class="bv-icon-wrapper bv-shipping-mode">
-              ${shipIcon}
+              <span class="bv-icon-text">貨</span>
             </div>
             <div class="bv-title-group">
               <h3 class="bv-panel-title">BV SHOP 出貨助手</h3>
@@ -4153,14 +4166,26 @@
     const notification = document.createElement('div');
     notification.className = `bv-notification ${type}`;
     
-    const icon = document.createElement('span');
-    icon.className = 'material-icons';
-    icon.textContent = type === 'success' ? 'check_circle' : 
-                      type === 'warning' ? 'warning' : 
-                      type === 'error' ? 'error' : 
-                      type === 'info' ? 'info' : 'check_circle';
+    if (state.currentPageType === CONFIG.PAGE_TYPES.ORDER_PRINT) {
+      const icon = document.createElement('span');
+      icon.className = 'material-icons';
+      icon.textContent = type === 'success' ? 'check_circle' : 
+                        type === 'warning' ? 'warning' : 
+                        type === 'error' ? 'error' : 
+                        type === 'info' ? 'info' : 'check_circle';
+      notification.appendChild(icon);
+    } else {
+      // 物流單頁面使用文字圖標
+      const textIcon = document.createElement('span');
+      textIcon.className = 'bv-text-icon';
+      textIcon.style.marginRight = '8px';
+      textIcon.textContent = type === 'success' ? '✓' : 
+                            type === 'warning' ? '⚠' : 
+                            type === 'error' ? '✗' : 
+                            type === 'info' ? 'ℹ' : '✓';
+      notification.appendChild(textIcon);
+    }
     
-    notification.appendChild(icon);
     notification.appendChild(document.createTextNode(message));
     document.body.appendChild(notification);
     
