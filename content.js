@@ -3320,6 +3320,13 @@
           pages: []
         };
         
+        // 先創建 pageContainer
+        const pageContainer = document.createElement('div');
+        pageContainer.className = 'bv-page-container';
+        pageContainer.setAttribute('data-order-index', orderIndex);
+        pageContainer.setAttribute('data-order-no', orderNo || '');
+        orderContent.parentNode.insertBefore(pageContainer, orderContent.nextSibling);
+        
         // 處理明細分頁
         if (state.printMode !== CONFIG.PRINT_MODES.SHIPPING_ONLY) {
           const orderContentClone = orderContent.cloneNode(true);
@@ -3335,12 +3342,6 @@
           let currentPage = null;
           let currentPageContent = null;
           let currentHeight = 0;
-          
-          const pageContainer = document.createElement('div');
-          pageContainer.className = 'bv-page-container';
-          pageContainer.setAttribute('data-order-index', orderIndex);
-          pageContainer.setAttribute('data-order-no', orderNo || '');
-          orderContent.parentNode.insertBefore(pageContainer, orderContent.nextSibling);
           
           elements.forEach((element, index) => {
             if (state.hideTableHeader && element.classList.contains('list-title')) {
@@ -3394,14 +3395,6 @@
         if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
           const shippingData = findMatchingShippingData(orderNo, orderIndex);
           if (shippingData) {
-            // 確保 pageContainer 已經定義
-            if (!pageContainer) {
-              pageContainer = document.createElement('div');
-              pageContainer.className = 'bv-page-container';
-              pageContainer.setAttribute('data-order-index', orderIndex);
-              pageContainer.setAttribute('data-order-no', orderNo || '');
-              orderContent.parentNode.insertBefore(pageContainer, orderContent.nextSibling);
-            }
             createShippingPages(shippingData, orderNo, showOrderLabel, orderIndex, pageContainer);
           }
         }
