@@ -1,7 +1,7 @@
 // BV SHOP 出貨助手 (完整整合版 v5.2 - 整合7-11抓取邏輯)
 (function() {
   'use strict';
-   
+  
   const CONFIG = {
     PAGE_TYPES: {
       ORDER_PRINT: 'order_print',
@@ -214,13 +214,8 @@
         if (hostname.includes('bvshop')) {
           state.currentPageType = CONFIG.PAGE_TYPES.ORDER_PRINT;
         }
-      }
-  
-  const fontLink = document.createElement('link');
-  fontLink.rel = 'stylesheet';
-  fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap';
-  document.head.appendChild(fontLink);
-  
+      }  
+
   // 初始化 Lazy Load
   function initLazyLoad() {
     if ('IntersectionObserver' in window) {
