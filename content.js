@@ -43,22 +43,6 @@
     }
   }
   
-  // 修改 getPanelStyles 函數中的 bv-icon-text 樣式（約第 485 行附近）
-  .bv-icon-text {
-    font-size: 14px;
-    font-weight: 700;
-    line-height: 1;
-    display: inline-block;
-  }
-  
-  // 新增物流單頁面的文字圖標樣式
-  .bv-text-icon {
-    font-size: 14px;
-    font-weight: 600;
-    display: inline-block;
-    line-height: 1;
-  }
-  
   const CONFIG = {
     PAGE_TYPES: {
       ORDER_PRINT: 'order_print',
@@ -425,6 +409,8 @@
     .bv-text-icon {
       font-size: 14px;
       font-weight: 600;
+      display: inline-block;
+      line-height: 1;
     }
     
     #bv-label-control-panel.minimized ~ .bv-minimized-button {
@@ -487,6 +473,7 @@
       font-size: 14px;
       font-weight: 700;
       line-height: 1;
+      display: inline-block;
     }
     
     .bv-title-group {
