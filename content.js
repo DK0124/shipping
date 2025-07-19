@@ -4769,7 +4769,7 @@
       }
       
       const script = document.createElement('script');
-      script.src = chrome.runtime.getURL('pdf.min.js');
+      script.src = chrome.runtime.getURL('pdf.js');
       script.onload = () => {
         pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.min.js');
         resolve();
