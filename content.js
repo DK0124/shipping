@@ -2,9 +2,22 @@
 (function() {
   'use strict';
   
-  // 移除外部字體載入
+  // 修正 Material Icons 載入
+  const iconLink = document.createElement('link');
+  iconLink.rel = 'stylesheet';
+  iconLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
+  document.head.appendChild(iconLink);
+  
+  // 強制載入 Material Icons 樣式
   const iconStyle = document.createElement('style');
   iconStyle.textContent = `
+    @font-face {
+      font-family: 'Material Icons';
+      font-style: normal;
+      font-weight: 400;
+      src: url(https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
+    }
+    
     .material-icons {
       font-family: 'Material Icons' !important;
       font-weight: normal;
@@ -57,7 +70,7 @@
     PRINT_MODES: {
       DETAIL_ONLY: 'detail_only',           // 出貨明細
       SHIPPING_ONLY: 'shipping_only',       // 物流單
-      DETAIL_SHIPPING: 'detail_shipping'    // 出貨明細-物流單
+      MANUAL_MATCH: 'manual_match'          // 出貨明細-物流單
     },
     
     // 排序方式
@@ -70,7 +83,7 @@
   let state = {
     isConverted: false,
     highlightQuantity: false,
-    hideExtraInfo: true, // 預設開啟精簡模式
+    hideExtraInfo: true,  // 預設開啟精簡模式
     hideTableHeader: false,
     originalBodyStyle: null,
     isPanelMinimized: false,
@@ -88,17 +101,23 @@
     lazyLoadObserver: null,
     detailPages: [],
     shippingPages: [],
+    shippingDataBatches: [],  // 儲存多批次的物流單資料
     
-    // 新增：列印模式設定
+    // 列印模式設定
     printMode: CONFIG.PRINT_MODES.DETAIL_ONLY,
     detailSortOrder: CONFIG.SORT_ORDERS.ASC,
     shippingSortOrder: CONFIG.SORT_ORDERS.ASC,
-    reverseShipping: false, // 物流單反序
+    reverseShipping: false,  // 物流單反序
     isExtensionEnabled: true,
     
-    // 多批次物流單管理
-    shippingBatches: [] // 儲存多批次物流單資料
+    // 預設字體大小
+    fontSize: '11'  // 預設11px
   };
+
+  const fontLink = document.createElement('link');
+  fontLink.rel = 'stylesheet';
+  fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap';
+  document.head.appendChild(fontLink);
   
   // 初始化 Lazy Load
   function initLazyLoad() {
@@ -700,8 +719,8 @@
     }
     
     .bv-glass-switch.disabled {
-      cursor: not-allowed;
       opacity: 0.5;
+      cursor: not-allowed;
     }
     
     .bv-glass-switch.disabled input {
@@ -1653,16 +1672,11 @@
     }
     
     .bv-product-image-col img {
-      width: 8mm !important;
-      height: 8mm !important;
+      width: 7mm !important;
+      height: 7mm !important;
       object-fit: cover !important;
       border-radius: 2px;
       display: block;
-    }
-    
-    .bv-list-title .bv-product-image-col {
-      font-size: 0 !important;
-      color: transparent !important;
     }
     
     /* 預設管理優化 */
@@ -1689,12 +1703,11 @@
       width: 100%;
     }
     
-    /* 預設管理簡化 */
-    .bv-preset-list {
+    /* 簡化的設定檔管理 */
+    .bv-preset-simple-list {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-bottom: 16px;
     }
     
     .bv-preset-item {
@@ -1713,10 +1726,16 @@
       border-color: rgba(81, 138, 255, 0.2);
     }
     
+    .bv-preset-item.active {
+      background: rgba(81, 138, 255, 0.08);
+      border-color: #518aff;
+    }
+    
     .bv-preset-name {
+      flex: 1;
       font-size: 14px;
       font-weight: 500;
-      color: #000;
+      cursor: pointer;
     }
     
     .bv-preset-actions {
@@ -1724,37 +1743,43 @@
       gap: 4px;
     }
     
-    .bv-preset-apply,
-    .bv-preset-delete {
-      padding: 6px 12px;
-      font-size: 12px;
-      background: rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 6px;
+    .bv-preset-action-btn {
+      width: 28px;
+      height: 28px;
+      background: transparent;
+      border: none;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
       transition: all 0.2s ease;
     }
     
-    .bv-preset-apply:hover {
-      background: rgba(81, 138, 255, 0.08);
-      border-color: #518aff;
-      color: #518aff;
+    .bv-preset-action-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
     }
     
-    .bv-preset-delete:hover {
-      background: rgba(255, 59, 48, 0.08);
-      border-color: #ff3b30;
-      color: #ff3b30;
+    .bv-preset-action-btn .material-icons {
+      font-size: 18px;
+      color: rgba(0, 0, 0, 0.5);
     }
     
-    /* 批次管理 */
+    .bv-preset-action-btn.delete:hover .material-icons {
+      color: #f44336;
+    }
+    
+    .bv-new-preset-input {
+      width: 100%;
+      margin-top: 12px;
+    }
+    
+    /* 物流單批次管理 */
     .bv-batch-list {
+      margin-top: 12px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-top: 12px;
-      max-height: 200px;
-      overflow-y: auto;
     }
     
     .bv-batch-item {
@@ -1762,51 +1787,76 @@
       align-items: center;
       justify-content: space-between;
       padding: 8px 12px;
-      background: rgba(255, 255, 255, 0.6);
-      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: rgba(248, 250, 252, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.06);
       border-radius: 6px;
       font-size: 12px;
     }
     
-    .bv-batch-info {
+    .bv-batch-item-info {
       flex: 1;
     }
     
-    .bv-batch-name {
+    .bv-batch-item-name {
       font-weight: 500;
       color: #000;
     }
     
-    .bv-batch-count {
+    .bv-batch-item-count {
       color: rgba(0, 0, 0, 0.5);
+      font-size: 11px;
     }
     
-    .bv-batch-sort {
+    .bv-batch-actions {
       display: flex;
       gap: 4px;
     }
     
-    .bv-batch-sort button {
+    .bv-batch-order {
+      display: flex;
+      gap: 2px;
+    }
+    
+    .bv-batch-order-btn {
       width: 24px;
       height: 24px;
-      padding: 0;
-      background: rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 4px;
+      background: transparent;
+      border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      border-radius: 4px;
+      transition: all 0.2s ease;
     }
     
-    .bv-batch-sort button:hover {
-      background: rgba(255, 255, 255, 0.9);
-      border-color: rgba(0, 0, 0, 0.12);
+    .bv-batch-order-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
     }
     
-    .bv-batch-sort button .material-icons {
+    .bv-batch-order-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    .bv-batch-order-btn .material-icons {
       font-size: 16px;
+      color: rgba(0, 0, 0, 0.7);
+    }
+    
+    /* 物流單反序開關 */
+    .bv-reverse-shipping-option {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(255, 245, 235, 0.5);
+      border: 1px solid rgba(255, 152, 0, 0.2);
+      border-radius: 8px;
+    }
+    
+    .bv-reverse-shipping-note {
+      font-size: 11px;
       color: rgba(0, 0, 0, 0.5);
+      margin-top: 4px;
     }
     `;
   }
@@ -1908,10 +1958,9 @@
         
         <div class="bv-panel-content-wrapper">
           <div class="bv-panel-body">
-            <!-- 物流單設定 -->
             <div class="bv-settings-card" data-section="integration">
               <h4 class="bv-card-title">
-                <span class="material-icons">local_shipping</span>
+                <span class="material-icons">merge_type</span>
                 物流單設定
                 ${collapseIcon}
               </h4>
@@ -1920,18 +1969,13 @@
                 <div class="bv-integration-status" id="bv-integration-status">
                   <span class="material-icons">info</span>
                   <div class="bv-status-info">
-                    <h4>尚無物流單資料</h4>
-                    <p>請先前往物流單頁面抓取或上傳 PDF</p>
+                    <h4>檢查物流單資料...</h4>
+                    <p>正在載入資料</p>
                   </div>
                 </div>
                 
-                <!-- 批次管理顯示 -->
-                <div class="bv-batch-list" id="bv-batch-list" style="display:none;">
-                  <!-- 動態生成批次列表 -->
-                </div>
-                
                 <div class="bv-pdf-upload-area" id="bv-pdf-upload-area" style="margin-top: 16px;">
-                  <input type="file" id="bv-pdf-input" accept="application/pdf" style="display:none;">
+                  <input type="file" id="bv-pdf-input" accept="application/pdf" style="display:none;" multiple>
                   <div id="bv-pdf-upload-prompt">
                     <span class="material-icons">picture_as_pdf</span>
                     <div class="bv-upload-hint">點擊上傳宅配物流單 PDF</div>
@@ -1953,6 +1997,10 @@
                   <div class="bv-conversion-status" id="bv-conversion-status">準備中...</div>
                 </div>
                 
+                <div class="bv-batch-list" id="bv-batch-list" style="display:none;">
+                  <!-- 批次列表會動態插入這裡 -->
+                </div>
+                
                 <button class="bv-glass-button" id="bv-clear-shipping" style="margin-top: 12px; width: 100%;">
                   <span class="material-icons">clear</span>
                   清除物流單資料
@@ -1960,10 +2008,9 @@
               </div>
             </div>
             
-            <!-- 出貨明細設定 -->
             <div class="bv-settings-card" data-section="layout">
               <h4 class="bv-card-title">
-                <span class="material-icons">description</span>
+                <span class="material-icons">tune</span>
                 出貨明細設定
                 ${collapseIcon}
               </h4>
@@ -1975,7 +2022,7 @@
                       <span>文字大小</span>
                       <span class="bv-value-label" id="bv-font-size-value">11.0</span>
                     </div>
-                    <input type="range" id="bv-font-size" min="10" max="13" step="0.1" value="11" class="bv-glass-slider">
+                    <input type="range" id="bv-font-size" min="11" max="13" step="0.1" value="11" class="bv-glass-slider">
                   </div>
                 </div>
                 
@@ -2023,9 +2070,9 @@
                   </div>
                 </div>
                 
-                <!-- 底圖設定 -->
-                <div style="margin-top: 24px; border-top: 1px solid rgba(0, 0, 0, 0.06); padding-top: 24px;">
-                  <h5 style="margin: 0 0 16px 0; font-size: 13px; font-weight: 600; color: #000;">底圖設定</h5>
+                <!-- 底圖設定移到這裡 -->
+                <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0, 0, 0, 0.06);">
+                  <h5 style="margin: 0 0 16px 0; font-size: 13px; font-weight: 600; color: rgba(0, 0, 0, 0.7);">底圖設定</h5>
                   
                   <div class="bv-logo-upload-area" id="logo-upload-area">
                     <input type="file" id="logo-input" accept="image/png,image/jpeg,image/jpg" style="display:none;">
@@ -2080,7 +2127,6 @@
               </div>
             </div>
             
-            <!-- 列印模式 -->
             <div class="bv-settings-card" data-section="print-mode">
               <h4 class="bv-card-title">
                 <span class="material-icons">print</span>
@@ -2106,30 +2152,40 @@
                     </div>
                   </label>
                   
-                  <label class="bv-mode-option ${state.printMode === 'detail_shipping' ? 'selected' : ''}">
-                    <input type="radio" name="print-mode" value="detail_shipping" ${state.printMode === 'detail_shipping' ? 'checked' : ''}>
+                  <label class="bv-mode-option ${state.printMode === 'manual_match' ? 'selected' : ''}">
+                    <input type="radio" name="print-mode" value="manual_match" ${state.printMode === 'manual_match' ? 'checked' : ''}>
                     <div class="bv-mode-info">
                       <div class="bv-mode-title">出貨明細-物流單</div>
-                      <div class="bv-mode-desc">同時列印兩種資料</div>
+                      <div class="bv-mode-desc">依設定順序列印</div>
                     </div>
                   </label>
                 </div>
                 
                 <div class="bv-sort-options" id="bv-sort-options" style="display:none;">
-                  <div class="bv-sort-group">
-                    <div class="bv-sort-label">排序方式</div>
+                  <div class="bv-sort-group" id="bv-detail-sort-group">
+                    <div class="bv-sort-label">出貨明細排序</div>
                     <div class="bv-sort-buttons">
                       <button class="bv-sort-button active" data-type="detail" data-order="asc">新到舊</button>
                       <button class="bv-sort-button" data-type="detail" data-order="desc">舊到新</button>
                     </div>
                   </div>
                   
-                  <div class="bv-setting-item" id="bv-reverse-shipping-item" style="display:none; margin-top: 12px;">
+                  <div class="bv-sort-group" id="bv-shipping-sort" style="display:none;">
+                    <div class="bv-sort-label">物流單排序</div>
+                    <div class="bv-sort-buttons">
+                      <button class="bv-sort-button active" data-type="shipping" data-order="asc">新到舊</button>
+                      <button class="bv-sort-button" data-type="shipping" data-order="desc">舊到新</button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="bv-reverse-shipping-option" id="bv-reverse-shipping-option" style="display:none;">
+                  <div class="bv-setting-item" style="padding: 0;">
                     <div class="bv-setting-info">
                       <span class="material-icons">swap_vert</span>
                       <div class="bv-setting-text">
                         <span class="bv-setting-label">物流單反序</span>
-                        <span class="bv-setting-desc">請確認是否有配對</span>
+                        <span class="bv-setting-desc">將物流單順序反轉</span>
                       </div>
                     </div>
                     <label class="bv-glass-switch">
@@ -2137,24 +2193,24 @@
                       <span class="bv-switch-slider"></span>
                     </label>
                   </div>
+                  <div class="bv-reverse-shipping-note">請確認是否有配對</div>
                 </div>
                 
-                <div class="bv-setting-item" id="bv-show-order-label-item" style="margin-top: 12px; display: none;">
+                <div class="bv-setting-item" id="bv-order-label-setting" style="margin-top: 12px; display: none;">
                   <div class="bv-setting-info">
                     <span class="material-icons">label</span>
                     <div class="bv-setting-text">
                       <span class="bv-setting-label">物流單上顯示訂單編號</span>
                     </div>
                   </div>
-                  <label class="bv-glass-switch ${state.printMode === 'detail_only' || state.printMode === 'shipping_only' ? 'disabled' : ''}" id="bv-order-label-switch">
-                    <input type="checkbox" id="bv-show-order-label" ${state.printMode === 'detail_only' || state.printMode === 'shipping_only' ? 'disabled' : ''}>
+                  <label class="bv-glass-switch disabled" id="bv-order-label-switch">
+                    <input type="checkbox" id="bv-show-order-label" disabled>
                     <span class="bv-switch-slider"></span>
                   </label>
                 </div>
               </div>
             </div>
             
-            <!-- 設定檔管理 -->
             <div class="bv-settings-card" data-section="presets">
               <h4 class="bv-card-title">
                 <span class="material-icons">bookmark</span>
@@ -2163,16 +2219,26 @@
               </h4>
               
               <div class="bv-card-content">
-                <div class="bv-preset-list" id="bv-preset-list">
-                  <!-- 動態生成預設列表 -->
+                <div class="bv-preset-simple-list" id="bv-preset-list">
+                  <!-- 預設列表會動態插入這裡 -->
                 </div>
                 
-                <div class="bv-preset-save-row">
-                  <input type="text" id="bv-new-preset-name" class="bv-glass-input" placeholder="輸入設定檔名稱...">
-                  <button class="bv-glass-button bv-primary" id="bv-save-preset">
-                    <span class="material-icons">save</span>
-                  </button>
+                <div class="bv-new-preset-input" style="display: none;" id="bv-new-preset-row">
+                  <div style="display: flex; gap: 8px;">
+                    <input type="text" id="bv-new-preset-name" class="bv-glass-input" placeholder="輸入設定檔名稱...">
+                    <button class="bv-glass-button bv-primary" id="bv-confirm-save">
+                      <span class="material-icons">check</span>
+                    </button>
+                    <button class="bv-glass-button" id="bv-cancel-save">
+                      <span class="material-icons">close</span>
+                    </button>
+                  </div>
                 </div>
+                
+                <button class="bv-glass-button" id="bv-add-preset" style="width: 100%; margin-top: 12px;">
+                  <span class="material-icons">add</span>
+                  新增設定檔
+                </button>
               </div>
             </div>
           </div>
@@ -2249,12 +2315,10 @@
   }
   
   function getGeneralShippingContent() {
-    const totalCount = getAllShippingCount();
-    
     return `
       <div class="bv-shipping-status">
-        <div class="bv-status-count" id="bv-shipping-count">${totalCount}</div>
-        <div class="bv-status-text">張物流單已儲存</div>
+        <div class="bv-status-count" id="bv-shipping-count">0</div>
+        <div class="bv-status-text">張物流單已抓取</div>
       </div>
       
       <button class="bv-primary-button" id="bv-fetch-shipping" style="width: 100%; margin-bottom: 12px;">
@@ -2273,107 +2337,14 @@
         </div>
         <div class="bv-button-content">
           <span class="bv-button-title">儲存資料</span>
-          <span class="bv-button-subtitle">新增至已儲存資料</span>
+          <span class="bv-button-subtitle">供明細頁使用</span>
         </div>
       </button>
-    `;
-  }
-  
-  // 取得所有批次的物流單總數
-  function getAllShippingCount() {
-    let count = 0;
-    state.shippingBatches.forEach(batch => {
-      count += batch.data.length;
-    });
-    return count;
-  }
-  
-  // 更新批次列表顯示
-  function updateBatchList() {
-    const batchList = document.getElementById('bv-batch-list');
-    if (!batchList) return;
-    
-    if (state.shippingBatches.length === 0) {
-      batchList.style.display = 'none';
-      return;
-    }
-    
-    batchList.style.display = 'block';
-    batchList.innerHTML = state.shippingBatches.map((batch, index) => `
-      <div class="bv-batch-item" data-batch-index="${index}">
-        <div class="bv-batch-info">
-          <div class="bv-batch-name">${batch.name}</div>
-          <div class="bv-batch-count">${batch.data.length} 張</div>
-        </div>
-        <div class="bv-batch-sort">
-          <button class="bv-batch-up" ${index === 0 ? 'disabled' : ''}>
-            <span class="material-icons">arrow_upward</span>
-          </button>
-          <button class="bv-batch-down" ${index === state.shippingBatches.length - 1 ? 'disabled' : ''}>
-            <span class="material-icons">arrow_downward</span>
-          </button>
-          <button class="bv-batch-delete">
-            <span class="material-icons">delete</span>
-          </button>
-        </div>
+      
+      <div class="bv-batch-list" id="bv-shipping-batch-list" style="margin-top: 16px; display: none;">
+        <!-- 批次列表會動態插入這裡 -->
       </div>
-    `).join('');
-    
-    // 綁定事件
-    batchList.querySelectorAll('.bv-batch-up').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const index = parseInt(this.closest('.bv-batch-item').dataset.batchIndex);
-        moveBatch(index, -1);
-      });
-    });
-    
-    batchList.querySelectorAll('.bv-batch-down').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const index = parseInt(this.closest('.bv-batch-item').dataset.batchIndex);
-        moveBatch(index, 1);
-      });
-    });
-    
-    batchList.querySelectorAll('.bv-batch-delete').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const index = parseInt(this.closest('.bv-batch-item').dataset.batchIndex);
-        deleteBatch(index);
-      });
-    });
-  }
-  
-  // 移動批次順序
-  function moveBatch(index, direction) {
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= state.shippingBatches.length) return;
-    
-    const temp = state.shippingBatches[index];
-    state.shippingBatches[index] = state.shippingBatches[newIndex];
-    state.shippingBatches[newIndex] = temp;
-    
-    saveShippingBatches();
-    updateBatchList();
-    checkShippingDataStatus();
-    updatePreview();
-  }
-  
-  // 刪除批次
-  function deleteBatch(index) {
-    if (confirm(`確定要刪除「${state.shippingBatches[index].name}」嗎？`)) {
-      state.shippingBatches.splice(index, 1);
-      saveShippingBatches();
-      updateBatchList();
-      checkShippingDataStatus();
-      updatePreview();
-    }
-  }
-  
-  // 儲存批次資料
-  function saveShippingBatches() {
-    chrome.storage.local.set({
-      shippingBatches: state.shippingBatches,
-      shippingTimestamp: new Date().toISOString()
-    });
+    `;
   }
   
   function initShippingMode() {
@@ -2385,7 +2356,7 @@
         });
       }
     } else {
-      loadShippingBatches();
+      loadShippingData();
     }
   }
   
@@ -2480,6 +2451,8 @@
         // 更新狀態
         if (type === 'detail') {
           state.detailSortOrder = order;
+        } else {
+          state.shippingSortOrder = order;
         }
         
         updatePreview();
@@ -2523,40 +2496,56 @@
   
   function updatePrintModeUI() {
     const sortOptions = document.getElementById('bv-sort-options');
-    const reverseShippingItem = document.getElementById('bv-reverse-shipping-item');
-    const orderLabelItem = document.getElementById('bv-show-order-label-item');
+    const detailSortGroup = document.getElementById('bv-detail-sort-group');
+    const shippingSort = document.getElementById('bv-shipping-sort');
+    const orderLabelSetting = document.getElementById('bv-order-label-setting');
     const orderLabelSwitch = document.getElementById('bv-order-label-switch');
     const orderLabelCheckbox = document.getElementById('bv-show-order-label');
+    const reverseShippingOption = document.getElementById('bv-reverse-shipping-option');
     
     switch(state.printMode) {
       case CONFIG.PRINT_MODES.DETAIL_ONLY:
         sortOptions.style.display = 'block';
-        reverseShippingItem.style.display = 'none';
-        orderLabelItem.style.display = 'none';
+        detailSortGroup.style.display = 'block';
+        shippingSort.style.display = 'none';
+        reverseShippingOption.style.display = 'none';
+        if (orderLabelSetting) {
+          orderLabelSetting.style.display = 'flex';
+          orderLabelSwitch.classList.add('disabled');
+          orderLabelCheckbox.checked = false;
+          orderLabelCheckbox.disabled = true;
+        }
         break;
         
       case CONFIG.PRINT_MODES.SHIPPING_ONLY:
         sortOptions.style.display = 'block';
-        reverseShippingItem.style.display = 'none';
-        orderLabelItem.style.display = 'flex';
-        // 純印物流單時預設關閉且不能調整
-        orderLabelCheckbox.checked = false;
-        orderLabelCheckbox.disabled = true;
-        orderLabelSwitch.classList.add('disabled');
+        detailSortGroup.style.display = 'none';
+        shippingSort.style.display = 'block';
+        reverseShippingOption.style.display = 'none';
+        if (orderLabelSetting) {
+          orderLabelSetting.style.display = 'flex';
+          orderLabelSwitch.classList.add('disabled');
+          orderLabelCheckbox.checked = false;
+          orderLabelCheckbox.disabled = true;
+        }
         break;
         
-      case CONFIG.PRINT_MODES.DETAIL_SHIPPING:
+      case CONFIG.PRINT_MODES.MANUAL_MATCH:
         sortOptions.style.display = 'block';
-        reverseShippingItem.style.display = 'flex';
-        orderLabelItem.style.display = 'flex';
-        // 出貨明細-物流單模式可以調整
-        orderLabelCheckbox.disabled = false;
-        orderLabelSwitch.classList.remove('disabled');
+        detailSortGroup.style.display = 'block';
+        shippingSort.style.display = 'none';
+        reverseShippingOption.style.display = 'block';
+        if (orderLabelSetting) {
+          orderLabelSetting.style.display = 'flex';
+          orderLabelSwitch.classList.remove('disabled');
+          orderLabelCheckbox.disabled = false;
+        }
         break;
         
       default:
         sortOptions.style.display = 'none';
-        orderLabelItem.style.display = 'none';
+        reverseShippingOption.style.display = 'none';
+        if (orderLabelSetting) orderLabelSetting.style.display = 'none';
     }
   }
   
@@ -2571,8 +2560,8 @@
         prepareShippingOnlyPrint();
         break;
         
-      case CONFIG.PRINT_MODES.DETAIL_SHIPPING:
-        prepareDetailShippingPrint();
+      case CONFIG.PRINT_MODES.MANUAL_MATCH:
+        prepareManualMatchPrint();
         break;
     }
     
@@ -2608,10 +2597,14 @@
     sortShippingPages();
   }
   
-  function prepareDetailShippingPrint() {
-    // 出貨明細-物流單模式
+  function prepareManualMatchPrint() {
+    // 手動配對：使用選定的排序
     sortDetailPages();
-    sortShippingPages();
+    
+    // 如果啟用物流單反序，則反轉物流單
+    if (state.reverseShipping) {
+      reverseShippingPages();
+    }
   }
   
   function sortDetailPages() {
@@ -2634,24 +2627,29 @@
     const containers = Array.from(document.querySelectorAll('.bv-page-container'))
       .filter(c => c.querySelector('.bv-shipping-page'));
     
-    let sorted = [...containers];
-    
-    // 根據設定排序
-    if (state.detailSortOrder === CONFIG.SORT_ORDERS.DESC) {
-      sorted.reverse();
+    if (state.shippingSortOrder === CONFIG.SORT_ORDERS.DESC) {
+      containers.reverse();
     }
     
-    // 如果開啟物流單反序
-    if (state.reverseShipping) {
-      sorted.reverse();
-    }
-    
-    const parent = sorted[0]?.parentNode;
+    const parent = containers[0]?.parentNode;
     if (parent) {
-      sorted.forEach(container => {
+      containers.forEach(container => {
         parent.appendChild(container);
       });
     }
+  }
+  
+  function reverseShippingPages() {
+    // 反轉每個訂單容器內的物流單頁面
+    document.querySelectorAll('.bv-page-container').forEach(container => {
+      const shippingPages = Array.from(container.querySelectorAll('.bv-shipping-page'));
+      if (shippingPages.length > 0) {
+        shippingPages.reverse();
+        shippingPages.forEach(page => {
+          container.appendChild(page);
+        });
+      }
+    });
   }
   
   function setupShippingEventListeners() {
@@ -2711,8 +2709,10 @@
     const clearShippingBtn = document.getElementById('bv-clear-shipping');
     if (clearShippingBtn) {
       clearShippingBtn.addEventListener('click', function() {
-        chrome.storage.local.remove(['shippingBatches', 'shippingTimestamp'], () => {
-          state.shippingBatches = [];
+        chrome.storage.local.remove(['shippingDataBatches', 'shippingData', 'pdfShippingData', 'shippingProvider', 'shippingTimestamp'], () => {
+          state.shippingData = [];
+          state.pdfShippingData = [];
+          state.shippingDataBatches = [];
           checkShippingDataStatus();
           updateBatchList();
           showNotification('已清除物流單資料');
@@ -2735,11 +2735,9 @@
       });
       
       pdfInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file && file.type === 'application/pdf') {
-          handlePdfUpload(file);
-        } else {
-          showNotification('請上傳 PDF 檔案', 'warning');
+        const files = Array.from(e.target.files);
+        if (files.length > 0) {
+          handleMultiplePdfUpload(files);
         }
       });
     }
@@ -2776,7 +2774,7 @@
     if (pdfUploadArea) pdfUploadArea.classList.remove('has-file');
   }
   
-  async function handlePdfUpload(file) {
+  async function handleMultiplePdfUpload(files) {
     const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
     const pdfInfo = document.getElementById('bv-pdf-info');
     const filenameEl = document.getElementById('bv-pdf-filename');
@@ -2789,98 +2787,118 @@
     if (uploadPrompt) uploadPrompt.style.display = 'none';
     if (pdfInfo) {
       pdfInfo.style.display = 'flex';
-      filenameEl.textContent = file.name;
+      filenameEl.textContent = files.length > 1 ? `${files.length} 個檔案` : files[0].name;
     }
     if (pdfUploadArea) pdfUploadArea.classList.add('has-file');
     if (progressEl) progressEl.classList.add('active');
     
     try {
-      statusEl.textContent = '載入 PDF...';
-      progressFill.style.width = '10%';
-      
-      const arrayBuffer = await file.arrayBuffer();
-      const typedArray = new Uint8Array(arrayBuffer);
-      
-      if (typeof pdfjsLib !== 'undefined') {
-        if (chrome && chrome.runtime && chrome.runtime.getURL) {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
-        } else {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-          pdfjsLib.GlobalWorkerOptions.isEvalSupported = false;
-        }
-      } else {
-        console.error('PDF.js 尚未載入');
-        throw new Error('PDF.js library not loaded');
-      }
-      
-      const pdf = await pdfjsLib.getDocument(typedArray).promise;
-      const numPages = pdf.numPages;
-      
-      if (pagesEl) pagesEl.textContent = `共 ${numPages} 頁`;
-      
-      const pdfData = [];
-      
-      for (let i = 1; i <= numPages; i++) {
-        statusEl.textContent = `處理第 ${i}/${numPages} 頁...`;
-        progressFill.style.width = `${10 + (i / numPages * 80)}%`;
-        
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2 });
-        
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        
-        await page.render({
-          canvasContext: context,
-          viewport: viewport
-        }).promise;
-        
-        const imageData = canvas.toDataURL('image/png');
-        
-        // 嘗試提取文字以匹配訂單
-        const textContent = await page.getTextContent();
-        const text = textContent.items.map(item => item.str).join(' ');
-        const shippingNo = extractShippingNumberFromText(text);
-        
-        pdfData.push({
-          provider: 'DELIVERY',
-          subType: state.deliverySubType || 'UNKNOWN',
-          orderNo: shippingNo || `PDF_${i}`,
-          pageNumber: i,
-          imageData: imageData,
-          width: viewport.width,
-          height: viewport.height,
-          timestamp: new Date().toISOString(),
-          extractedText: text
-        });
-      }
-      
-      // 新增為批次
-      const batchName = `${file.name} (${numPages}頁)`;
-      state.shippingBatches.push({
+      let totalPages = 0;
+      const newBatch = {
         id: Date.now(),
-        name: batchName,
         type: 'pdf',
-        data: pdfData,
+        provider: 'DELIVERY',
+        subType: state.deliverySubType || 'UNKNOWN',
+        name: files.length > 1 ? `PDF 批次 (${files.length} 個檔案)` : files[0].name,
+        data: [],
         timestamp: new Date().toISOString()
-      });
+      };
+      
+      for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
+        const file = files[fileIndex];
+        
+        statusEl.textContent = `處理檔案 ${fileIndex + 1}/${files.length}...`;
+        progressFill.style.width = `${(fileIndex / files.length * 100)}%`;
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const typedArray = new Uint8Array(arrayBuffer);
+        
+        if (typeof pdfjsLib !== 'undefined') {
+          if (chrome && chrome.runtime && chrome.runtime.getURL) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
+          } else {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+            pdfjsLib.GlobalWorkerOptions.isEvalSupported = false;
+          }
+        } else {
+          console.error('PDF.js 尚未載入');
+          throw new Error('PDF.js library not loaded');
+        }
+        
+        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+        const numPages = pdf.numPages;
+        totalPages += numPages;
+        
+        for (let i = 1; i <= numPages; i++) {
+          statusEl.textContent = `檔案 ${fileIndex + 1}/${files.length} - 第 ${i}/${numPages} 頁...`;
+          const progress = (fileIndex / files.length + (i / numPages) / files.length) * 100;
+          progressFill.style.width = `${progress}%`;
+          
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 2 });
+          
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          
+          await page.render({
+            canvasContext: context,
+            viewport: viewport
+          }).promise;
+          
+          const imageData = canvas.toDataURL('image/png');
+          
+          // 嘗試提取文字以匹配訂單
+          const textContent = await page.getTextContent();
+          const text = textContent.items.map(item => item.str).join(' ');
+          const shippingNo = extractShippingNumberFromText(text);
+          
+          newBatch.data.push({
+            provider: 'DELIVERY',
+            subType: state.deliverySubType || 'UNKNOWN',
+            orderNo: shippingNo || `PDF_${totalPages}`,
+            pageNumber: i,
+            fileIndex: fileIndex,
+            fileName: file.name,
+            imageData: imageData,
+            width: viewport.width,
+            height: viewport.height,
+            timestamp: new Date().toISOString(),
+            extractedText: text
+          });
+        }
+      }
+      
+      if (pagesEl) pagesEl.textContent = `共 ${totalPages} 頁`;
       
       progressFill.style.width = '100%';
       statusEl.textContent = '轉換完成！';
       
-      saveShippingBatches();
-      updateBatchList();
-      checkShippingDataStatus();
-      updatePreview();
-      showNotification(`成功轉換 ${numPages} 頁 PDF`);
+      // 加入批次列表
+      state.shippingDataBatches.push(newBatch);
       
-      setTimeout(() => {
-        progressEl.classList.remove('active');
-        progressFill.style.width = '0%';
-        resetPdfUploadArea();
-      }, 1000);
+      // 合併所有批次資料
+      mergeAllBatchData();
+      
+      // 儲存資料
+      chrome.storage.local.set({
+        shippingDataBatches: state.shippingDataBatches,
+        pdfShippingData: state.pdfShippingData,
+        shippingProvider: 'DELIVERY',
+        shippingSubType: state.deliverySubType,
+        shippingTimestamp: new Date().toISOString()
+      }, () => {
+        showNotification(`成功轉換 ${totalPages} 頁 PDF`);
+        checkShippingDataStatus();
+        updateBatchList();
+        updatePreview();
+        
+        setTimeout(() => {
+          progressEl.classList.remove('active');
+          progressFill.style.width = '0%';
+        }, 1000);
+      });
       
     } catch (error) {
       console.error('PDF 處理錯誤:', error);
@@ -2920,11 +2938,124 @@
     return null;
   }
   
-  function loadShippingBatches() {
-    chrome.storage.local.get(['shippingBatches'], (result) => {
-      if (result.shippingBatches) {
-        state.shippingBatches = result.shippingBatches;
+  function loadShippingData() {
+    chrome.storage.local.get(['shippingDataBatches', 'shippingData'], (result) => {
+      if (result.shippingDataBatches) {
+        state.shippingDataBatches = result.shippingDataBatches;
+        mergeAllBatchData();
+        updateBatchList();
         updateShippingCount();
+      } else if (result.shippingData) {
+        // 相容舊版資料
+        state.shippingData = result.shippingData;
+        updateShippingCount();
+      }
+    });
+  }
+  
+  function mergeAllBatchData() {
+    // 合併所有批次的資料
+    state.shippingData = [];
+    state.pdfShippingData = [];
+    
+    state.shippingDataBatches.forEach(batch => {
+      if (batch.type === 'pdf') {
+        state.pdfShippingData.push(...batch.data);
+      } else {
+        state.shippingData.push(...batch.data);
+      }
+    });
+  }
+  
+  function updateBatchList() {
+    const batchListEl = document.getElementById('bv-batch-list');
+    const shippingBatchListEl = document.getElementById('bv-shipping-batch-list');
+    
+    if (batchListEl && state.shippingDataBatches.length > 0) {
+      batchListEl.style.display = 'block';
+      batchListEl.innerHTML = state.shippingDataBatches.map((batch, index) => `
+        <div class="bv-batch-item" data-batch-id="${batch.id}">
+          <div class="bv-batch-item-info">
+            <div class="bv-batch-item-name">${batch.name}</div>
+            <div class="bv-batch-item-count">${batch.data.length} 張</div>
+          </div>
+          <div class="bv-batch-actions">
+            <div class="bv-batch-order">
+              <button class="bv-batch-order-btn" data-action="up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>
+                <span class="material-icons">arrow_upward</span>
+              </button>
+              <button class="bv-batch-order-btn" data-action="down" data-index="${index}" ${index === state.shippingDataBatches.length - 1 ? 'disabled' : ''}>
+                <span class="material-icons">arrow_downward</span>
+              </button>
+            </div>
+            <button class="bv-batch-order-btn" data-action="delete" data-index="${index}">
+              <span class="material-icons">delete</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+      
+      // 綁定事件
+      batchListEl.querySelectorAll('.bv-batch-order-btn').forEach(btn => {
+        btn.addEventListener('click', handleBatchAction);
+      });
+    } else if (batchListEl) {
+      batchListEl.style.display = 'none';
+    }
+    
+    // 更新物流單頁面的批次列表
+    if (shippingBatchListEl && state.shippingDataBatches.length > 0) {
+      shippingBatchListEl.style.display = 'block';
+      shippingBatchListEl.innerHTML = batchListEl.innerHTML;
+      
+      shippingBatchListEl.querySelectorAll('.bv-batch-order-btn').forEach(btn => {
+        btn.addEventListener('click', handleBatchAction);
+      });
+    } else if (shippingBatchListEl) {
+      shippingBatchListEl.style.display = 'none';
+    }
+  }
+  
+  function handleBatchAction(e) {
+    const action = e.currentTarget.dataset.action;
+    const index = parseInt(e.currentTarget.dataset.index);
+    
+    switch(action) {
+      case 'up':
+        if (index > 0) {
+          [state.shippingDataBatches[index], state.shippingDataBatches[index - 1]] = 
+          [state.shippingDataBatches[index - 1], state.shippingDataBatches[index]];
+        }
+        break;
+        
+      case 'down':
+        if (index < state.shippingDataBatches.length - 1) {
+          [state.shippingDataBatches[index], state.shippingDataBatches[index + 1]] = 
+          [state.shippingDataBatches[index + 1], state.shippingDataBatches[index]];
+        }
+        break;
+        
+      case 'delete':
+        if (confirm('確定要刪除這個批次嗎？')) {
+          state.shippingDataBatches.splice(index, 1);
+        }
+        break;
+    }
+    
+    // 更新資料
+    mergeAllBatchData();
+    updateBatchList();
+    updateShippingCount();
+    
+    // 儲存更新
+    chrome.storage.local.set({
+      shippingDataBatches: state.shippingDataBatches,
+      pdfShippingData: state.pdfShippingData,
+      shippingData: state.shippingData
+    }, () => {
+      updatePreview();
+      if (action === 'delete') {
+        showNotification('已刪除批次');
       }
     });
   }
@@ -2932,7 +3063,8 @@
   function updateShippingCount() {
     const countEl = document.getElementById('bv-shipping-count');
     if (countEl) {
-      countEl.textContent = getAllShippingCount();
+      const totalCount = state.shippingData.length + state.pdfShippingData.length;
+      countEl.textContent = totalCount;
     }
   }
   
@@ -2946,22 +3078,37 @@
       return;
     }
     
-    state.shippingData = [];
+    const newBatch = {
+      id: Date.now(),
+      type: 'html',
+      provider: state.currentProvider,
+      name: `${provider.name} - ${new Date().toLocaleTimeString()}`,
+      data: [],
+      timestamp: new Date().toISOString()
+    };
+    
     const processedOrders = new Set();
     
     elements.forEach((element, index) => {
       const data = extractShippingData(element);
       if (data && data.orderNo && !processedOrders.has(data.orderNo)) {
         processedOrders.add(data.orderNo);
-        state.shippingData.push({
+        newBatch.data.push({
           ...data,
-          index: state.shippingData.length
+          index: newBatch.data.length
         });
       }
     });
     
-    updateShippingCount();
-    showNotification(`成功抓取 ${state.shippingData.length} 張物流單`);
+    if (newBatch.data.length > 0) {
+      state.shippingDataBatches.push(newBatch);
+      mergeAllBatchData();
+      updateBatchList();
+      updateShippingCount();
+      showNotification(`成功抓取 ${newBatch.data.length} 張物流單`);
+    } else {
+      showNotification('未抓取到有效的物流單', 'warning');
+    }
   }
   
   function extractShippingData(element) {
@@ -3043,48 +3190,63 @@
   }
   
   function saveShippingData() {
-    if (state.shippingData.length === 0) {
+    if (state.shippingDataBatches.length === 0) {
       showNotification('沒有資料可儲存', 'warning');
       return;
     }
     
-    const batchName = `${CONFIG.PROVIDERS[state.currentProvider].name} (${new Date().toLocaleString()})`;
-    
-    state.shippingBatches.push({
-      id: Date.now(),
-      name: batchName,
-      type: 'html',
-      provider: state.currentProvider,
-      data: state.shippingData,
-      timestamp: new Date().toISOString()
+    chrome.storage.local.set({
+      shippingDataBatches: state.shippingDataBatches,
+      shippingData: state.shippingData,
+      pdfShippingData: state.pdfShippingData,
+      shippingProvider: state.currentProvider,
+      shippingTimestamp: new Date().toISOString()
+    }, () => {
+      const totalCount = state.shippingData.length + state.pdfShippingData.length;
+      showNotification(`已儲存 ${totalCount} 張物流單`);
     });
-    
-    saveShippingBatches();
-    showNotification(`已儲存 ${state.shippingData.length} 張物流單`);
-    
-    // 清空暫存資料
-    state.shippingData = [];
-    updateShippingCount();
   }
   
   function checkShippingDataStatus() {
-    chrome.storage.local.get(['shippingBatches'], (result) => {
+    chrome.storage.local.get(['shippingDataBatches', 'shippingData', 'shippingProvider', 'pdfShippingData', 'shippingSubType'], (result) => {
       const statusEl = document.getElementById('bv-integration-status');
       
       if (!statusEl) return;
       
-      if (result.shippingBatches && result.shippingBatches.length > 0) {
-        state.shippingBatches = result.shippingBatches;
+      // 載入批次資料
+      if (result.shippingDataBatches) {
+        state.shippingDataBatches = result.shippingDataBatches;
+        mergeAllBatchData();
         updateBatchList();
+      } else if (result.shippingData || result.pdfShippingData) {
+        // 相容舊版資料
+        state.shippingData = result.shippingData || [];
+        state.pdfShippingData = result.pdfShippingData || [];
+      }
+      
+      const hasShippingData = state.shippingData.length > 0;
+      const hasPdfData = state.pdfShippingData.length > 0;
+      
+      if (hasShippingData || hasPdfData) {
+        const totalCount = state.shippingData.length + state.pdfShippingData.length;
+        let providerName = '未知';
         
-        const totalCount = getAllShippingCount();
+        if (result.shippingProvider) {
+          if (result.shippingProvider === 'DELIVERY' && result.shippingSubType) {
+            providerName = CONFIG.PROVIDERS.DELIVERY.subTypes[result.shippingSubType] || '宅配';
+          } else {
+            providerName = CONFIG.PROVIDERS[result.shippingProvider]?.name || '未知';
+          }
+        } else if (hasPdfData) {
+          providerName = '宅配';
+        }
         
         statusEl.className = 'bv-integration-status success';
         statusEl.innerHTML = `
           <span class="material-icons">check_circle</span>
           <div class="bv-status-info">
-            <h4>已載入 ${totalCount} 張物流單 (${state.shippingBatches.length} 批次)</h4>
-            <p>可與明細整合列印</p>
+            <h4>已載入 ${totalCount} 張物流單</h4>
+            <p>${providerName} - 可與明細整合列印</p>
           </div>
         `;
       } else {
@@ -3327,19 +3489,32 @@
   
   function initPresetSystem() {
     const presetList = document.getElementById('bv-preset-list');
+    const addPresetBtn = document.getElementById('bv-add-preset');
+    const newPresetRow = document.getElementById('bv-new-preset-row');
     const newPresetName = document.getElementById('bv-new-preset-name');
-    const savePresetBtn = document.getElementById('bv-save-preset');
+    const confirmSaveBtn = document.getElementById('bv-confirm-save');
+    const cancelSaveBtn = document.getElementById('bv-cancel-save');
     
     if (!presetList) return;
     
     loadPresetList();
     
-    // 儲存新預設
-    if (savePresetBtn && newPresetName) {
-      savePresetBtn.addEventListener('click', function() {
+    if (addPresetBtn) {
+      addPresetBtn.addEventListener('click', function() {
+        newPresetRow.style.display = 'block';
+        newPresetName.value = '';
+        newPresetName.focus();
+        this.style.display = 'none';
+      });
+    }
+    
+    if (confirmSaveBtn) {
+      confirmSaveBtn.addEventListener('click', function() {
+        if (!newPresetName) return;
+        
         const presetName = newPresetName.value.trim();
         if (!presetName) {
-          showNotification('請輸入設定檔名稱', 'warning');
+          showNotification('請輸入名稱', 'warning');
           return;
         }
         
@@ -3353,75 +3528,97 @@
           
           const storageData = {
             [`bvPreset_${presetName}`]: settings,
-            presetList: allPresets
+            presetList: allPresets,
+            lastSelectedPreset: presetName
           };
           
           chrome.storage.local.set(storageData, () => {
-            newPresetName.value = '';
             loadPresetList();
+            newPresetRow.style.display = 'none';
+            addPresetBtn.style.display = 'block';
             showNotification(`設定檔「${presetName}」已儲存`);
           });
         });
       });
     }
     
+    if (cancelSaveBtn) {
+      cancelSaveBtn.addEventListener('click', function() {
+        newPresetRow.style.display = 'none';
+        addPresetBtn.style.display = 'block';
+      });
+    }
+    
     if (newPresetName) {
       newPresetName.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && savePresetBtn) {
-          savePresetBtn.click();
+        if (e.key === 'Enter' && confirmSaveBtn) {
+          confirmSaveBtn.click();
         }
       });
     }
   }
   
   function loadPresetList() {
-    const presetList = document.getElementById('bv-preset-list');
-    if (!presetList) return;
+    const presetListEl = document.getElementById('bv-preset-list');
+    if (!presetListEl) return;
     
-    chrome.storage.local.get(['presetList'], (result) => {
+    chrome.storage.local.get(['presetList', 'lastSelectedPreset'], (result) => {
       const allPresets = result.presetList || [];
+      const lastSelected = result.lastSelectedPreset;
       
-      if (allPresets.length === 0) {
-        presetList.innerHTML = '<div style="text-align: center; color: rgba(0,0,0,0.5); font-size: 12px; padding: 20px;">尚無設定檔</div>';
-        return;
-      }
-      
-      presetList.innerHTML = allPresets.map(presetName => `
-        <div class="bv-preset-item">
-          <span class="bv-preset-name">${presetName}</span>
+      presetListEl.innerHTML = allPresets.map(presetName => `
+        <div class="bv-preset-item ${presetName === lastSelected ? 'active' : ''}">
+          <div class="bv-preset-name" data-preset="${presetName}">${presetName}</div>
           <div class="bv-preset-actions">
-            <button class="bv-preset-apply" data-preset="${presetName}">套用</button>
-            <button class="bv-preset-delete" data-preset="${presetName}">刪除</button>
+            <button class="bv-preset-action-btn delete" data-preset="${presetName}">
+              <span class="material-icons">delete</span>
+            </button>
           </div>
         </div>
       `).join('');
       
-      // 綁定套用按鈕
-      presetList.querySelectorAll('.bv-preset-apply').forEach(btn => {
-        btn.addEventListener('click', function() {
+      // 綁定載入事件
+      presetListEl.querySelectorAll('.bv-preset-name').forEach(el => {
+        el.addEventListener('click', function() {
           const presetName = this.dataset.preset;
           chrome.storage.local.get([`bvPreset_${presetName}`], (result) => {
             const settings = result[`bvPreset_${presetName}`];
             if (settings) {
               applyPresetSettings(settings);
-              showNotification(`已套用設定檔「${presetName}」`);
+              chrome.storage.local.set({ lastSelectedPreset: presetName });
+              
+              // 更新選中狀態
+              document.querySelectorAll('.bv-preset-item').forEach(item => {
+                item.classList.remove('active');
+              });
+              this.closest('.bv-preset-item').classList.add('active');
+              
+              showNotification(`已載入設定檔「${presetName}」`);
               updatePreview();
             }
           });
         });
       });
       
-      // 綁定刪除按鈕
-      presetList.querySelectorAll('.bv-preset-delete').forEach(btn => {
-        btn.addEventListener('click', function() {
+      // 綁定刪除事件
+      presetListEl.querySelectorAll('.bv-preset-action-btn.delete').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          
           const presetName = this.dataset.preset;
           if (confirm(`確定要刪除設定檔「${presetName}」嗎？`)) {
-            chrome.storage.local.get(['presetList'], (result) => {
+            chrome.storage.local.get(['presetList', 'lastSelectedPreset'], (result) => {
               const allPresets = result.presetList || [];
               const updatedPresets = allPresets.filter(name => name !== presetName);
               
+              const storageData = { presetList: updatedPresets };
+              
+              if (result.lastSelectedPreset === presetName) {
+                chrome.storage.local.remove(['lastSelectedPreset']);
+              }
+              
               chrome.storage.local.remove([`bvPreset_${presetName}`], () => {
-                chrome.storage.local.set({ presetList: updatedPresets }, () => {
+                chrome.storage.local.set(storageData, () => {
                   loadPresetList();
                   showNotification(`設定檔「${presetName}」已刪除`);
                 });
@@ -3512,22 +3709,10 @@
     state.detailPages = [];
     state.shippingPages = [];
     
-    // 合併所有批次的物流單資料
-    const allShippingData = [];
-    state.shippingBatches.forEach(batch => {
-      batch.data.forEach(data => {
-        allShippingData.push({
-          ...data,
-          batchId: batch.id,
-          batchName: batch.name
-        });
-      });
-    });
-    
     // 根據列印模式處理
     if (state.printMode === CONFIG.PRINT_MODES.SHIPPING_ONLY) {
       // 純印物流單模式
-      createShippingOnlyPages(allShippingData);
+      createShippingOnlyPages();
     } else {
       // 其他模式：處理出貨明細
       orderContents.forEach((orderContent, orderIndex) => {
@@ -3612,8 +3797,8 @@
         state.detailPages.push(orderData);
         
         // 根據列印模式決定是否插入物流單
-        if (state.printMode === CONFIG.PRINT_MODES.DETAIL_SHIPPING) {
-          const shippingData = findMatchingShippingData(orderNo, orderIndex, allShippingData);
+        if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
+          const shippingData = findMatchingShippingData(orderNo, orderIndex);
           if (shippingData) {
             const shippingPage = createShippingPage(shippingData, orderNo, showOrderLabel, orderIndex);
             if (shippingPage) {
@@ -3646,33 +3831,19 @@
     const productTable = container.querySelector('.list');
     if (!productTable) return;
     
-    // 檢查是否已有商品圖欄位
+    // 處理標題列
     const headerRow = productTable.querySelector('.list-title');
-    if (headerRow) {
-      const headers = headerRow.querySelectorAll('th');
-      let hasImageColumn = false;
-      
-      headers.forEach(th => {
-        if (th.classList.contains('bv-product-image-col')) {
-          hasImageColumn = true;
-        }
-      });
-      
-      if (!hasImageColumn) {
-        // 新增商品圖標題（空白）
-        const imageHeader = document.createElement('th');
-        imageHeader.className = 'bv-product-image-col';
-        imageHeader.textContent = ''; // 空白標題
-        headerRow.insertBefore(imageHeader, headerRow.firstChild);
-      }
+    if (headerRow && !state.hideTableHeader) {
+      // 新增空白商品圖標題
+      const imageHeader = document.createElement('th');
+      imageHeader.className = 'bv-product-image-col';
+      imageHeader.textContent = ''; // 空白標題
+      headerRow.insertBefore(imageHeader, headerRow.firstChild);
     }
     
     // 處理每個商品列
     const productRows = productTable.querySelectorAll('.list-item');
     productRows.forEach(row => {
-      // 檢查是否已有圖片欄位
-      if (row.querySelector('.bv-product-image-col')) return;
-      
       const nameCell = row.querySelector('.list-item-name');
       if (!nameCell) return;
       
@@ -3712,19 +3883,22 @@
   function applySortOrder() {
     // 即時更新排序
     if (state.printMode === CONFIG.PRINT_MODES.DETAIL_ONLY || 
-        state.printMode === CONFIG.PRINT_MODES.DETAIL_SHIPPING) {
+        state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
       sortDetailPages();
     }
     
-    if (state.printMode === CONFIG.PRINT_MODES.SHIPPING_ONLY ||
-        state.printMode === CONFIG.PRINT_MODES.DETAIL_SHIPPING) {
+    if (state.printMode === CONFIG.PRINT_MODES.SHIPPING_ONLY) {
       sortShippingPages();
+    } else if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH && state.reverseShipping) {
+      // 在手動配對模式下，如果啟用物流單反序
+      reverseShippingPages();
     }
   }
   
-  function createShippingOnlyPages(allShippingData) {
+  function createShippingOnlyPages() {
     // 創建純物流單頁面
-    const showOrderLabel = document.getElementById('bv-show-order-label')?.checked ?? false;
+    const allShippingData = [...state.shippingData, ...state.pdfShippingData];
+    const showOrderLabel = false; // 純印物流單時不顯示訂單編號
     
     allShippingData.forEach((data, index) => {
       const pageContainer = document.createElement('div');
@@ -3772,39 +3946,14 @@
     return null;
   }
   
-  function findMatchingShippingData(orderNo, index, allShippingData) {
-    // 嘗試透過物流編號匹配
-    if (orderNo) {
-      // 先嘗試精確匹配
-      const exactMatch = allShippingData.find(data => data.orderNo === orderNo);
-      if (exactMatch) return { type: exactMatch.imageData ? 'pdf' : 'html', data: exactMatch };
-      
-      // 嘗試從提取的文字中匹配
-      const textMatch = allShippingData.find(data => {
-        if (data.extractedText) {
-          const patterns = [
-            new RegExp(`訂單[編號碼]*[：:]*\\s*${orderNo}`, 'i'),
-            new RegExp(`${orderNo}`, 'i')
-          ];
-          
-          for (const pattern of patterns) {
-            if (pattern.test(data.extractedText)) {
-              return true;
-            }
-          }
-        }
-        
-        return false;
-      });
-      
-      if (textMatch) return { type: textMatch.imageData ? 'pdf' : 'html', data: textMatch };
-    }
+  function findMatchingShippingData(orderNo, index) {
+    // 使用索引對應
+    const allShippingData = [...state.shippingData, ...state.pdfShippingData];
     
-    // 如果無法匹配，使用索引對應
     if (allShippingData[index]) {
-      return { 
-        type: allShippingData[index].imageData ? 'pdf' : 'html', 
-        data: allShippingData[index] 
+      return {
+        type: allShippingData[index].imageData ? 'pdf' : 'html',
+        data: allShippingData[index]
       };
     }
     
@@ -3855,15 +4004,39 @@
     
     // 處理訂單編號標籤
     if (showOrderLabel && orderNo) {
+      const labelOrderNo = getOrderLabelForShipping(orderIndex, orderNo);
       const label = document.createElement('div');
       label.className = 'bv-order-label';
-      label.textContent = `訂單：${orderNo}`;
+      label.textContent = `訂單：${labelOrderNo}`;
       content.appendChild(label);
     }
     
     page.appendChild(content);
     
     return page;
+  }
+  
+  function getOrderLabelForShipping(shippingIndex, defaultOrderNo) {
+    // 手動配對模式下，需要找到對應的明細訂單編號
+    if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
+      // 根據排序後的順序找到對應的明細
+      const sortedDetailContainers = Array.from(document.querySelectorAll('.bv-page-container'))
+        .filter(c => c.querySelector('.bv-label-page[data-page-type="detail"]'));
+      
+      if (state.detailSortOrder === CONFIG.SORT_ORDERS.DESC) {
+        sortedDetailContainers.reverse();
+      }
+      
+      // 使用相同索引的明細訂單編號
+      if (sortedDetailContainers[shippingIndex]) {
+        const detailOrderNo = sortedDetailContainers[shippingIndex].getAttribute('data-order-no');
+        if (detailOrderNo) {
+          return detailOrderNo;
+        }
+      }
+    }
+    
+    return defaultOrderNo;
   }
   
   function processExtraInfoHiding(container) {
@@ -3906,7 +4079,7 @@
   }
   
   function updateLabelStyles() {
-    const fontSize = document.getElementById('bv-font-size')?.value || '11'; // 預設11px
+    const fontSize = document.getElementById('bv-font-size')?.value || '11';
     const labelPadding = '5';
     const paddingPx = parseFloat(labelPadding) * 3.78;
     
@@ -4041,11 +4214,11 @@
       
       .bv-converted .orderProductImage,
       .bv-label-page .orderProductImage {
-        width: 8mm !important;
-        height: 8mm !important;
+        width: 7mm !important;
+        height: 7mm !important;
         object-fit: cover !important;
         margin: 0 !important;
-        vertical-align: middle !important;
+        vertical-align: top !important;
         border-radius: 2px;
       }
       
@@ -4108,26 +4281,6 @@
         top: ${logoY}% !important;
         transform: translate(-50%, -50%) !important;
         opacity: ${(100 - logoOpacity) / 100} !important;
-      }
-      
-      /* 商品圖欄位特殊處理 */
-      .bv-product-image-col {
-        width: 8mm !important;
-        padding: 2px !important;
-        vertical-align: top !important;
-      }
-      
-      .bv-product-image-col img {
-        width: 8mm !important;
-        height: 8mm !important;
-        object-fit: cover !important;
-        border-radius: 2px;
-        display: block;
-      }
-      
-      .bv-list-title .bv-product-image-col {
-        font-size: 0 !important;
-        color: transparent !important;
       }
     `;
     
@@ -4406,6 +4559,7 @@
       showOrderLabel: document.getElementById('bv-show-order-label')?.checked,
       printMode: state.printMode,
       detailSortOrder: state.detailSortOrder,
+      shippingSortOrder: state.shippingSortOrder,
       reverseShipping: state.reverseShipping
     };
   }
@@ -4457,6 +4611,17 @@
       const sortBtn = document.querySelector(`.bv-sort-button[data-type="detail"][data-order="${settings.detailSortOrder}"]`);
       if (sortBtn) {
         document.querySelectorAll('.bv-sort-button[data-type="detail"]').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        sortBtn.classList.add('active');
+      }
+    }
+    
+    if (settings.shippingSortOrder !== undefined) {
+      state.shippingSortOrder = settings.shippingSortOrder;
+      const sortBtn = document.querySelector(`.bv-sort-button[data-type="shipping"][data-order="${settings.shippingSortOrder}"]`);
+      if (sortBtn) {
+        document.querySelectorAll('.bv-sort-button[data-type="shipping"]').forEach(btn => {
           btn.classList.remove('active');
         });
         sortBtn.classList.add('active');
@@ -4533,6 +4698,7 @@
       showOrderLabel: document.getElementById('bv-show-order-label')?.checked ?? false,
       printMode: state.printMode,
       detailSortOrder: state.detailSortOrder,
+      shippingSortOrder: state.shippingSortOrder,
       reverseShipping: state.reverseShipping
     };
     
@@ -4540,7 +4706,7 @@
   }
   
   function loadSettings() {
-    chrome.storage.local.get(['bvLabelSettings', 'bvPanelMinimized', 'bvCollapsedSections', 'shippingBatches'], (result) => {
+    chrome.storage.local.get(['bvLabelSettings', 'lastSelectedPreset', 'bvPanelMinimized', 'bvCollapsedSections'], (result) => {
       if (result.bvLabelSettings) {
         const settings = result.bvLabelSettings;
         
@@ -4553,7 +4719,7 @@
           const qtyCheckbox = document.getElementById('bv-highlight-qty');
           if (qtyCheckbox) qtyCheckbox.checked = state.highlightQuantity;
           
-          state.hideExtraInfo = settings.hideExtraInfo !== undefined ? settings.hideExtraInfo : true; // 預設開啟
+          state.hideExtraInfo = settings.hideExtraInfo !== undefined ? settings.hideExtraInfo : true;
           const hideExtraCheckbox = document.getElementById('bv-hide-extra-info');
           if (hideExtraCheckbox) hideExtraCheckbox.checked = state.hideExtraInfo;
           
@@ -4586,12 +4752,24 @@
             }
           }
           
+          if (settings.shippingSortOrder !== undefined) {
+            state.shippingSortOrder = settings.shippingSortOrder;
+            const sortBtn = document.querySelector(`.bv-sort-button[data-type="shipping"][data-order="${settings.shippingSortOrder}"]`);
+            if (sortBtn) {
+              document.querySelectorAll('.bv-sort-button[data-type="shipping"]').forEach(btn => {
+                btn.classList.remove('active');
+              });
+              sortBtn.classList.add('active');
+            }
+          }
+          
           if (settings.reverseShipping !== undefined) {
             state.reverseShipping = settings.reverseShipping;
             const reverseCheckbox = document.getElementById('bv-reverse-shipping');
-            if (reverseCheckbox) reverseCheckbox.checked = state.reverseShipping;
+            if (reverseCheckbox) reverseCheckbox.checked = settings.reverseShipping;
           }
           
+          state.fontSize = settings.fontSize || '11';
           if (settings.fontSize) {
             const fontSizeSlider = document.getElementById('bv-font-size');
             if (fontSizeSlider) {
@@ -4624,6 +4802,22 @@
             }
           });
         }
+      } else {
+        // 載入預設值
+        if (state.isConverted) {
+          state.fontSize = '11';
+          state.hideExtraInfo = true;
+          
+          const fontSizeSlider = document.getElementById('bv-font-size');
+          if (fontSizeSlider) {
+            fontSizeSlider.value = '11';
+            document.getElementById('bv-font-size-value').textContent = '11.0';
+            updateRangeProgress(fontSizeSlider);
+          }
+          
+          const hideExtraCheckbox = document.getElementById('bv-hide-extra-info');
+          if (hideExtraCheckbox) hideExtraCheckbox.checked = true;
+        }
       }
       
       if (result.bvPanelMinimized !== undefined) {
@@ -4641,9 +4835,13 @@
         state.collapsedSections = result.bvCollapsedSections;
       }
       
-      if (result.shippingBatches) {
-        state.shippingBatches = result.shippingBatches;
-        updateBatchList();
+      if (result.lastSelectedPreset && state.isConverted) {
+        chrome.storage.local.get([`bvPreset_${result.lastSelectedPreset}`], (presetResult) => {
+          const presetSettings = presetResult[`bvPreset_${result.lastSelectedPreset}`];
+          if (presetSettings) {
+            applyPresetSettings(presetSettings);
+          }
+        });
       }
     });
   }
@@ -4665,4 +4863,4 @@
     console.error('BV SHOP 出貨助手初始化失敗:', error);
   }
   
-})();    
+})();
