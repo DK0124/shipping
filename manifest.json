@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "BV SHOP 出貨助手",
   "description": "轉換出貨明細為10×15cm標籤格式，支援超商取貨與宅配物流單整合列印",
-  "version": "5.0.0",
-  "author": "DK0124",
+  "version": "5.1.0",
+  "author": "Derek Yu",
   
   "icons": {
     "16": "icons/icon-16.png",
@@ -32,14 +32,14 @@
         "*://*.dhl.com/*",
         "*://*.fedex.com/*"
       ],
-      "js": ["pdf.js", "content.js"],
+      "js": ["html2canvas.min.js", "pdf.js", "content.js"],
       "run_at": "document_idle"
     }
   ],
   
   "web_accessible_resources": [
     {
-      "resources": ["pdf.worker.js"],
+      "resources": ["pdf.worker.js", "html2canvas.min.js"],
       "matches": ["<all_urls>"]
     }
   ]
