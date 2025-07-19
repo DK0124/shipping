@@ -1,540 +1,423 @@
-// BV SHOP 出貨助手 (完整整合版 v5.0)
 (function() {
   'use strict';
   
-  // 修正 Material Icons 載入
-  const iconLink = document.createElement('link');
-  iconLink.rel = 'stylesheet';
-  iconLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
-  document.head.appendChild(iconLink);
-  
-  // 強制載入 Material Icons 樣式
-  const iconStyle = document.createElement('style');
-  iconStyle.textContent = `
-    @font-face {
-      font-family: 'Material Icons';
-      font-style: normal;
-      font-weight: 400;
-      src: url(https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
-    }
-    
-    .material-icons {
-      font-family: 'Material Icons' !important;
-      font-weight: normal;
-      font-style: normal;
-      font-size: 24px;
-      line-height: 1;
-      letter-spacing: normal;
-      text-transform: none;
-      display: inline-block;
-      white-space: nowrap;
-      word-wrap: normal;
-      direction: ltr;
-      font-feature-settings: 'liga';
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-      -moz-osx-font-smoothing: grayscale;
-    }
-  `;
-  document.head.appendChild(iconStyle);
-  
+  // 設定常數
   const CONFIG = {
+    VERSION: '5.1.0',
     PAGE_TYPES: {
-      ORDER_PRINT: 'order_print',
+      DETAIL: 'detail',
       SHIPPING: 'shipping'
     },
     PROVIDERS: {
-      // 超商取貨
-      SEVEN: { name: '7-11', domains: ['myship.7-11.com.tw', 'epayment.7-11.com.tw', 'eship.7-11.com.tw'], selector: '.div_frame', type: 'store' },
-      FAMILY: { name: '全家', domains: ['family.com.tw', 'famiport.com.tw'], selector: '.print-area', type: 'store' },
-      HILIFE: { name: '萊爾富', domains: ['hilife.com.tw'], selector: '.print_area', type: 'store' },
-      OKMART: { name: 'OK超商', domains: ['okmart.com.tw'], selector: '.printarea', type: 'store' },
-      
-      // 宅配 (支援 PDF)
+      SEVEN: { name: '7-11', selector: '.shipping-7eleven', type: 'store' },
+      FAMILY: { name: '全家', selector: '.shipping-family', type: 'store' },
+      HILIFE: { name: '萊爾富', selector: '.shipping-hilife', type: 'store' },
+      OKMART: { name: 'OK超商', selector: '.shipping-okmart', type: 'store' },
       DELIVERY: { 
         name: '宅配', 
-        domains: ['kerrytj.com', 'hct.com.tw', 't-cat.com.tw', 'global-business.com.tw', 'fedex.com'], 
-        selector: 'iframe', 
         type: 'delivery',
         subTypes: {
-          KERRY: '嘉里大榮',
+          KERRYTJ: '嘉里大榮',
           HCT: '新竹貨運',
           TCAT: '黑貓宅急便',
-          GLOBAL: '全球快遞Global Express',
+          GLOBAL: '全球快遞',
+          DHL: 'DHL',
           FEDEX: 'FedEx'
         }
       }
     },
-    
-    // 列印模式
     PRINT_MODES: {
-      DETAIL_ONLY: 'detail_only',           // 出貨明細
-      SHIPPING_ONLY: 'shipping_only',       // 物流單
-      MANUAL_MATCH: 'manual_match'          // 出貨明細-物流單
+      DETAIL_ONLY: 'detail_only',
+      SHIPPING_ONLY: 'shipping_only',
+      MANUAL_MATCH: 'manual_match'
     },
-    
-    // 排序方式
     SORT_ORDERS: {
-      ASC: 'asc',   // 新到舊
-      DESC: 'desc'  // 舊到新
+      ASC: 'asc',
+      DESC: 'desc'
     }
   };
   
-  let state = {
-    isConverted: false,
-    highlightQuantity: false,
-    hideExtraInfo: true,  // 預設開啟精簡模式
-    hideTableHeader: false,
-    originalBodyStyle: null,
-    isPanelMinimized: false,
-    logoDataUrl: null,
-    logoAspectRatio: 1,
-    collapsedSections: {},
+  // 全域狀態
+  const state = {
     currentPageType: null,
     currentProvider: null,
+    deliverySubType: null,
+    isConverted: false,
+    isPanelMinimized: false,
+    highlightQuantity: false,
+    hideExtraInfo: true,
+    hideTableHeader: false,
+    logoDataUrl: null,
+    logoAspectRatio: 1,
+    originalBodyStyle: {},
+    fontSize: '11',
     shippingData: [],
-    detailData: [],
     pdfShippingData: [],
-    enableIntegration: false,
-    cachedProviderSettings: {},
-    previewCache: new Map(),
-    lazyLoadObserver: null,
+    shippingDataBatches: [],
     detailPages: [],
     shippingPages: [],
-    shippingDataBatches: [],  // 儲存多批次的物流單資料
-    
-    // 列印模式設定
     printMode: CONFIG.PRINT_MODES.DETAIL_ONLY,
     detailSortOrder: CONFIG.SORT_ORDERS.ASC,
     shippingSortOrder: CONFIG.SORT_ORDERS.ASC,
-    reverseShipping: false,  // 物流單反序
-    isExtensionEnabled: true,
-    
-    // 預設字體大小
-    fontSize: '11'  // 預設11px
+    reverseShipping: false,
+    collapsedSections: {},
+    lazyLoadObserver: null,
+    previewCache: new Map(),
+    previewTimeout: null
   };
-
-  const fontLink = document.createElement('link');
-  fontLink.rel = 'stylesheet';
-  fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap';
-  document.head.appendChild(fontLink);
   
-  // 初始化 Lazy Load
-  function initLazyLoad() {
-    if ('IntersectionObserver' in window) {
-      state.lazyLoadObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const img = entry.target;
-            if (img.dataset.src) {
-              img.src = img.dataset.src;
-              img.removeAttribute('data-src');
-              state.lazyLoadObserver.unobserve(img);
-            }
+  // 初始化 Intersection Observer
+  if (typeof IntersectionObserver !== 'undefined') {
+    state.lazyLoadObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          if (img.dataset.src) {
+            img.src = img.dataset.src;
+            img.removeAttribute('data-src');
+            state.lazyLoadObserver.unobserve(img);
           }
-        });
-      }, {
-        rootMargin: '50px 0px',
-        threshold: 0.01
+        }
       });
-    }
+    }, {
+      rootMargin: '100px'
+    });
   }
   
+  // 頁面偵測
   function detectCurrentPage() {
-    const hostname = window.location.hostname;
-    const pathname = window.location.pathname;
     const url = window.location.href;
     
-    console.log('=== 頁面偵測 ===');
-    console.log('Hostname:', hostname);
-    console.log('Pathname:', pathname);
-    console.log('Full URL:', url);
-    
-    // 檢查宅配頁面
-    if (CONFIG.PROVIDERS.DELIVERY.domains.some(domain => hostname.includes(domain))) {
-      state.currentProvider = 'DELIVERY';
-      state.currentPageType = CONFIG.PAGE_TYPES.SHIPPING;
-      
-      // 識別具體的宅配商
-      if (hostname.includes('kerrytj.com')) {
-        state.deliverySubType = 'KERRY';
-      } else if (hostname.includes('hct.com.tw')) {
-        state.deliverySubType = 'HCT';
-      } else if (hostname.includes('t-cat.com.tw')) {
-        state.deliverySubType = 'TCAT';
-      } else if (hostname.includes('global-business.com.tw')) {
-        state.deliverySubType = 'GLOBAL';
-      } else if (hostname.includes('fedex.com')) {
-        state.deliverySubType = 'FEDEX';
-      }
-      
-      console.log('✓ 偵測到宅配頁面:', CONFIG.PROVIDERS.DELIVERY.subTypes[state.deliverySubType]);
-      createControlPanel();
+    // 檢查是否為 BV SHOP 出貨明細頁面
+    if (url.includes('bvshop') && 
+        (url.includes('print_order_content') || 
+         url.includes('print') && url.includes('order'))) {
+      state.currentPageType = CONFIG.PAGE_TYPES.DETAIL;
+      initDetailMode();
       return;
     }
     
-    // 檢查超商頁面
-    for (const [key, provider] of Object.entries(CONFIG.PROVIDERS)) {
-      if (key !== 'DELIVERY' && provider.domains.some(domain => hostname.includes(domain))) {
-        state.currentProvider = key;
+    // 檢查是否為超商物流單頁面
+    for (const [provider, config] of Object.entries(CONFIG.PROVIDERS)) {
+      if (provider === 'DELIVERY') continue;
+      
+      if (url.includes(config.name) || 
+          document.querySelector(config.selector)) {
         state.currentPageType = CONFIG.PAGE_TYPES.SHIPPING;
-        console.log('✓ 偵測到物流單頁面:', provider.name);
-        createControlPanel();
+        state.currentProvider = provider;
+        initShippingMode();
         return;
       }
     }
     
-    // 出貨明細頁面檢測
-    if (hostname.includes('bvshop')) {
-      const orderPatterns = [
-        'order_print',
-        'orderprint',
-        'order-print',
-        'order/print',
-        'orders/print',
-        'admin/order',
-        'manage/order'
-      ];
-      
-      const hasOrderPath = orderPatterns.some(pattern => 
-        pathname.toLowerCase().includes(pattern) || 
-        url.toLowerCase().includes(pattern)
-      );
-      
-      if (hasOrderPath || pathname.includes('order')) {
-        state.currentPageType = CONFIG.PAGE_TYPES.ORDER_PRINT;
-        console.log('✓ 偵測到出貨明細頁面');
-        createControlPanel();
+    // 檢查是否為宅配物流單頁面
+    const deliveryPatterns = {
+      KERRYTJ: /kerrytj\.com/,
+      HCT: /hct\.com\.tw/,
+      TCAT: /t-cat\.com\.tw/,
+      GLOBAL: /global-business\.com\.tw/,
+      DHL: /dhl\.com/,
+      FEDEX: /fedex\.com/
+    };
+    
+    for (const [subType, pattern] of Object.entries(deliveryPatterns)) {
+      if (pattern.test(url)) {
+        state.currentPageType = CONFIG.PAGE_TYPES.SHIPPING;
+        state.currentProvider = 'DELIVERY';
+        state.deliverySubType = subType;
+        initShippingMode();
         return;
       }
-      
-      setTimeout(() => {
-        const hasOrderContent = document.querySelector('.order-content') || 
-                              document.querySelector('[class*="order"]') ||
-                              document.body.textContent.includes('訂單編號');
-        
-        if (hasOrderContent) {
-          state.currentPageType = CONFIG.PAGE_TYPES.ORDER_PRINT;
-          console.log('✓ 透過內容偵測到出貨明細頁面');
-          createControlPanel();
-        }
-      }, 1000);
     }
-    
-    state.currentPageType = null;
-    console.log('✗ 未偵測到支援的頁面類型');
   }
   
+  // 初始化出貨明細模式
+  function initDetailMode() {
+    loadSettings();
+    createControlPanel();
+    
+    // 檢查物流單資料
+    setTimeout(() => {
+      if (state.isConverted) {
+        checkShippingDataStatus();
+      }
+    }, 100);
+  }
+  
+  // 創建控制面板
   function createControlPanel() {
-    // 只在支援的頁面創建面板
-    if (!state.currentPageType) return;
+    const existingPanel = document.getElementById('bv-label-control-panel');
+    if (existingPanel) existingPanel.remove();
     
-    if (document.getElementById('bv-label-control-panel')) return;
-    
-    const panel = document.createElement('div');
-    panel.id = 'bv-label-control-panel';
-    panel.innerHTML = getPanelContent();
-    
-    const style = document.createElement('style');
-    style.textContent = getPanelStyles();
-    document.head.appendChild(style);
-    document.body.appendChild(panel);
-    
-    // 最小化按鈕
-    const minimizedButton = document.createElement('button');
-    minimizedButton.className = 'bv-minimized-button';
+    const minimizedButton = document.createElement('div');
     minimizedButton.id = 'bv-minimized-button';
-    minimizedButton.innerHTML = '<span class="material-icons">apps</span>';
+    minimizedButton.className = 'bv-minimized-button';
+    minimizedButton.innerHTML = '<span class="material-icons">print</span>';
     minimizedButton.style.display = 'none';
     document.body.appendChild(minimizedButton);
     
-    setupEventListeners();
-    loadSettings();
-    initDragFunction();
-    initLazyLoad();
+    const panel = document.createElement('div');
+    panel.id = 'bv-label-control-panel';
+    panel.className = 'bv-label-control-panel';
+    panel.innerHTML = getPanelContent();
+    document.body.appendChild(panel);
     
-    if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
-      initShippingMode();
-    } else if (state.isConverted) {
-      checkShippingDataStatus();
-    }
+    const materialIcons = document.createElement('link');
+    materialIcons.rel = 'stylesheet';
+    materialIcons.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
+    document.head.appendChild(materialIcons);
+    
+    const styles = document.createElement('style');
+    styles.textContent = getPanelStyles();
+    document.head.appendChild(styles);
+    
+    setupEventListeners();
+    initDragFunction();
   }
   
+  // 面板樣式
   function getPanelStyles() {
     return `
-    * {
-      outline: none !important;
+    /* 字體 */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap');
+    
+    /* 基礎樣式重置 */
+    .bv-label-control-panel * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
     
-    *:focus,
-    *:focus-visible,
-    *:focus-within,
-    *:active {
-      outline: none !important;
-      box-shadow: none !important;
-    }
-    
-    #bv-label-control-panel {
+    /* 控制面板 */
+    .bv-label-control-panel {
       position: fixed;
-      right: 24px;
-      top: 24px;
-      bottom: 24px;
-      width: 360px;
+      top: 20px;
+      right: 20px;
+      width: 380px;
+      max-height: 90vh;
       z-index: 10000;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans TC', sans-serif;
-      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC', 'Segoe UI', Roboto, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: rgba(0, 0, 0, 0.87);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
+    .bv-label-control-panel.minimized {
+      transform: translateX(calc(100% + 40px));
+    }
+    
+    /* 毛玻璃面板 */
     .bv-glass-panel {
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(24px) saturate(140%);
-      -webkit-backdrop-filter: blur(24px) saturate(140%);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
       border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.75);
-      box-shadow: 
-        0 10px 40px rgba(0, 0, 0, 0.05),
-        0 0 0 0.5px rgba(255, 255, 255, 0.6) inset,
-        0 0 60px rgba(255, 255, 255, 0.4);
-      display: flex;
-      flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
       overflow: hidden;
     }
     
-    #bv-label-control-panel.minimized {
-      display: none !important;
-    }
-    
-    .bv-minimized-button {
-      position: fixed;
-      bottom: 32px;
-      right: 32px;
-      width: 56px;
-      height: 56px;
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      color: white;
-      border: none;
-      border-radius: 28px;
-      box-shadow: 
-        0 4px 24px rgba(81, 138, 255, 0.3),
-        0 0 0 0.5px rgba(255, 255, 255, 0.2),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
-      cursor: pointer;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    .bv-minimized-button:hover {
-      transform: scale(1.05) translateY(-2px);
-      box-shadow: 
-        0 8px 32px rgba(81, 138, 255, 0.4),
-        0 0 0 0.5px rgba(255, 255, 255, 0.3),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
-    }
-    
-    .bv-minimized-button:active {
-      transform: scale(0.98);
-    }
-    
-    .bv-minimized-button .material-icons {
-      font-size: 28px;
-    }
-    
-    #bv-label-control-panel.minimized ~ .bv-minimized-button {
-      display: flex;
-    }
-    
+    /* 面板頭部 */
     .bv-panel-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(20px);
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.5);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      flex-shrink: 0;
+      justify-content: space-between;
       cursor: move;
-      user-select: none;
     }
     
     .bv-header-content {
       display: flex;
       align-items: center;
-      gap: 16px;
-      flex: 1;
+      gap: 12px;
     }
     
     .bv-icon-wrapper {
       width: 40px;
       height: 40px;
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      box-shadow: 
-        0 2px 8px rgba(81, 138, 255, 0.2),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
     
     .bv-icon-wrapper.bv-label-mode {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      box-shadow: 
-        0 2px 8px rgba(16, 185, 129, 0.2),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
     }
     
     .bv-icon-wrapper.bv-shipping-mode {
-      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-      box-shadow: 
-        0 2px 8px rgba(255, 152, 0, 0.2),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
     }
     
     .bv-icon-wrapper .material-icons {
-      font-size: 22px;
+      color: white;
+      font-size: 24px;
     }
     
     .bv-title-group {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+      flex: 1;
     }
     
     .bv-panel-title {
-      margin: 0;
       font-size: 16px;
       font-weight: 600;
-      color: #000;
-      letter-spacing: -0.02em;
+      color: rgba(0, 0, 0, 0.87);
+      margin: 0;
     }
     
     .bv-panel-subtitle {
-      font-size: 13px;
+      font-size: 12px;
       color: rgba(0, 0, 0, 0.5);
-      font-weight: 400;
+      margin: 0;
     }
     
-    .bv-glass-button {
-      width: 32px;
-      height: 32px;
-      background: rgba(0, 0, 0, 0.03);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: rgba(0, 0, 0, 0.7);
-    }
-    
-    .bv-glass-button:hover {
-      background: rgba(0, 0, 0, 0.05);
-      transform: scale(1.04);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-    
-    .bv-glass-button:active {
-      transform: scale(0.96);
-    }
-    
-    .bv-glass-button .material-icons {
-      font-size: 20px;
-    }
-    
-    .bv-glass-button.bv-primary {
-      background: rgba(81, 138, 255, 0.08);
-      color: #518aff;
-      border-color: rgba(81, 138, 255, 0.15);
-    }
-    
-    .bv-glass-button.bv-primary:hover {
-      background: rgba(81, 138, 255, 0.12);
+    /* 面板內容 */
+    .bv-panel-body {
+      padding: 20px;
+      max-height: calc(90vh - 180px);
+      overflow-y: auto;
+      overflow-x: hidden;
     }
     
     .bv-panel-content-wrapper {
       display: flex;
       flex-direction: column;
-      flex: 1;
-      overflow: hidden;
+      height: 100%;
     }
     
-    .bv-panel-body {
-      padding: 24px;
-      overflow-y: auto;
-      flex: 1;
-      -webkit-overflow-scrolling: touch;
-    }
-    
-    .bv-primary-section {
-      margin-bottom: 28px;
-    }
-    
-    .bv-primary-button,
-    .bv-secondary-button {
-      width: 100%;
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      border: none;
+    /* 卡片樣式 */
+    .bv-settings-card {
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(0, 0, 0, 0.06);
       border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      box-shadow: 
-        0 3px 12px rgba(81, 138, 255, 0.25),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .bv-settings-card.collapsed .bv-card-content {
+      display: none;
+    }
+    
+    .bv-card-title {
+      padding: 16px;
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.87);
       display: flex;
       align-items: center;
-      gap: 16px;
-      padding: 16px 20px;
-      color: white;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
     }
     
-    .bv-secondary-button {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      box-shadow: 
-        0 3px 12px rgba(16, 185, 129, 0.25),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+    .bv-card-title .material-icons {
+      font-size: 20px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .bv-collapse-icon {
+      margin-left: auto;
+      transition: transform 0.3s ease;
+    }
+    
+    .bv-settings-card.collapsed .bv-collapse-icon {
+      transform: rotate(-90deg);
+    }
+    
+    .bv-card-content {
+      padding: 0 16px 16px;
+    }
+    
+    /* 按鈕樣式 */
+    .bv-glass-button {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(0, 0, 0, 0.87);
+      font-family: inherit;
+    }
+    
+    .bv-glass-button:hover {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(0, 0, 0, 0.12);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .bv-glass-button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .bv-glass-button .material-icons {
+      font-size: 18px;
+    }
+    
+    .bv-glass-button.bv-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+    }
+    
+    .bv-glass-button.bv-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    /* 主要按鈕 */
+    .bv-primary-button {
+      width: 100%;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: inherit;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
     }
     
     .bv-primary-button:hover {
-      transform: translateY(-1px);
-      box-shadow: 
-        0 6px 20px rgba(81, 138, 255, 0.35),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
-    }
-    
-    .bv-secondary-button:hover {
-      transform: translateY(-1px);
-      box-shadow: 
-        0 6px 20px rgba(16, 185, 129, 0.35),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
-    }
-    
-    .bv-primary-button:active,
-    .bv-secondary-button:active {
-      transform: translateY(0);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(102, 126, 234, 0.4);
     }
     
     .bv-button-icon {
-      width: 44px;
-      height: 44px;
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(20px);
-      border-radius: 10px;
+      width: 48px;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
     }
     
     .bv-button-icon .material-icons {
-      font-size: 26px;
+      font-size: 24px;
     }
     
     .bv-button-content {
@@ -544,102 +427,85 @@
     
     .bv-button-title {
       display: block;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 600;
       margin-bottom: 2px;
-      letter-spacing: -0.01em;
     }
     
     .bv-button-subtitle {
       display: block;
       font-size: 13px;
-      opacity: 0.8;
+      font-weight: 400;
+      opacity: 0.9;
     }
     
-    .bv-settings-card {
-      background: rgba(248, 250, 252, 0.5);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 16px;
-      transition: all 0.3s ease;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    }
-    
-    .bv-settings-card:hover {
-      background: rgba(248, 250, 252, 0.7);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-    }
-    
-    .bv-card-title {
-      margin: 0 0 20px 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: #000;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      user-select: none;
+    /* 開關 */
+    .bv-glass-switch {
       position: relative;
-      padding-right: 28px;
+      display: inline-block;
+      width: 48px;
+      height: 24px;
     }
     
-    .bv-card-title .material-icons {
-      font-size: 18px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-collapse-icon {
-      position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.3s ease;
-    }
-    
-    .bv-collapse-icon .material-icons {
-      font-size: 20px;
-      color: rgba(0, 0, 0, 0.4);
-    }
-    
-    .bv-settings-card.collapsed .bv-collapse-icon {
-      transform: translateY(-50%) rotate(-90deg);
-    }
-    
-    .bv-card-content {
-      overflow: hidden;
-      transition: all 0.3s ease;
-    }
-    
-    .bv-settings-card.collapsed .bv-card-content {
-      max-height: 0 !important;
-      margin-top: -20px;
+    .bv-glass-switch input {
       opacity: 0;
+      width: 0;
+      height: 0;
     }
     
+    .bv-switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      border-radius: 24px;
+    }
+    
+    .bv-switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      transition: all 0.3s ease;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .bv-glass-switch input:checked + .bv-switch-slider {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .bv-glass-switch input:checked + .bv-switch-slider:before {
+      transform: translateX(24px);
+    }
+    
+    .bv-glass-switch.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .bv-glass-switch.disabled .bv-switch-slider {
+      cursor: not-allowed;
+    }
+    
+    /* 設定項目 */
     .bv-setting-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 0;
-      border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     }
     
     .bv-setting-item:last-child {
       border-bottom: none;
-      padding-bottom: 0;
-    }
-    
-    .bv-setting-item:first-child {
-      padding-top: 0;
     }
     
     .bv-setting-info {
@@ -655,676 +521,461 @@
     }
     
     .bv-setting-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+      flex: 1;
     }
     
     .bv-setting-label {
+      display: block;
       font-size: 14px;
       font-weight: 500;
-      color: #000;
-      letter-spacing: -0.01em;
+      color: rgba(0, 0, 0, 0.87);
+      margin-bottom: 2px;
     }
     
     .bv-setting-desc {
+      display: block;
       font-size: 12px;
       color: rgba(0, 0, 0, 0.5);
     }
     
-    .bv-glass-switch {
-      position: relative;
-      display: inline-block;
-      width: 48px;
-      height: 28px;
-      cursor: pointer;
-    }
-    
-    .bv-glass-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    
-    .bv-switch-slider {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.1);
-      border-radius: 28px;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    .bv-switch-slider:before {
-      position: absolute;
-      content: "";
-      height: 24px;
-      width: 24px;
-      left: 2px;
-      bottom: 2px;
-      background: white;
-      border-radius: 50%;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    
-    .bv-glass-switch input:checked + .bv-switch-slider {
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-    }
-    
-    .bv-glass-switch input:checked + .bv-switch-slider:before {
-      transform: translateX(20px);
-    }
-    
-    .bv-glass-switch.disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .bv-glass-switch.disabled input {
-      cursor: not-allowed;
-    }
-    
+    /* 滑桿 */
     .bv-slider-group {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      margin: 16px 0;
     }
     
     .bv-slider-item {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding-bottom: 8px;
+      margin-bottom: 20px;
     }
     
     .bv-slider-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 8px;
       font-size: 13px;
-      color: #000;
+      color: rgba(0, 0, 0, 0.7);
     }
     
     .bv-value-label {
-      background: rgba(81, 138, 255, 0.08);
-      color: #518aff;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 12px;
       font-weight: 600;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', monospace;
-      min-width: 48px;
-      text-align: center;
+      color: #667eea;
     }
     
     .bv-glass-slider {
       -webkit-appearance: none;
       width: 100%;
       height: 6px;
-      background: rgba(0, 0, 0, 0.06);
+      background: rgba(0, 0, 0, 0.1);
       border-radius: 3px;
       outline: none;
       position: relative;
       cursor: pointer;
-      margin: 12px 0;
-      overflow: visible;
-    }
-    
-    .bv-glass-slider:before {
-      content: '';
-      position: absolute;
-      height: 6px;
-      border-radius: 3px;
-      background: #518aff;
-      width: var(--value, 0%);
-      pointer-events: none;
     }
     
     .bv-glass-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 20px;
-      height: 20px;
-      background: white;
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border-radius: 50%;
       cursor: pointer;
-      box-shadow: 
-        0 1px 4px rgba(0, 0, 0, 0.15),
-        0 0 0 0.5px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
       transition: all 0.2s ease;
-      position: relative;
-      z-index: 1;
     }
     
     .bv-glass-slider::-webkit-slider-thumb:hover {
       transform: scale(1.1);
-      box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.2),
-        0 0 0 0.5px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
     
     .bv-glass-slider::-moz-range-thumb {
-      width: 20px;
-      height: 20px;
-      background: white;
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border-radius: 50%;
       cursor: pointer;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-      transition: all 0.2s ease;
       border: none;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     }
     
-    .bv-preset-controls {
+    /* 進度條填充 */
+    .bv-glass-slider {
+      background-image: linear-gradient(
+        to right,
+        #667eea 0%,
+        #764ba2 var(--value, 0%),
+        rgba(0, 0, 0, 0.1) var(--value, 0%),
+        rgba(0, 0, 0, 0.1) 100%
+      );
+    }
+    
+    /* 最小化按鈕 */
+    .bv-minimized-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 24px;
       display: flex;
-      gap: 8px;
       align-items: center;
-    }
-    
-    .bv-glass-select {
-      flex: 1;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(20px);
-      border: 0.5px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      padding: 0 12px;
-      font-size: 14px;
-      color: #000;
+      justify-content: center;
       cursor: pointer;
-      transition: all 0.2s ease;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23666666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      padding-right: 32px;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+      transition: all 0.3s ease;
+      z-index: 10001;
     }
     
-    .bv-glass-select:hover {
-      background-color: rgba(255, 255, 255, 0.9);
-      border-color: rgba(0, 0, 0, 0.12);
+    .bv-minimized-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 24px rgba(102, 126, 234, 0.4);
     }
     
-    .bv-glass-select:focus {
-      background-color: white;
-      border-color: #518aff;
-      box-shadow: 0 0 0 3px rgba(81, 138, 255, 0.1);
+    .bv-minimized-button .material-icons {
+      color: white;
+      font-size: 24px;
     }
     
-    .bv-preset-buttons {
-      display: flex;
-      gap: 4px;
-      flex-shrink: 0;
-    }
-    
-    .bv-preset-save-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-      align-items: center;
-    }
-    
-    .bv-glass-input {
-      flex: 1;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(20px);
-      border: 0.5px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      padding: 0 12px;
-      font-size: 14px;
-      color: #000;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-glass-input::placeholder {
-      color: rgba(0, 0, 0, 0.4);
-    }
-    
-    .bv-glass-input:hover {
-      background-color: rgba(255, 255, 255, 0.9);
-      border-color: rgba(0, 0, 0, 0.12);
-    }
-    
-    .bv-glass-input:focus {
-      background-color: white;
-      border-color: #518aff;
-      box-shadow: 0 0 0 3px rgba(81, 138, 255, 0.1);
-    }
-    
+    /* 面板頁腳 */
     .bv-panel-footer {
-      padding: 16px 24px 24px;
-      background: rgba(255, 255, 255, 0.6);
-      backdrop-filter: blur(20px);
-      border-top: 1px solid rgba(0, 0, 0, 0.05);
-      flex-shrink: 0;
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.5);
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      display: flex;
+      gap: 12px;
+      align-items: center;
     }
     
     .bv-glass-action-button {
-      width: 100%;
-      height: 48px;
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      color: white;
+      flex: 1;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border: none;
-      border-radius: 12px;
+      border-radius: 10px;
+      color: white;
       font-size: 15px;
       font-weight: 600;
       cursor: pointer;
+      transition: all 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      box-shadow: 
-        0 3px 12px rgba(81, 138, 255, 0.25),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-      letter-spacing: -0.01em;
+      font-family: inherit;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
     
     .bv-glass-action-button:hover {
-      transform: translateY(-1px);
-      box-shadow: 
-        0 6px 20px rgba(81, 138, 255, 0.35),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
-    }
-    
-    .bv-glass-action-button:active {
-      transform: translateY(0);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
     
     .bv-glass-action-button .material-icons {
-      font-size: 22px;
+      font-size: 20px;
     }
     
-    .bv-panel-body::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.15);
-      border-radius: 6px;
-      transition: background 0.2s ease;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.25);
-    }
-    
+    /* 通知樣式 */
     .bv-notification {
       position: fixed;
-      top: 32px;
+      top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(50px) saturate(180%);
-      -webkit-backdrop-filter: blur(50px) saturate(180%);
+      background: white;
       padding: 16px 24px;
       border-radius: 12px;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.12),
-        0 0 0 0.5px rgba(0, 0, 0, 0.05),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.9);
-      z-index: 100001;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
       display: flex;
       align-items: center;
       gap: 12px;
+      z-index: 10002;
+      font-size: 14px;
+      font-weight: 500;
       animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      letter-spacing: -0.01em;
-    }
-    
-    .bv-notification.success {
-      color: #248A3D;
-    }
-    
-    .bv-notification.warning {
-      color: #C04C00;
-    }
-    
-    .bv-notification.error {
-      color: #D70015;
+      font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC', 'Segoe UI', Roboto, Arial, sans-serif;
     }
     
     .bv-notification .material-icons {
-      font-size: 20px;
+      font-size: 24px;
+    }
+    
+    .bv-notification.success {
+      background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+      color: #0a5f3b;
+    }
+    
+    .bv-notification.warning {
+      background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+      color: #8b5a00;
+    }
+    
+    .bv-notification.error {
+      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+      color: #8b0000;
     }
     
     @keyframes slideDown {
       from {
+        transform: translateX(-50%) translateY(-20px);
         opacity: 0;
-        transform: translate(-50%, -20px);
       }
       to {
+        transform: translateX(-50%) translateY(0);
         opacity: 1;
-        transform: translate(-50%, 0);
       }
     }
     
     @keyframes slideUp {
       from {
+        transform: translateX(-50%) translateY(0);
         opacity: 1;
-        transform: translate(-50%, 0);
       }
       to {
+        transform: translateX(-50%) translateY(-20px);
         opacity: 0;
-        transform: translate(-50%, -20px);
       }
     }
     
-    .bv-qty-star {
-      font-weight: 700;
-      color: inherit;
+    /* 標籤頁面樣式 */
+    .bv-page-container {
+      display: block;
+      margin: 0;
+      padding: 0;
+      page-break-inside: avoid;
     }
     
-    .bv-qty-star::before {
-      content: "★ ";
-      color: #000;
-      font-weight: normal;
+    .bv-label-page {
+      width: 377px;
+      height: 566px;
+      margin: 0 auto 20px;
+      background: white;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+      box-sizing: border-box;
     }
     
-    @media print {
-      .bv-qty-star {
-        font-weight: 700 !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-      
-      .bv-qty-star::before {
-        content: "★ " !important;
-        color: #000 !important;
-      }
-    }
-    
-    .bv-counter-icon {
-      font-family: 'Material Icons';
-      font-weight: normal;
-      font-style: normal;
-      font-size: 20px;
-      display: inline-block;
-      line-height: 1;
-      text-transform: none;
-      letter-spacing: normal;
-      word-wrap: normal;
-      white-space: nowrap;
-      direction: ltr;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-      -moz-osx-font-smoothing: grayscale;
-      font-feature-settings: 'liga';
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-counter-icon::before {
-      content: "star";
-    }
-    
-    body.bv-converted {
-      width: auto !important;
-      max-width: none !important;
-      min-width: auto !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    
-    .bv-logo-upload-area {
-      border: 2px dashed rgba(0, 0, 0, 0.08);
-      border-radius: 12px;
-      padding: 32px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      background: rgba(248, 250, 252, 0.3);
-      margin-bottom: 20px;
+    .bv-page-content {
+      width: 100%;
+      height: 100%;
       position: relative;
       overflow: hidden;
     }
     
-    .bv-logo-upload-area:hover {
-      border-color: #518aff;
-      background: rgba(81, 138, 255, 0.02);
+    .label-background-logo {
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+      object-fit: contain;
     }
     
-    .bv-logo-upload-area.has-logo {
-      border-style: solid;
-      padding: 20px;
+    .bv-page-content > * {
+      position: relative;
+      z-index: 2;
+    }
+    
+    /* 滾動條樣式 */
+    .bv-panel-body::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .bv-panel-body::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 3px;
+    }
+    
+    .bv-panel-body::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 3px;
+    }
+    
+    .bv-panel-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+    
+    /* 數量標示樣式 */
+    .bv-qty-star {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 6px;
+      background: #ff6b6b;
+      color: white;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 12px;
+      position: relative;
+    }
+    
+    .bv-qty-star::before {
+      content: "★";
+      position: absolute;
+      right: -8px;
+      top: -4px;
+      color: #ff6b6b;
+      font-size: 16px;
+    }
+    
+    /* 列印時隱藏 */
+    @media print {
+      .bv-label-control-panel,
+      .bv-minimized-button,
+      .bv-notification {
+        display: none !important;
+      }
+    }
+    
+    /* 列印模式選擇器 */
+    .bv-print-mode-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .bv-mode-option {
+      display: flex;
+      align-items: center;
+      padding: 12px;
       background: rgba(255, 255, 255, 0.6);
+      border: 2px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
     
-    .bv-logo-upload-area .material-icons {
-      vertical-align: middle;
-      line-height: 1;
+    .bv-mode-option:hover {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: rgba(102, 126, 234, 0.2);
     }
     
-    .bv-logo-preview {
-      max-width: 100%;
-      max-height: 120px;
-      margin: 0 auto;
-      display: block;
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    .bv-mode-option.selected {
+      background: rgba(102, 126, 234, 0.08);
+      border-color: #667eea;
     }
     
-    .bv-upload-hint {
-      color: rgba(0, 0, 0, 0.5);
-      font-size: 14px;
-      margin-top: 12px;
-      font-weight: 500;
-    }
-    
-    .bv-logo-controls {
+    .bv-mode-option input[type="radio"] {
       display: none;
     }
     
-    .bv-logo-controls.active {
-      display: block;
-      animation: fadeIn 0.3s ease;
+    .bv-mode-info {
+      flex: 1;
+      margin-left: 12px;
     }
     
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .bv-remove-logo-btn {
-      background: linear-gradient(135deg, #FF3B30 0%, #D70015 100%);
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
+    .bv-mode-title {
       font-size: 14px;
       font-weight: 600;
-      cursor: pointer;
-      margin-top: 20px;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
-      display: inline-flex;
-      align-items: center;
+      color: rgba(0, 0, 0, 0.87);
+      margin-bottom: 2px;
+    }
+    
+    .bv-mode-desc {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    /* 排序選項 */
+    .bv-sort-options {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    
+    .bv-sort-group {
+      margin-bottom: 16px;
+    }
+    
+    .bv-sort-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.7);
+      margin-bottom: 8px;
+    }
+    
+    .bv-sort-buttons {
+      display: flex;
       gap: 8px;
-      letter-spacing: -0.01em;
     }
     
-    .bv-remove-logo-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
+    .bv-sort-button {
+      flex: 1;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.6);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
     }
     
-    .bv-remove-logo-btn .material-icons {
-      font-size: 18px;
-      vertical-align: middle;
-      line-height: 1;
+    .bv-sort-button:hover {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: rgba(0, 0, 0, 0.15);
     }
     
-    .label-background-logo {
-      position: absolute !important;
-      z-index: 1 !important;
-      pointer-events: none;
-      object-fit: contain !important;
+    .bv-sort-button.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-color: transparent;
     }
     
-    .bv-label-page > *:not(.label-background-logo) {
-      position: relative !important;
-      z-index: 2 !important;
+    /* 物流單樣式 */
+    .bv-shipping-page {
+      background: #f8f9fa;
     }
     
-    @media screen {
-      body.bv-converted {
-        background: white;
-        padding: 20px 0;
-      }
-      
-      .bv-page-container {
-        margin: 0 auto 20px;
-        width: fit-content;
-      }
-      
-      .bv-label-page {
-        width: 377px !important;
-        height: 566px !important;
-        background: white;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-        position: relative;
-        overflow: hidden;
-        box-sizing: border-box;
-        padding: 18.9px !important;
-      }
-      
-      .bv-page-content {
-        width: 100%;
-        height: 100%;
-        position: relative;
-        display: block;
-        box-sizing: border-box;
-      }
-      
-      .bv-converted .order-content.bv-original {
-        display: none !important;
-      }
+    .bv-shipping-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
     }
     
-    @page {
-      size: 100mm 150mm;
-      margin: 0 !important;
-      padding: 0 !important;
+    .bv-shipping-wrapper-inner {
+      max-width: 100%;
+      max-height: 100%;
+      overflow: hidden;
     }
     
-    @media print {
-      #bv-label-control-panel,
-      .bv-minimized-button {
-        display: none !important;
-      }
-      
-      body:not(.bv-converted) {
-        visibility: visible !important;
-      }
-      
-      body:not(.bv-converted) .order-content {
-        display: block !important;
-        visibility: visible !important;
-      }
-      
-      * {
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      
-      html, body {
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-      }
-      
-      body.bv-converted {
-        width: auto !important;
-        max-width: none !important;
-        min-width: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        background: white !important;
-      }
-      
-      body.bv-converted .bv-original {
-        display: none !important;
-      }
-      
-      body.bv-converted .bv-page-container {
-        page-break-inside: avoid !important;
-        page-break-after: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      
-      body.bv-converted .bv-label-page {
-        width: 100mm !important;
-        height: 150mm !important;
-        margin: 0 !important;
-        padding: 5mm !important;
-        box-sizing: border-box !important;
-        page-break-after: always !important;
-        page-break-inside: avoid !important;
-        box-shadow: none !important;
-        border: none !important;
-        position: relative !important;
-        display: block !important;
-        background: white !important;
-      }
-      
-      body.bv-converted .bv-label-page:last-child {
-        page-break-after: auto !important;
-      }
-      
-      body.bv-converted .bv-page-content {
-        position: relative !important;
-        page-break-inside: avoid !important;
-        width: 90mm !important;
-        height: 140mm !important;
-      }
-      
-      body.bv-converted > *:not(.bv-page-container) {
-        display: none !important;
-      }
+    .bv-store-shipping-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     
-    .bv-shipping-status {
-      background: rgba(248, 250, 252, 0.8);
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      margin-bottom: 20px;
+    .bv-order-label {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      z-index: 10;
     }
     
-    .bv-status-count {
-      font-size: 48px;
-      font-weight: 700;
-      color: #ff9800;
-      margin: 8px 0;
-    }
-    
-    .bv-status-text {
-      color: #666;
-      font-size: 14px;
-    }
-    
+    /* 物流單狀態 */
     .bv-integration-status {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       padding: 16px;
-      background: rgba(248, 250, 252, 0.8);
-      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 10px;
       margin-bottom: 16px;
     }
     
@@ -1333,7 +984,8 @@
     }
     
     .bv-integration-status.success {
-      background: rgba(16, 185, 129, 0.08);
+      background: rgba(132, 250, 176, 0.1);
+      border: 1px solid rgba(132, 250, 176, 0.3);
     }
     
     .bv-integration-status.success .material-icons {
@@ -1341,51 +993,47 @@
     }
     
     .bv-integration-status.warning {
-      background: rgba(255, 152, 0, 0.08);
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px solid rgba(251, 191, 36, 0.3);
     }
     
     .bv-integration-status.warning .material-icons {
-      color: #ff9800;
+      color: #f59e0b;
     }
     
     .bv-status-info h4 {
       margin: 0 0 4px 0;
       font-size: 14px;
       font-weight: 600;
-      color: #000;
+      color: rgba(0, 0, 0, 0.87);
     }
     
     .bv-status-info p {
       margin: 0;
       font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
+      color: rgba(0, 0, 0, 0.6);
     }
     
+    /* PDF 上傳區域 */
     .bv-pdf-upload-area {
-      border: 2px dashed #f44336;
-      border-color: rgba(244, 67, 54, 0.3);
-      background: rgba(255, 245, 245, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100px;
-      padding: 16px;
-      border-radius: 8px;
+      border: 2px dashed rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      padding: 24px;
+      text-align: center;
       cursor: pointer;
       transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.5);
     }
     
     .bv-pdf-upload-area:hover {
-      border-color: #f44336;
-      background: rgba(255, 235, 235, 0.5);
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.05);
     }
     
     .bv-pdf-upload-area.has-file {
       border-style: solid;
-      border-color: #4caf50;
-      background: rgba(241, 248, 233, 0.5);
-      min-height: auto;
-      padding: 12px 16px;
+      border-color: #10b981;
+      background: rgba(132, 250, 176, 0.05);
     }
     
     #bv-pdf-upload-prompt {
@@ -1396,81 +1044,47 @@
     }
     
     #bv-pdf-upload-prompt .material-icons {
-      font-size: 36px;
-      color: #f44336;
+      font-size: 48px;
+      color: rgba(0, 0, 0, 0.3);
     }
     
-    #bv-pdf-upload-prompt .bv-upload-hint {
-      font-size: 13px;
+    .bv-upload-hint {
+      font-size: 14px;
       color: rgba(0, 0, 0, 0.6);
-      font-weight: 500;
     }
     
     .bv-pdf-info {
       display: flex;
       align-items: center;
       gap: 12px;
-      color: #2e7d32;
-      width: 100%;
     }
     
     .bv-pdf-info .material-icons {
-      font-size: 28px;
-      flex-shrink: 0;
-    }
-    
-    .bv-pdf-pages-info {
-      flex: 1;
-      min-width: 0;
+      font-size: 32px;
+      color: #10b981;
     }
     
     .bv-pdf-pages-info h4 {
-      margin: 0;
-      font-size: 13px;
-      color: #2e7d32;
+      margin: 0 0 4px 0;
+      font-size: 14px;
       font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      color: rgba(0, 0, 0, 0.87);
     }
     
     .bv-pdf-pages-info p {
-      margin: 2px 0 0 0;
-      font-size: 11px;
-      color: #558b2f;
+      margin: 0;
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.6);
     }
     
-    #bv-clear-shipping {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 8px 16px;
-      font-size: 13px;
-      font-weight: 500;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.8);
-      color: rgba(0, 0, 0, 0.7);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-    }
-    
-    #bv-clear-shipping .material-icons {
-      font-size: 18px;
-    }
-    
-    #bv-clear-shipping:hover {
-      background: rgba(255, 255, 255, 0.9);
-      border-color: rgba(0, 0, 0, 0.12);
-      transform: translateY(-1px);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    }
-    
+    /* 轉換進度 */
     .bv-conversion-progress {
+      display: none;
       margin-top: 16px;
       padding: 16px;
-      background: rgba(232, 245, 233, 0.5);
-      border-radius: 8px;
-      display: none;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.06);
     }
     
     .bv-conversion-progress.active {
@@ -1478,232 +1092,190 @@
     }
     
     .bv-conversion-progress h5 {
-      margin: 0 0 8px 0;
-      color: #2e7d32;
+      margin: 0 0 12px 0;
       font-size: 14px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.87);
     }
     
     .bv-conversion-progress-bar {
-      height: 6px;
-      background: #c8e6c9;
-      border-radius: 3px;
+      width: 100%;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 4px;
       overflow: hidden;
       margin-bottom: 8px;
     }
     
     .bv-conversion-progress-fill {
       height: 100%;
-      background: #4caf50;
-      width: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      width: 0%;
       transition: width 0.3s ease;
     }
     
     .bv-conversion-status {
       font-size: 12px;
-      color: #558b2f;
+      color: rgba(0, 0, 0, 0.6);
       text-align: center;
     }
     
-    .bv-shipping-page {
-      background: #f5f5f5 !important;
+    /* 物流單頁面樣式 */
+    .bv-shipping-status {
+      text-align: center;
+      padding: 32px 20px;
     }
     
-    .bv-shipping-content {
-      width: 100%;
-      height: 100%;
-      position: relative;
-      overflow: hidden;
-      background: white;
-      margin: 0;
-      box-sizing: border-box;
+    .bv-status-count {
+      font-size: 48px;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 8px;
     }
     
-    .bv-shipping-wrapper-inner {
-      position: relative;
+    .bv-status-text {
+      font-size: 16px;
+      color: rgba(0, 0, 0, 0.6);
+    }
+    
+    .bv-secondary-button {
       width: 100%;
-      height: 100%;
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 2px solid rgba(102, 126, 234, 0.3);
+      border-radius: 12px;
+      color: #667eea;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
       display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: inherit;
+    }
+    
+    .bv-secondary-button:hover {
+      background: rgba(102, 126, 234, 0.08);
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+    }
+    
+    .bv-secondary-button .bv-button-icon {
+      background: rgba(102, 126, 234, 0.1);
+    }
+    
+    /* 標籤設定 */
+    .bv-counter-icon {
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-    }
-    
-    .bv-order-label {
-      position: absolute;
-      top: 5mm;
-      left: 50%;
-      transform: translateX(-50%);
-      background: white;
-      padding: 4px 12px;
-      border: 1px solid #333;
-      border-radius: 4px;
-      font-size: 14px;
+      background: #ff6b6b;
+      color: white;
+      border-radius: 10px;
       font-weight: bold;
-      z-index: 1000;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      white-space: nowrap;
+      font-size: 11px;
+      position: relative;
     }
     
-    .bv-print-mode-selector {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 16px;
+    .bv-counter-icon::before {
+      content: "2";
     }
     
-    .bv-mode-option {
-      display: flex;
-      align-items: center;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.6);
-      border: 1px solid rgba(0, 0, 0, 0.08);
+    .bv-counter-icon::after {
+      content: "★";
+      position: absolute;
+      right: -6px;
+      top: -3px;
+      color: #ff6b6b;
+      font-size: 12px;
+    }
+    
+    /* 輸入框 */
+    .bv-glass-input {
+      width: 100%;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.1);
       border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-mode-option:hover {
-      background: rgba(255, 255, 255, 0.8);
-      border-color: rgba(81, 138, 255, 0.2);
-    }
-    
-    .bv-mode-option.selected {
-      background: rgba(81, 138, 255, 0.08);
-      border-color: #518aff;
-    }
-    
-    .bv-mode-option input[type="radio"] {
-      margin-right: 12px;
-    }
-    
-    .bv-mode-info {
-      flex: 1;
-    }
-    
-    .bv-mode-title {
       font-size: 14px;
-      font-weight: 600;
-      color: #000;
-      margin-bottom: 2px;
-    }
-    
-    .bv-mode-desc {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-sort-options {
-      display: flex;
-      gap: 12px;
-      margin-top: 12px;
-    }
-    
-    .bv-sort-group {
-      flex: 1;
-    }
-    
-    .bv-sort-label {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-      margin-bottom: 4px;
-    }
-    
-    .bv-sort-buttons {
-      display: flex;
-      gap: 4px;
-    }
-    
-    .bv-sort-button {
-      flex: 1;
-      padding: 6px 12px;
-      background: rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 6px;
-      font-size: 12px;
-      cursor: pointer;
+      font-family: inherit;
       transition: all 0.2s ease;
+      outline: none;
     }
     
-    .bv-sort-button:hover {
-      background: rgba(255, 255, 255, 0.9);
-      border-color: rgba(0, 0, 0, 0.12);
+    .bv-glass-input:focus {
+      border-color: #667eea;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
     
-    .bv-sort-button.active {
-      background: rgba(81, 138, 255, 0.08);
-      border-color: #518aff;
-      color: #518aff;
+    /* 底圖上傳 */
+    .bv-logo-upload-area {
+      border: 2px dashed rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.5);
+      position: relative;
+      overflow: hidden;
     }
     
-    /* 超商物流單特殊處理 */
-    .bv-store-shipping-content {
-      transform: scale(0.9);
-      transform-origin: center center;
+    .bv-logo-upload-area:hover {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.05);
     }
     
-    .bv-store-shipping-content .div_frame,
-    .bv-store-shipping-content .print-area,
-    .bv-store-shipping-content .print_area,
-    .bv-store-shipping-content .printarea {
-      width: 100% !important;
-      height: auto !important;
-      max-width: none !important;
-      margin: 0 auto !important;
+    .bv-logo-upload-area.has-logo {
+      padding: 12px;
+      height: 120px;
     }
     
-    /* 保護 QR Code */
-    .bv-store-shipping-content img[src*="qr"],
-    .bv-store-shipping-content img[src*="QR"],
-    .bv-store-shipping-content img[src*="barcode"],
-    .bv-store-shipping-content .qrcode,
-    .bv-store-shipping-content .QRCode {
-      image-rendering: pixelated !important;
-      image-rendering: -moz-crisp-edges !important;
-      image-rendering: crisp-edges !important;
-      width: auto !important;
-      height: auto !important;
-      max-width: 100% !important;
+    .bv-logo-preview {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
     }
     
-    /* 商品圖欄位 */
-    .bv-product-image-col {
-      width: 8mm !important;
-      padding: 2px !important;
-      vertical-align: top !important;
+    .bv-logo-controls {
+      display: none;
+      margin-top: 16px;
     }
     
-    .bv-product-image-col img {
-      width: 7mm !important;
-      height: 7mm !important;
-      object-fit: cover !important;
-      border-radius: 2px;
+    .bv-logo-controls.active {
       display: block;
     }
     
-    /* 預設管理優化 */
-    .bv-preset-controls {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: center;
+    .bv-remove-logo-btn {
       width: 100%;
-    }
-    
-    .bv-preset-buttons {
-      display: flex;
-      gap: 4px;
-      flex-shrink: 0;
-    }
-    
-    .bv-preset-save-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
+      padding: 8px 16px;
+      background: rgba(244, 67, 54, 0.1);
+      border: 1px solid rgba(244, 67, 54, 0.2);
+      border-radius: 8px;
+      color: #f44336;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       gap: 8px;
+      font-family: inherit;
       margin-top: 12px;
-      align-items: center;
-      width: 100%;
     }
     
-    /* 簡化的設定檔管理 */
+    .bv-remove-logo-btn:hover {
+      background: rgba(244, 67, 54, 0.15);
+      border-color: #f44336;
+    }
+    
+    /* 設定檔管理 - 簡化版 */
     .bv-preset-simple-list {
       display: flex;
       flex-direction: column;
@@ -1858,6 +1430,23 @@
       color: rgba(0, 0, 0, 0.5);
       margin-top: 4px;
     }
+    
+    /* 商品圖片欄位 */
+    .bv-product-image-col {
+      width: 40px !important;
+      padding: 4px !important;
+      text-align: center !important;
+      vertical-align: middle !important;
+    }
+    
+    .bv-product-image-col .orderProductImage {
+      width: 32px !important;
+      height: 32px !important;
+      object-fit: cover !important;
+      margin: 0 auto !important;
+      display: block !important;
+      border-radius: 4px;
+    }
     `;
   }
   
@@ -1974,18 +1563,11 @@
                   </div>
                 </div>
                 
-                <div class="bv-pdf-upload-area" id="bv-pdf-upload-area" style="margin-top: 16px;">
+                <div class="bv-pdf-upload-area" id="bv-pdf-upload-area">
                   <input type="file" id="bv-pdf-input" accept="application/pdf" style="display:none;" multiple>
                   <div id="bv-pdf-upload-prompt">
                     <span class="material-icons">picture_as_pdf</span>
-                    <div class="bv-upload-hint">點擊上傳宅配物流單 PDF</div>
-                  </div>
-                  <div id="bv-pdf-info" class="bv-pdf-info" style="display:none;">
-                    <span class="material-icons">check_circle</span>
-                    <div class="bv-pdf-pages-info">
-                      <h4 id="bv-pdf-filename">檔案名稱</h4>
-                      <p id="bv-pdf-pages">共 0 頁</p>
-                    </div>
+                    <div class="bv-upload-hint">點擊上傳宅配物流單 PDF（支援多檔案）</div>
                   </div>
                 </div>
                 
@@ -2225,11 +1807,11 @@
                 
                 <div class="bv-new-preset-input" style="display: none;" id="bv-new-preset-row">
                   <div style="display: flex; gap: 8px;">
-                    <input type="text" id="bv-new-preset-name" class="bv-glass-input" placeholder="輸入設定檔名稱...">
-                    <button class="bv-glass-button bv-primary" id="bv-confirm-save">
+                    <input type="text" id="bv-new-preset-name" class="bv-glass-input" placeholder="輸入設定檔名稱..." maxlength="20">
+                    <button class="bv-glass-button bv-primary" id="bv-confirm-save" style="padding: 8px 12px;">
                       <span class="material-icons">check</span>
                     </button>
-                    <button class="bv-glass-button" id="bv-cancel-save">
+                    <button class="bv-glass-button" id="bv-cancel-save" style="padding: 8px 12px;">
                       <span class="material-icons">close</span>
                     </button>
                   </div>
@@ -2296,13 +1878,22 @@
         <h4 style="margin: 0 0 16px 0; color: #ff9800;">${deliveryName}物流單</h4>
         <p style="color: #666; font-size: 14px; line-height: 1.6;">
           偵測到${deliveryName}網站<br>
-          請使用瀏覽器的列印功能<br>
-          選擇「另存為 PDF」儲存檔案<br>
-          再到出貨明細頁面上傳使用
+          請直接抓取或另存為 PDF<br>
+          再到出貨明細頁面使用
         </p>
       </div>
       
-      <button class="bv-primary-button" id="bv-delivery-print" style="width: 100%;">
+      <button class="bv-primary-button" id="bv-capture-shipping" style="width: 100%; margin-bottom: 12px;">
+        <div class="bv-button-icon">
+          <span class="material-icons">photo_camera</span>
+        </div>
+        <div class="bv-button-content">
+          <span class="bv-button-title">抓取物流單</span>
+          <span class="bv-button-subtitle">擷取當前頁面</span>
+        </div>
+      </button>
+      
+      <button class="bv-secondary-button" id="bv-delivery-print" style="width: 100%;">
         <div class="bv-button-icon">
           <span class="material-icons">print</span>
         </div>
@@ -2311,6 +1902,10 @@
           <span class="bv-button-subtitle">選擇另存為 PDF</span>
         </div>
       </button>
+      
+      <div class="bv-batch-list" id="bv-shipping-batch-list" style="margin-top: 16px; display: none;">
+        <!-- 批次列表會動態插入這裡 -->
+      </div>
     `;
   }
   
@@ -2348,8 +1943,16 @@
   }
   
   function initShippingMode() {
+    createControlPanel();
+    
     if (state.currentProvider === 'DELIVERY') {
+      const captureBtn = document.getElementById('bv-capture-shipping');
       const deliveryPrintBtn = document.getElementById('bv-delivery-print');
+      
+      if (captureBtn) {
+        captureBtn.addEventListener('click', captureDeliveryPage);
+      }
+      
       if (deliveryPrintBtn) {
         deliveryPrintBtn.addEventListener('click', () => {
           window.print();
@@ -2357,6 +1960,89 @@
       }
     } else {
       loadShippingData();
+    }
+  }
+  
+  async function captureDeliveryPage() {
+    if (typeof html2canvas === 'undefined') {
+      showNotification('html2canvas 尚未載入', 'error');
+      return;
+    }
+    
+    try {
+      showNotification('正在擷取頁面...', 'info');
+      
+      // 找到要擷取的元素（通常是物流單的容器）
+      let targetElement = document.body;
+      
+      // 嘗試找到更精確的目標元素
+      const possibleSelectors = [
+        '.shipping-label',
+        '.delivery-label',
+        '.print-area',
+        '#printArea',
+        '.label-container',
+        'main',
+        'article'
+      ];
+      
+      for (const selector of possibleSelectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+          targetElement = element;
+          break;
+        }
+      }
+      
+      const canvas = await html2canvas(targetElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imageData = canvas.toDataURL('image/jpeg', 0.9);
+      
+      // 創建新批次
+      const newBatch = {
+        id: Date.now(),
+        type: 'image',
+        provider: 'DELIVERY',
+        subType: state.deliverySubType,
+        name: `${CONFIG.PROVIDERS.DELIVERY.subTypes[state.deliverySubType]} - ${new Date().toLocaleTimeString()}`,
+        data: [{
+          provider: 'DELIVERY',
+          subType: state.deliverySubType,
+          orderNo: `IMG_${Date.now()}`,
+          imageData: imageData,
+          width: canvas.width,
+          height: canvas.height,
+          timestamp: new Date().toISOString()
+        }],
+        timestamp: new Date().toISOString()
+      };
+      
+      // 載入現有批次
+      chrome.storage.local.get(['shippingDataBatches'], (result) => {
+        const batches = result.shippingDataBatches || [];
+        batches.push(newBatch);
+        
+        // 儲存資料
+        chrome.storage.local.set({
+          shippingDataBatches: batches,
+          shippingProvider: 'DELIVERY',
+          shippingSubType: state.deliverySubType,
+          shippingTimestamp: new Date().toISOString()
+        }, () => {
+          state.shippingDataBatches = batches;
+          updateBatchList();
+          showNotification('已成功擷取物流單');
+        });
+      });
+      
+    } catch (error) {
+      console.error('擷取頁面失敗:', error);
+      showNotification('擷取失敗: ' + error.message, 'error');
     }
   }
   
@@ -2550,6 +2236,10 @@
   }
   
   function preparePrintWithMode() {
+    // 先儲存原始狀態
+    const originalContainers = Array.from(document.querySelectorAll('.bv-page-container'));
+    const originalOrder = originalContainers.map(c => c.cloneNode(true));
+    
     // 根據列印模式準備頁面
     switch(state.printMode) {
       case CONFIG.PRINT_MODES.DETAIL_ONLY:
@@ -2572,6 +2262,14 @@
       
       // 列印後恢復原始狀態
       setTimeout(() => {
+        // 恢復原始順序
+        const parent = originalContainers[0]?.parentNode;
+        if (parent) {
+          originalContainers.forEach(c => c.remove());
+          originalOrder.forEach(c => parent.appendChild(c));
+        }
+        
+        // 重新初始化事件和預覽
         updatePreview();
       }, 100);
     }, 100);
@@ -2598,12 +2296,17 @@
   }
   
   function prepareManualMatchPrint() {
+    // 顯示所有頁面
+    document.querySelectorAll('.bv-page-container').forEach(container => {
+      container.style.display = 'block';
+    });
+    
     // 手動配對：使用選定的排序
     sortDetailPages();
     
     // 如果啟用物流單反序，則反轉物流單
     if (state.reverseShipping) {
-      reverseShippingPages();
+      reverseShippingPagesForPrint();
     }
   }
   
@@ -2639,17 +2342,42 @@
     }
   }
   
-  function reverseShippingPages() {
-    // 反轉每個訂單容器內的物流單頁面
-    document.querySelectorAll('.bv-page-container').forEach(container => {
-      const shippingPages = Array.from(container.querySelectorAll('.bv-shipping-page'));
-      if (shippingPages.length > 0) {
-        shippingPages.reverse();
-        shippingPages.forEach(page => {
-          container.appendChild(page);
-        });
+  function reverseShippingPagesForPrint() {
+    // 取得所有容器
+    const allContainers = Array.from(document.querySelectorAll('.bv-page-container'));
+    
+    // 分離出貨明細和物流單
+    const detailContainers = [];
+    const shippingContainers = [];
+    
+    allContainers.forEach(container => {
+      if (container.querySelector('.bv-shipping-page')) {
+        shippingContainers.push(container);
+      } else {
+        detailContainers.push(container);
       }
     });
+    
+    // 反轉物流單順序
+    shippingContainers.reverse();
+    
+    // 重新組合：交錯排列
+    const parent = allContainers[0]?.parentNode;
+    if (parent) {
+      // 清空
+      allContainers.forEach(c => c.remove());
+      
+      // 交錯插入
+      const maxLength = Math.max(detailContainers.length, shippingContainers.length);
+      for (let i = 0; i < maxLength; i++) {
+        if (detailContainers[i]) {
+          parent.appendChild(detailContainers[i]);
+        }
+        if (shippingContainers[i]) {
+          parent.appendChild(shippingContainers[i]);
+        }
+      }
+    }
   }
   
   function setupShippingEventListeners() {
@@ -2717,9 +2445,6 @@
           updateBatchList();
           showNotification('已清除物流單資料');
           
-          // 重置 PDF 上傳區域到初始狀態
-          resetPdfUploadArea();
-          
           // 自動重新整理預覽
           updatePreview();
         });
@@ -2762,34 +2487,11 @@
     updatePrintModeUI();
   }
   
-  function resetPdfUploadArea() {
-    const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
-    const pdfInfo = document.getElementById('bv-pdf-info');
-    const pdfInput = document.getElementById('bv-pdf-input');
-    const pdfUploadArea = document.getElementById('bv-pdf-upload-area');
-    
-    if (uploadPrompt) uploadPrompt.style.display = 'flex';
-    if (pdfInfo) pdfInfo.style.display = 'none';
-    if (pdfInput) pdfInput.value = '';
-    if (pdfUploadArea) pdfUploadArea.classList.remove('has-file');
-  }
-  
   async function handleMultiplePdfUpload(files) {
-    const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
-    const pdfInfo = document.getElementById('bv-pdf-info');
-    const filenameEl = document.getElementById('bv-pdf-filename');
-    const pagesEl = document.getElementById('bv-pdf-pages');
     const progressEl = document.getElementById('bv-conversion-progress');
     const progressFill = document.getElementById('bv-conversion-progress-fill');
     const statusEl = document.getElementById('bv-conversion-status');
-    const pdfUploadArea = document.getElementById('bv-pdf-upload-area');
     
-    if (uploadPrompt) uploadPrompt.style.display = 'none';
-    if (pdfInfo) {
-      pdfInfo.style.display = 'flex';
-      filenameEl.textContent = files.length > 1 ? `${files.length} 個檔案` : files[0].name;
-    }
-    if (pdfUploadArea) pdfUploadArea.classList.add('has-file');
     if (progressEl) progressEl.classList.add('active');
     
     try {
@@ -2847,7 +2549,7 @@
             viewport: viewport
           }).promise;
           
-          const imageData = canvas.toDataURL('image/png');
+          const imageData = canvas.toDataURL('image/jpeg', 0.9);
           
           // 嘗試提取文字以匹配訂單
           const textContent = await page.getTextContent();
@@ -2869,8 +2571,6 @@
           });
         }
       }
-      
-      if (pagesEl) pagesEl.textContent = `共 ${totalPages} 頁`;
       
       progressFill.style.width = '100%';
       statusEl.textContent = '轉換完成！';
@@ -2897,6 +2597,8 @@
         setTimeout(() => {
           progressEl.classList.remove('active');
           progressFill.style.width = '0%';
+          // 重置檔案輸入
+          document.getElementById('bv-pdf-input').value = '';
         }, 1000);
       });
       
@@ -2904,8 +2606,6 @@
       console.error('PDF 處理錯誤:', error);
       showNotification('PDF 處理失敗: ' + error.message, 'error');
       progressEl.classList.remove('active');
-      
-      resetPdfUploadArea();
     }
   }
   
@@ -2959,7 +2659,7 @@
     state.pdfShippingData = [];
     
     state.shippingDataBatches.forEach(batch => {
-      if (batch.type === 'pdf') {
+      if (batch.type === 'pdf' || batch.type === 'image') {
         state.pdfShippingData.push(...batch.data);
       } else {
         state.shippingData.push(...batch.data);
@@ -3068,7 +2768,75 @@
     }
   }
   
-  function fetchShippingData() {
+  async function fetchShippingData() {
+    const provider = CONFIG.PROVIDERS[state.currentProvider];
+    if (!provider) return;
+    
+    // 如果是超商，嘗試使用截圖方式
+    if (provider.type === 'store' && typeof html2canvas !== 'undefined') {
+      try {
+        showNotification('正在擷取物流單...', 'info');
+        
+        const elements = document.querySelectorAll(provider.selector);
+        if (elements.length === 0) {
+          showNotification('未找到物流單', 'warning');
+          return;
+        }
+        
+        const newBatch = {
+          id: Date.now(),
+          type: 'image',
+          provider: state.currentProvider,
+          name: `${provider.name} - ${new Date().toLocaleTimeString()}`,
+          data: [],
+          timestamp: new Date().toISOString()
+        };
+        
+        for (let index = 0; index < elements.length; index++) {
+          const element = elements[index];
+          
+          // 使用 html2canvas 擷取元素
+          const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff'
+          });
+          
+          const imageData = canvas.toDataURL('image/jpeg', 0.9);
+          
+          // 提取訂單資訊
+          const orderData = extractShippingData(element);
+          
+          newBatch.data.push({
+            ...orderData,
+            imageData: imageData,
+            width: canvas.width,
+            height: canvas.height,
+            index: index
+          });
+        }
+        
+        if (newBatch.data.length > 0) {
+          state.shippingDataBatches.push(newBatch);
+          mergeAllBatchData();
+          updateBatchList();
+          updateShippingCount();
+          showNotification(`成功擷取 ${newBatch.data.length} 張物流單`);
+        }
+        
+      } catch (error) {
+        console.error('擷取失敗:', error);
+        // 如果截圖失敗，回退到原始 HTML 方式
+        fetchShippingDataHTML();
+      }
+    } else {
+      // 使用原始 HTML 方式
+      fetchShippingDataHTML();
+    }
+  }
+  
+  function fetchShippingDataHTML() {
     const provider = CONFIG.PROVIDERS[state.currentProvider];
     if (!provider) return;
     
@@ -3566,6 +3334,11 @@
       const allPresets = result.presetList || [];
       const lastSelected = result.lastSelectedPreset;
       
+      if (allPresets.length === 0) {
+        presetListEl.innerHTML = '<div style="text-align: center; color: rgba(0,0,0,0.5); padding: 20px; font-size: 13px;">尚無設定檔</div>';
+        return;
+      }
+      
       presetListEl.innerHTML = allPresets.map(presetName => `
         <div class="bv-preset-item ${presetName === lastSelected ? 'active' : ''}">
           <div class="bv-preset-name" data-preset="${presetName}">${presetName}</div>
@@ -3834,16 +3607,24 @@
     // 處理標題列
     const headerRow = productTable.querySelector('.list-title');
     if (headerRow && !state.hideTableHeader) {
-      // 新增空白商品圖標題
-      const imageHeader = document.createElement('th');
-      imageHeader.className = 'bv-product-image-col';
-      imageHeader.textContent = ''; // 空白標題
-      headerRow.insertBefore(imageHeader, headerRow.firstChild);
+      // 檢查是否已經有圖片欄位
+      const existingImageHeader = headerRow.querySelector('.bv-product-image-col');
+      if (!existingImageHeader) {
+        // 新增空白商品圖標題
+        const imageHeader = document.createElement('th');
+        imageHeader.className = 'bv-product-image-col';
+        imageHeader.textContent = ''; // 空白標題
+        headerRow.insertBefore(imageHeader, headerRow.firstChild);
+      }
     }
     
     // 處理每個商品列
     const productRows = productTable.querySelectorAll('.list-item');
     productRows.forEach(row => {
+      // 檢查是否已經處理過
+      const existingImageCell = row.querySelector('.bv-product-image-col');
+      if (existingImageCell) return;
+      
       const nameCell = row.querySelector('.list-item-name');
       if (!nameCell) return;
       
@@ -3863,6 +3644,68 @@
       }
       
       row.insertBefore(imageCell, row.firstChild);
+    });
+  }
+  
+  function processExtraInfoHiding(container) {
+    const orderInfo = container.querySelector('.order-info');
+    if (!orderInfo) return;
+    
+    // 移除所有只包含統一編號的 row
+    const rows = orderInfo.querySelectorAll('.row');
+    rows.forEach(row => {
+      const cols = row.querySelectorAll('.col-6');
+      let hasOnlyTaxId = true;
+      let hasContent = false;
+      
+      cols.forEach(col => {
+        const text = col.textContent.trim();
+        if (text) {
+          hasContent = true;
+          if (!text.includes('統一編號')) {
+            hasOnlyTaxId = false;
+          }
+        }
+      });
+      
+      // 如果整個 row 只有統一編號相關內容，則移除
+      if (hasContent && hasOnlyTaxId) {
+        row.remove();
+      }
+    });
+    
+    // 處理個別的 p 標籤
+    const allParagraphs = orderInfo.querySelectorAll('p');
+    
+    // 精簡模式只保留這五個選項
+    const keepPatterns = [
+      /訂單編號/,
+      /物流編號/,
+      /送貨方式/,
+      /收件人(?!地址|電話)/,
+      /收件人電話/
+    ];
+    
+    allParagraphs.forEach(p => {
+      const text = p.textContent.trim();
+      let shouldKeep = false;
+      
+      // 檢查是否包含統一編號
+      if (text.includes('統一編號')) {
+        p.remove();
+        return;
+      }
+      
+      for (let pattern of keepPatterns) {
+        if (pattern.test(text)) {
+          shouldKeep = true;
+          break;
+        }
+      }
+      
+      if (!shouldKeep) {
+        p.remove();
+      }
     });
   }
   
@@ -3889,9 +3732,6 @@
     
     if (state.printMode === CONFIG.PRINT_MODES.SHIPPING_ONLY) {
       sortShippingPages();
-    } else if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH && state.reverseShipping) {
-      // 在手動配對模式下，如果啟用物流單反序
-      reverseShippingPages();
     }
   }
   
@@ -3906,7 +3746,7 @@
       pageContainer.setAttribute('data-shipping-index', index);
       
       const shippingInfo = {
-        type: data.imageData ? 'pdf' : 'html',
+        type: data.imageData ? 'image' : 'html',
         data: data
       };
       
@@ -3952,7 +3792,7 @@
     
     if (allShippingData[index]) {
       return {
-        type: allShippingData[index].imageData ? 'pdf' : 'html',
+        type: allShippingData[index].imageData ? 'image' : 'html',
         data: allShippingData[index]
       };
     }
@@ -3975,7 +3815,7 @@
     const isStore = shippingInfo.data.provider && 
                    CONFIG.PROVIDERS[shippingInfo.data.provider]?.type === 'store';
     
-    if (shippingInfo.type === 'pdf') {
+    if (shippingInfo.type === 'image') {
       const img = document.createElement('img');
       img.src = shippingInfo.data.imageData;
       img.style.cssText = `
@@ -4037,38 +3877,6 @@
     }
     
     return defaultOrderNo;
-  }
-  
-  function processExtraInfoHiding(container) {
-    const orderInfo = container.querySelector('.order-info');
-    if (!orderInfo) return;
-    
-    const allParagraphs = orderInfo.querySelectorAll('p');
-    
-    // 精簡模式只保留這五個選項
-    const keepPatterns = [
-      /訂單編號/,
-      /物流編號/,
-      /送貨方式/,
-      /收件人(?!地址|電話)/,
-      /收件人電話/
-    ];
-    
-    allParagraphs.forEach(p => {
-      const text = p.textContent.trim();
-      let shouldKeep = false;
-      
-      for (let pattern of keepPatterns) {
-        if (pattern.test(text)) {
-          shouldKeep = true;
-          break;
-        }
-      }
-      
-      if (!shouldKeep) {
-        p.remove();
-      }
-    });
   }
   
   function triggerOriginalPageUpdate() {
@@ -4848,7 +4656,9 @@
   
   function init() {
     console.log('=== BV SHOP 出貨助手初始化 ===');
+    console.log('版本:', CONFIG.VERSION);
     console.log('初始化時間:', new Date().toLocaleString());
+    console.log('使用者:', 'DK0124');
     
     // 偵測頁面類型
     detectCurrentPage();
