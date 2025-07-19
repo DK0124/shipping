@@ -1,47 +1,7 @@
 // BV SHOP 出貨助手 (完整整合版 v5.2 - 整合7-11抓取邏輯)
 (function() {
   'use strict';
-  
-  // 修正 Material Icons 載入 - 只在出貨明細頁面載入
-  function loadMaterialIcons() {
-    if (state.currentPageType === CONFIG.PAGE_TYPES.ORDER_PRINT) {
-      const iconLink = document.createElement('link');
-      iconLink.rel = 'stylesheet';
-      iconLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
-      document.head.appendChild(iconLink);
-      
-      // 強制載入 Material Icons 樣式
-      const iconStyle = document.createElement('style');
-      iconStyle.textContent = `
-        @font-face {
-          font-family: 'Material Icons';
-          font-style: normal;
-          font-weight: 400;
-          src: url(https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
-        }
-        
-        .material-icons {
-          font-family: 'Material Icons' !important;
-          font-weight: normal;
-          font-style: normal;
-          font-size: 24px;
-          line-height: 1;
-          letter-spacing: normal;
-          text-transform: none;
-          display: inline-block;
-          white-space: nowrap;
-          word-wrap: normal;
-          direction: ltr;
-          font-feature-settings: 'liga';
-          -webkit-font-smoothing: antialiased;
-          text-rendering: optimizeLegibility;
-          -moz-osx-font-smoothing: grayscale;
-        }
-      `;
-      document.head.appendChild(iconStyle);
-    }
-  }
-  
+   
   const CONFIG = {
     PAGE_TYPES: {
       ORDER_PRINT: 'order_print',
@@ -170,6 +130,44 @@
     debugMode: false
   };
 
+    function loadMaterialIcons() {
+      if (state.currentPageType === CONFIG.PAGE_TYPES.ORDER_PRINT) {
+        const iconLink = document.createElement('link');
+        iconLink.rel = 'stylesheet';
+        iconLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
+        document.head.appendChild(iconLink);
+        
+        const iconStyle = document.createElement('style');
+        iconStyle.textContent = `
+          @font-face {
+            font-family: 'Material Icons';
+            font-style: normal;
+            font-weight: 400;
+            src: url(https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
+          }
+          
+          .material-icons {
+            font-family: 'Material Icons' !important;
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            -moz-osx-font-smoothing: grayscale;
+          }
+        `;
+        document.head.appendChild(iconStyle);
+      }
+    }
+  
     // 修改字體載入 - 只在非物流單頁面載入
       function loadGoogleFonts() {
         // 先偵測頁面類型
