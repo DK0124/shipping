@@ -4771,7 +4771,7 @@
       const script = document.createElement('script');
       script.src = chrome.runtime.getURL('pdf.js');
       script.onload = () => {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.min.js');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
         resolve();
       };
       script.onerror = reject;
