@@ -3403,9 +3403,37 @@
         
         // 根據列印模式決定是否插入物流單
         if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
-          const shippingData = findMatchingShippingData(orderNo, orderIndex);
+          // 嘗試自動配對
+          let shippingData = null;
+          let matchType = 'none';
+          
+          // 優先使用訂單編號配對
+          if (orderNo) {
+            shippingData = findMatchingShippingDataByOrderNo(orderNo);
+            if (shippingData) {
+              matchType = 'auto';
+            }
+          }
+          
+          // 如果訂單編號配對失敗，使用索引配對（手動配對）
+          if (!shippingData) {
+            shippingData = findMatchingShippingDataByIndex(orderIndex);
+            if (shippingData) {
+              matchType = 'manual';
+            }
+          }
+          
           if (shippingData) {
             createShippingPages(shippingData, orderNo, showOrderLabel, orderIndex, pageContainer);
+            
+            // 記錄配對狀態
+            state.matchingResults = state.matchingResults || [];
+            state.matchingResults.push({
+              orderNo: orderNo,
+              orderIndex: orderIndex,
+              matchType: matchType,
+              shippingOrderNo: shippingData.data.orderNo
+            });
           }
         }
       });
@@ -3413,6 +3441,11 @@
     
     updateLogos();
     applySortOrder();
+
+          // 顯示配對結果
+          if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH && state.matchingResults) {
+            showMatchingResults();
+          }    
   }
   
   function createShippingPages(shippingInfo, orderNo, showOrderLabel, orderIndex, pageContainer) {
@@ -3549,10 +3582,9 @@
     
     if (state.printMode === CONFIG.PRINT_MODES.SHIPPING_ONLY) {
       sortShippingPages();
-    } else if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH && state.reverseShipping) {
-      // 在手動配對模式下，如果啟用物流單反序
-      reverseShippingPages();
     }
+    
+    // 手動配對模式不需要在這裡處理反序，已在配對時處理
   }
   
   function createShippingOnlyPages() {
@@ -3626,14 +3658,52 @@
     return null;
   }
   
-  function findMatchingShippingData(orderNo, index) {
-    // 使用索引對應
+  function findMatchingShippingDataByOrderNo(orderNo) {
     const allShippingData = [...state.shippingData, ...state.pdfShippingData];
     
-    if (allShippingData[index]) {
+    // 尋找訂單編號完全相符的資料
+    const exactMatch = allShippingData.find(data => 
+      data.orderNo && data.orderNo.trim() === orderNo.trim()
+    );
+    
+    if (exactMatch) {
       return {
-        type: allShippingData[index].imageData ? 'pdf' : 'html',
-        data: allShippingData[index]
+        type: exactMatch.imageData ? 'pdf' : 'html',
+        data: exactMatch
+      };
+    }
+    
+    // 嘗試模糊比對（去除特殊字符）
+    const cleanOrderNo = orderNo.replace(/[^A-Z0-9]/gi, '');
+    const fuzzyMatch = allShippingData.find(data => {
+      if (!data.orderNo) return false;
+      const cleanDataOrderNo = data.orderNo.replace(/[^A-Z0-9]/gi, '');
+      return cleanDataOrderNo === cleanOrderNo;
+    });
+    
+    if (fuzzyMatch) {
+      return {
+        type: fuzzyMatch.imageData ? 'pdf' : 'html',
+        data: fuzzyMatch
+      };
+    }
+    
+    return null;
+  }
+  
+  function findMatchingShippingDataByIndex(index) {
+    const allShippingData = [...state.shippingData, ...state.pdfShippingData];
+    
+    // 考慮反序設定
+    let actualIndex = index;
+    if (state.reverseShipping) {
+      actualIndex = allShippingData.length - 1 - index;
+    }
+    
+    if (allShippingData[actualIndex]) {
+      return {
+        type: allShippingData[actualIndex].imageData ? 'pdf' : 'html',
+        data: allShippingData[actualIndex]
       };
     }
     
@@ -4934,7 +5004,10 @@
   // 預覽更新函數
   function updatePreview() {
     if (!state.isConverted) return;
-    
+
+    // 清除舊的配對結果
+    state.matchingResults = [];
+        
     // 重新分頁
     handlePagination();
     
@@ -5190,6 +5263,43 @@
         saveBtn.addEventListener('click', saveShippingData);
       }
     }
+  }
+
+  function showMatchingResults() {
+    if (!state.matchingResults || state.matchingResults.length === 0) return;
+    
+    const autoMatches = state.matchingResults.filter(r => r.matchType === 'auto').length;
+    const manualMatches = state.matchingResults.filter(r => r.matchType === 'manual').length;
+    const totalOrders = state.matchingResults.length;
+    
+    let message = `配對完成：共 ${totalOrders} 筆訂單`;
+    
+    if (autoMatches > 0) {
+      message += `\n自動配對成功：${autoMatches} 筆`;
+    }
+    
+    if (manualMatches > 0) {
+      message += `\n手動配對（依順序）：${manualMatches} 筆`;
+    }
+    
+    const unmatched = totalOrders - autoMatches - manualMatches;
+    if (unmatched > 0) {
+      message += `\n未配對：${unmatched} 筆`;
+    }
+    
+    // 使用 console 顯示詳細配對資訊
+    console.log('=== 配對詳情 ===');
+    state.matchingResults.forEach((result, index) => {
+      console.log(`訂單 ${index + 1}: ${result.orderNo || '無編號'} => ${
+        result.matchType === 'auto' ? '自動配對' : 
+        result.matchType === 'manual' ? '手動配對' : '未配對'
+      } => 物流單: ${result.shippingOrderNo || '無'}`);
+    });
+    
+    showNotification(message.replace(/\n/g, '、'), autoMatches === totalOrders ? 'success' : 'warning');
+    
+    // 清除配對結果
+    state.matchingResults = [];
   }
   
   // 初始化
