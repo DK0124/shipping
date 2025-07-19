@@ -4,7 +4,6 @@
   
   // 修正 Material Icons 載入 - 只在出貨明細頁面載入
   function loadMaterialIcons() {
-    // 只在出貨明細頁面載入 Material Icons
     if (state.currentPageType === CONFIG.PAGE_TYPES.ORDER_PRINT) {
       const iconLink = document.createElement('link');
       iconLink.rel = 'stylesheet';
@@ -171,6 +170,54 @@
     debugMode: false
   };
 
+    // 修改字體載入 - 只在非物流單頁面載入
+      function loadGoogleFonts() {
+        // 先偵測頁面類型
+        detectPageTypeFirst();
+        
+        // 只在出貨明細頁面載入 Google Fonts
+        if (state.currentPageType === CONFIG.PAGE_TYPES.ORDER_PRINT) {
+          const fontLink = document.createElement('link');
+          fontLink.rel = 'stylesheet';
+          fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap';
+          document.head.appendChild(fontLink);
+        }
+      }
+      
+      // 新增：先偵測頁面類型
+      function detectPageTypeFirst() {
+        const hostname = window.location.hostname;
+        
+        // 檢查是否為物流單頁面
+        for (const [key, provider] of Object.entries(CONFIG.PROVIDERS)) {
+          if (provider.domains.some(domain => hostname.includes(domain))) {
+            state.currentPageType = CONFIG.PAGE_TYPES.SHIPPING;
+            state.currentProvider = key;
+            
+            if (key === 'DELIVERY') {
+              // 識別具體的宅配商
+              if (hostname.includes('kerrytj.com')) {
+                state.deliverySubType = 'KERRY';
+              } else if (hostname.includes('hct.com.tw')) {
+                state.deliverySubType = 'HCT';
+              } else if (hostname.includes('t-cat.com.tw')) {
+                state.deliverySubType = 'TCAT';
+              } else if (hostname.includes('global-business.com.tw')) {
+                state.deliverySubType = 'GLOBAL';
+              } else if (hostname.includes('fedex.com')) {
+                state.deliverySubType = 'FEDEX';
+              }
+            }
+            return;
+          }
+        }
+        
+        // 檢查是否為出貨明細頁面
+        if (hostname.includes('bvshop')) {
+          state.currentPageType = CONFIG.PAGE_TYPES.ORDER_PRINT;
+        }
+      }
+  
   const fontLink = document.createElement('link');
   fontLink.rel = 'stylesheet';
   fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap';
@@ -323,6 +370,10 @@
   }
   
   function getPanelStyles() {
+    const fontFamily = state.currentPageType === CONFIG.PAGE_TYPES.ORDER_PRINT 
+      ? "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans TC', sans-serif"
+      : "-apple-system, BlinkMacSystemFont, 'Microsoft JhengHei', 'Arial', sans-serif";
+    
     return `
     * {
       outline: none !important;
@@ -343,7 +394,7 @@
       bottom: 24px;
       width: 360px;
       z-index: 10000;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans TC', sans-serif;
+      font-family: ${fontFamily};
       transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
     
@@ -3765,6 +3816,11 @@
     const oldStyle = document.getElementById('bv-label-styles');
     if (oldStyle) oldStyle.remove();
     
+    // 根據頁面類型使用不同的字體
+    const fontFamily = state.currentPageType === CONFIG.PAGE_TYPES.ORDER_PRINT
+      ? "'Noto Sans TC', 'Microsoft JhengHei', Arial, sans-serif"
+      : "'Microsoft JhengHei', Arial, sans-serif";
+    
     const labelStyles = document.createElement('style');
     labelStyles.id = 'bv-label-styles';
     labelStyles.textContent = `
@@ -3777,12 +3833,12 @@
       }
       
       .bv-converted .order-content {
-        font-family: 'Noto Sans TC', 'Microsoft JhengHei', Arial, sans-serif !important;
+        font-family: ${fontFamily} !important;
         font-size: ${fontSize}px !important;
       }
       
       .bv-label-page * {
-        font-family: 'Noto Sans TC', 'Microsoft JhengHei', Arial, sans-serif !important;
+        font-family: ${fontFamily} !important;
         font-size: ${fontSize}px !important;
       }
       
@@ -3974,6 +4030,13 @@
     
     document.head.appendChild(labelStyles);
   }
+  
+  // 初始化順序調整
+  loadGoogleFonts();  // 條件性載入字體
+  initLazyLoad();
+  detectCurrentPage();
+  
+})();
   
   function updateLogos() {
     document.querySelectorAll('.label-background-logo').forEach(logo => logo.remove());
