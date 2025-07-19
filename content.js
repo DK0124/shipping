@@ -3405,6 +3405,8 @@
             createShippingPages(shippingData, orderNo, showOrderLabel, orderIndex, pageContainer);
           }
         }
+      });
+    }
     
     updateLogos();
     applySortOrder();
