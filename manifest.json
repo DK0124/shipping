@@ -7,22 +7,11 @@
     "storage",
     "activeTab"
   ],
-  "host_permissions": [
-    "*://.bvshop-manage.bvshop.tw/*",
-    "*://*.7-11.com.tw/*",
-    "*://*.family.com.tw/*",
-    "*://*.hilife.com.tw/*",
-    "*://*.okmart.com.tw/*",
-    "*://*.kerrytj.com/*",
-    "*://*.hct.com.tw/*",
-    "*://*.t-cat.com.tw/*",
-    "*://*.global-business.com.tw/*",
-    "*://*.fedex.com/*"
-  ],
+
   "content_scripts": [
     {
       "matches": [
-        "*://.bvshop-manage.bvshop.tw/*",
+        "*://bvshop-manage.bvshop.tw/*",
         "*://*.7-11.com.tw/*",
         "*://*.family.com.tw/*",
         "*://*.hilife.com.tw/*",
