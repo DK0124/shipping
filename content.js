@@ -3351,21 +3351,21 @@
       orderContents.forEach((orderContent, orderIndex) => {
         orderContent.classList.add('bv-original');
         
-      // 提取訂單和物流資訊
-      const orderInfo = extractOrderInfo(orderContent);
-      const orderData = {
-        orderNo: orderInfo.orderNo,
-        logisticsNo: orderInfo.logisticsNo,
-        index: orderIndex,
-        element: orderContent,
-        pages: []
-      };
-  
+        // 提取訂單和物流資訊
+        const orderInfo = extractOrderInfo(orderContent);
+        const orderData = {
+          orderNo: orderInfo.orderNo,
+          logisticsNo: orderInfo.logisticsNo,
+          index: orderIndex,
+          element: orderContent,
+          pages: []
+        };
+      
         // 先創建 pageContainer
         const pageContainer = document.createElement('div');
         pageContainer.className = 'bv-page-container';
         pageContainer.setAttribute('data-order-index', orderIndex);
-        pageContainer.setAttribute('data-order-no', orderInfo.orderNo || '');
+        pageContainer.setAttribute('data-order-no', orderInfo.orderNo || '');  // ← 修正為 orderInfo.orderNo
         orderContent.parentNode.insertBefore(pageContainer, orderContent.nextSibling);
         
         // 處理明細分頁
@@ -3410,7 +3410,7 @@
               currentPage.style.padding = `${paddingMm}mm`;
               currentPage.setAttribute('data-page-type', 'detail');
               currentPage.setAttribute('data-order-index', orderIndex);
-              currentPage.setAttribute('data-order-no', orderNo || '');
+              currentPage.setAttribute('data-order-no', orderInfo.orderNo || '');
               
               currentPageContent = document.createElement('div');
               currentPageContent.className = 'bv-page-content';
@@ -3687,11 +3687,10 @@
         /訂單\s*([A-Z0-9]+)/i
       ],
       logisticsNo: [
-        /物流編號[：:]\s*([A-Z0-9-]+)/i,
+        /物流編號[：:]\s*([A-Z0-9-]+)/i,  // 這個模式會匹配 "物流編號: F16818697586"
         /物流單號[：:]\s*([A-Z0-9-]+)/i,
-        /交貨便服務代碼[：:]\s*([A-Z0-9-]+)/i,  // 新增這個模式
-        /服務代碼[：:]\s*([A-Z0-9-]+)/i,
-        /配送編號[：:]\s*([A-Z0-9-]+)/i  // 可能的其他名稱
+        /交貨便服務代碼[：:]\s*([A-Z0-9-]+)/i,
+        /服務代碼[：:]\s*([A-Z0-9-]+)/i
       ]
     };
     
