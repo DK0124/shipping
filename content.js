@@ -4091,6 +4091,7 @@
   function convertToLabelFormat() {
     if (state.isConverted) return;
     
+    // 移除包含 baseImage 的訂單內容（通常是空白頁）
     document.querySelectorAll('.order-content:has(.baseImage)').forEach(e => e.remove());
     
     const contents = document.querySelectorAll('.order-content');
@@ -4099,6 +4100,7 @@
       return;
     }
     
+    // 儲存原始 body 樣式
     state.originalBodyStyle = {
       width: document.body.style.width,
       maxWidth: document.body.style.maxWidth,
@@ -4107,6 +4109,7 @@
       padding: document.body.style.padding
     };
     
+    // 設定 body 樣式
     document.body.style.width = 'auto';
     document.body.style.maxWidth = 'none';
     document.body.style.minWidth = 'auto';
@@ -4115,19 +4118,27 @@
     
     document.body.classList.add('bv-converted');
     
+    // 觸發原始頁面更新
     triggerOriginalPageUpdate();
     
+    // 更新標籤樣式
     updateLabelStyles();
     
+    // 處理分頁
     setTimeout(() => {
-      if (state.highlightQuantity) {
-        applyQuantityHighlight();
-      }
-    }, 200);
-  }, 100);
+      handlePagination();
+      
+      // 確保數量標示在轉換後正確顯示
+      setTimeout(() => {
+        if (state.highlightQuantity) {
+          applyQuantityHighlight();
+        }
+      }, 200);
+    }, 100);
     
     state.isConverted = true;
     
+    // 更新控制面板內容
     updatePanelContent();
     
     // 確保監聽原始控制項
