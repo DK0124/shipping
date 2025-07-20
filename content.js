@@ -1098,10 +1098,14 @@
     .bv-qty-star {
       font-weight: 700;
       color: inherit;
+      position: relative;
+      padding-left: 1.2em;
     }
     
     .bv-qty-star::before {
-      content: "★ ";
+      content: "▲";
+      position: absolute;
+      left: 0;
       color: #000;
       font-weight: normal;
     }
@@ -1114,7 +1118,7 @@
       }
       
       .bv-qty-star::before {
-        content: "★ " !important;
+        content: "▲" !important;
         color: #000 !important;
       }
     }
@@ -2160,7 +2164,7 @@
                 <span class="bv-counter-icon"></span>
                 <div class="bv-setting-text">
                   <span class="bv-setting-label">數量標示</span>
-                  <span class="bv-setting-desc">標示數量 ≥ 2（★）</span>
+                  <span class="bv-setting-desc">標示數量 ≥ 2（▲）</span>
                 </div>
               </div>
               <label class="bv-glass-switch">
@@ -2273,7 +2277,7 @@
                       <span class="bv-counter-icon"></span>
                       <div class="bv-setting-text">
                         <span class="bv-setting-label">數量標示</span>
-                        <span class="bv-setting-desc">標示數量 ≥ 2（★）</span>
+                        <span class="bv-setting-desc">標示數量 ≥ 2（▲）</span>
                       </div>
                     </div>
                     <label class="bv-glass-switch">
@@ -3652,48 +3656,7 @@
             <h4>尚無物流單資料</h4>
             <p>請先前往物流單頁面抓取或上傳 PDF</p>
           </div>
-          <button class="bv-reload-shipping-btn" id="bv-reload-shipping">
-            <span class="material-icons">refresh</span>
-            重新載入
-          </button>
         `;
-        
-        // 綁定重新載入按鈕事件
-        const reloadBtn = document.getElementById('bv-reload-shipping');
-        if (reloadBtn) {
-          reloadBtn.addEventListener('click', function() {
-            this.disabled = true;
-            this.innerHTML = '<span class="material-icons">hourglass_empty</span> 載入中...';
-            
-            // 強制重新從 storage 載入所有資料
-            chrome.storage.local.get(['shippingDataBatches', 'shippingData', 'pdfShippingData', 'shippingProvider', 'shippingSubType'], (reloadResult) => {
-              // 更新狀態
-              if (reloadResult.shippingDataBatches) {
-                state.shippingDataBatches = reloadResult.shippingDataBatches;
-                mergeAllBatchData();
-                updateBatchList();
-              } else if (reloadResult.shippingData || reloadResult.pdfShippingData) {
-                state.shippingData = reloadResult.shippingData || [];
-                state.pdfShippingData = reloadResult.pdfShippingData || [];
-              }
-              
-              // 檢查是否有資料
-              const hasData = (state.shippingData.length + state.pdfShippingData.length) > 0;
-              
-              if (hasData) {
-                // 如果找到資料，重新顯示狀態
-                checkShippingDataStatus();
-                updatePreview();
-                showNotification('已重新載入物流單資料');
-              } else {
-                // 如果還是沒有資料，恢復按鈕
-                this.disabled = false;
-                this.innerHTML = '<span class="material-icons">refresh</span> 重新載入';
-                showNotification('未找到物流單資料', 'warning');
-              }
-            });
-          });
-        }
       }
     });
   }
@@ -4985,10 +4948,16 @@
   
   function revertToOriginal() {
     // 清除自動檢查
-      if (state.autoCheckInterval) {
-        clearInterval(state.autoCheckInterval);
-        state.autoCheckInterval = null;
-      }
+    if (state.autoCheckInterval) {
+      clearInterval(state.autoCheckInterval);
+      state.autoCheckInterval = null;
+    }
+    
+    // 移除 storage 監聽器
+    if (state.storageListener) {
+      chrome.storage.onChanged.removeListener(state.storageListener);
+      state.storageListener = null;
+    }
     
     // 移除轉換相關元素
     document.querySelectorAll('.bv-page-container').forEach(el => el.remove());
@@ -5425,17 +5394,21 @@
         const qtyCell = item.querySelector('td:first-child');
         if (!qtyCell) return;
         
+        // 清除舊的標記
+        const existingStar = qtyCell.querySelector('.bv-qty-star');
+        if (existingStar) {
+          qtyCell.textContent = existingStar.textContent;
+        }
+        
         const qtyMatch = qtyCell.textContent.match(/^\s*(\d+)\s*$/);
         if (qtyMatch) {
           const qty = parseInt(qtyMatch[1]);
           if (qty >= 2) {
-            if (!qtyCell.querySelector('.bv-qty-star')) {
-              const span = document.createElement('span');
-              span.className = 'bv-qty-star';
-              span.textContent = qty;
-              qtyCell.textContent = '';
-              qtyCell.appendChild(span);
-            }
+            const span = document.createElement('span');
+            span.className = 'bv-qty-star';
+            span.textContent = qty;
+            qtyCell.textContent = '';
+            qtyCell.appendChild(span);
           }
         }
       });
