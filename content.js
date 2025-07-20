@@ -1101,7 +1101,7 @@
     }
     
     .bv-qty-star::before {
-      content: "▲ ";
+      content: "★ ";
       color: #000;
       font-weight: normal;
     }
@@ -1114,7 +1114,7 @@
       }
       
       .bv-qty-star::before {
-        content: "▲ " !important;
+        content: "★ " !important;
         color: #000 !important;
       }
     }
@@ -2160,7 +2160,7 @@
                 <span class="bv-counter-icon"></span>
                 <div class="bv-setting-text">
                   <span class="bv-setting-label">數量標示</span>
-                  <span class="bv-setting-desc">標示數量 ≥ 2（▲）</span>
+                  <span class="bv-setting-desc">標示數量 ≥ 2（★）</span>
                 </div>
               </div>
               <label class="bv-glass-switch">
@@ -2273,7 +2273,7 @@
                       <span class="bv-counter-icon"></span>
                       <div class="bv-setting-text">
                         <span class="bv-setting-label">數量標示</span>
-                        <span class="bv-setting-desc">標示數量 ≥ 2（▲）</span>
+                        <span class="bv-setting-desc">標示數量 ≥ 2（★）</span>
                       </div>
                     </div>
                     <label class="bv-glass-switch">
