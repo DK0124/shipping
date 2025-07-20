@@ -265,6 +265,13 @@
         state.currentPageType = CONFIG.PAGE_TYPES.ORDER_PRINT;
         console.log('✓ 偵測到出貨明細頁面');
         createControlPanel();
+        
+        // 預設自動轉換為 10×15 模式
+        setTimeout(() => {
+          if (!state.isConverted) {
+            convertToLabelFormat();
+          }
+        }, 500);
         return;
       }
       
@@ -277,6 +284,13 @@
           state.currentPageType = CONFIG.PAGE_TYPES.ORDER_PRINT;
           console.log('✓ 透過內容偵測到出貨明細頁面');
           createControlPanel();
+          
+          // 預設自動轉換為 10×15 模式
+          setTimeout(() => {
+            if (!state.isConverted) {
+              convertToLabelFormat();
+            }
+          }, 500);
         }
       }, 1000);
     }
@@ -1262,15 +1276,17 @@
       }
       
       .bv-label-page.bv-shipping-page {
-        padding: 0 !important;
+        padding: 3mm !important;  /* 改為 3mm */
         background: #f5f5f5 !important;
       }
       
-      .bv-page-content {
-        width: 100%;
-        height: 100%;
+      .bv-shipping-content {
+        width: calc(100% - 6mm);  /* 扣除兩邊的 3mm */
+        height: calc(100% - 6mm);
         position: relative;
-        display: block;
+        overflow: hidden;
+        background: white;
+        margin: 0;
         box-sizing: border-box;
       }
       
@@ -1738,19 +1754,27 @@
     }
     
     /* 商品圖欄位 */
-    .bv-product-image-col {
-      width: 8mm !important;
-      padding: 2px !important;
-      vertical-align: top !important;
-    }
-    
-    .bv-product-image-col img {
-      width: 7mm !important;
-      height: 7mm !important;
-      object-fit: cover !important;
-      border-radius: 2px;
-      display: block;
-    }
+   .bv-product-image-col {
+        width: 8mm !important;
+        padding: 2px !important;
+        vertical-align: top !important;
+      }
+      
+      .bv-product-image-col img,
+      .bv-product-img {
+        display: block !important;
+        visibility: visible !important;
+        width: 7mm !important;
+        height: 7mm !important;
+        object-fit: cover !important;
+        border-radius: 2px !important;
+      }
+      
+      /* 確保原始 orderProductImage 在原位置隱藏 */
+      .bv-converted .list-item-name .orderProductImage,
+      .bv-label-page .list-item-name .orderProductImage {
+        display: none !important;
+      }
     
     /* 預設管理優化 */
     .bv-preset-controls {
@@ -1991,7 +2015,63 @@
     .bv-match-mode-option input[type="radio"] {
       margin-right: 8px;
     }
+
+    .bv-reload-shipping-btn {
+      margin-top: 12px;
+      padding: 8px 16px;
+      background: rgba(81, 138, 255, 0.08);
+      color: #518aff;
+      border: 1px solid rgba(81, 138, 255, 0.2);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-reload-shipping-btn:hover {
+      background: rgba(81, 138, 255, 0.12);
+      transform: translateY(-1px);
+    }
+    
+    .bv-reload-shipping-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .bv-reload-shipping-btn .material-icons {
+      font-size: 18px;
+    }
+    
+    /* 確保商品圖片顯示 */
+    .bv-product-img {
+      display: block !important;
+      visibility: visible !important;
+      width: 7mm !important;
+      height: 7mm !important;
+      object-fit: cover !important;
+      border-radius: 2px !important;
+    }
+    
+    @media print {
+      .bv-label-page.bv-shipping-page {
+        padding: 3mm !important;
+      }
+      
+      .bv-product-img {
+        display: block !important;
+        visibility: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }    
     `;
+    
+    document.head.appendChild(labelStyles);
   }
   
   function getPanelContent() {
@@ -2832,7 +2912,7 @@
     
     const newBatch = {
       id: Date.now(),
-      type: 'screenshot',  // 改為截圖類型
+      type: 'screenshot',
       provider: state.currentProvider,
       name: `${provider.name} - ${new Date().toLocaleTimeString()}`,
       data: [],
@@ -2840,56 +2920,111 @@
     };
     
     const processedOrders = new Set();
+    let processedCount = 0;
     
     // 處理每個物流單元素
     elements.forEach((element, index) => {
-      const data = extractShippingData(element);
-      if (!data || !data.orderNo || processedOrders.has(data.orderNo)) return;
-      
-      processedOrders.add(data.orderNo);
-      
-      // 使用 html2canvas 截圖
-      html2canvas(element, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        logging: false,
-        useCORS: true,
-        allowTaint: true
-      }).then(canvas => {
-        const imageData = canvas.toDataURL('image/png');
+      // 7-11 四格特殊處理
+      if (state.currentProvider === 'SEVEN' && element.classList.contains('div_frame')) {
+        // 只處理單個 frame
+        const data = extractShippingData(element);
+        if (!data || !data.orderNo || processedOrders.has(data.orderNo)) return;
         
-        newBatch.data.push({
-          ...data,
-          imageData: imageData,  // 儲存截圖
-          index: newBatch.data.length,
-          width: canvas.width,
-          height: canvas.height
+        processedOrders.add(data.orderNo);
+        
+        // 截圖單個 frame
+        html2canvas(element, {
+          backgroundColor: '#ffffff',
+          scale: 3, // 提高解析度
+          logging: false,
+          useCORS: true,
+          allowTaint: true
+        }).then(canvas => {
+          // 轉換為高品質 JPG
+          const imageData = canvas.toDataURL('image/jpeg', 0.95);
+          
+          newBatch.data.push({
+            ...data,
+            imageData: imageData,
+            index: newBatch.data.length,
+            width: canvas.width,
+            height: canvas.height
+          });
+          
+          processedCount++;
+          checkComplete();
+        }).catch(err => {
+          console.error('截圖失敗:', err);
+          processedCount++;
+          checkComplete();
         });
+      } else {
+        // 一般處理
+        const data = extractShippingData(element);
+        if (!data || !data.orderNo || processedOrders.has(data.orderNo)) return;
         
-        // 如果處理完所有元素
-        if (newBatch.data.length === processedOrders.size) {
-          if (newBatch.data.length > 0) {
-            state.shippingDataBatches.push(newBatch);
-            mergeAllBatchData();
-            updateBatchList();
-            updateShippingCount();
-            
-            // 立即儲存
-            chrome.storage.local.set({
-              shippingDataBatches: state.shippingDataBatches,
-              shippingData: state.shippingData,
-              pdfShippingData: state.pdfShippingData,
-              shippingProvider: state.currentProvider,
-              shippingTimestamp: new Date().toISOString()
-            }, () => {
-              showNotification(`成功抓取並儲存 ${newBatch.data.length} 張物流單`);
-            });
-          }
-        }
-      }).catch(err => {
-        console.error('截圖失敗:', err);
-      });
+        processedOrders.add(data.orderNo);
+        
+        html2canvas(element, {
+          backgroundColor: '#ffffff',
+          scale: 3, // 提高解析度
+          logging: false,
+          useCORS: true,
+          allowTaint: true
+        }).then(canvas => {
+          // 轉換為高品質 JPG
+          const imageData = canvas.toDataURL('image/jpeg', 0.95);
+          
+          newBatch.data.push({
+            ...data,
+            imageData: imageData,
+            index: newBatch.data.length,
+            width: canvas.width,
+            height: canvas.height
+          });
+          
+          processedCount++;
+          checkComplete();
+        }).catch(err => {
+          console.error('截圖失敗:', err);
+          processedCount++;
+          checkComplete();
+        });
+      }
     });
+    
+    function checkComplete() {
+      if (processedCount === processedOrders.size) {
+        if (newBatch.data.length > 0) {
+          state.shippingDataBatches.push(newBatch);
+          mergeAllBatchData();
+          updateBatchList();
+          updateShippingCount();
+          
+          // 立即儲存
+          chrome.storage.local.set({
+            shippingDataBatches: state.shippingDataBatches,
+            shippingData: state.shippingData,
+            pdfShippingData: state.pdfShippingData,
+            shippingProvider: state.currentProvider,
+            shippingTimestamp: new Date().toISOString()
+          }, () => {
+            showNotification(`成功抓取並儲存 ${newBatch.data.length} 張物流單`);
+          });
+        }
+      }
+    }
+    
+    // 載入 html2canvas
+    if (typeof html2canvas === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      script.onload = () => {
+        // 重新執行函數
+        fetchAndSaveShippingData();
+      };
+      document.head.appendChild(script);
+    }
   }
   
   function getSevenElevenPosition(frame, parentDiv) {
@@ -3494,7 +3629,26 @@
             <h4>尚無物流單資料</h4>
             <p>請先前往物流單頁面抓取或上傳 PDF</p>
           </div>
+          <button class="bv-reload-shipping-btn" id="bv-reload-shipping">
+            <span class="material-icons">refresh</span>
+            重新載入
+          </button>
         `;
+        
+        // 綁定重新載入按鈕事件
+        const reloadBtn = document.getElementById('bv-reload-shipping');
+        if (reloadBtn) {
+          reloadBtn.addEventListener('click', function() {
+            this.disabled = true;
+            this.innerHTML = '<span class="material-icons">hourglass_empty</span> 載入中...';
+            
+            // 重新檢查資料
+            setTimeout(() => {
+              checkShippingDataStatus();
+              updatePreview();
+            }, 500);
+          });
+        }
       }
     });
   }
@@ -3504,8 +3658,19 @@
       title.addEventListener('click', function() {
         const card = this.closest('.bv-settings-card');
         const sectionId = card.getAttribute('data-section');
+        const wasCollapsed = card.classList.contains('collapsed');
         
-        if (card.classList.contains('collapsed')) {
+        // 收摺所有其他卡片
+        document.querySelectorAll('.bv-settings-card').forEach(otherCard => {
+          if (otherCard !== card) {
+            otherCard.classList.add('collapsed');
+            const otherSectionId = otherCard.getAttribute('data-section');
+            state.collapsedSections[otherSectionId] = true;
+          }
+        });
+        
+        // 切換當前卡片
+        if (wasCollapsed) {
           card.classList.remove('collapsed');
           state.collapsedSections[sectionId] = false;
         } else {
@@ -3517,7 +3682,7 @@
       });
     });
   }
-  
+    
   function restoreCollapsedStates() {
     Object.keys(state.collapsedSections).forEach(sectionId => {
       if (state.collapsedSections[sectionId]) {
@@ -4444,7 +4609,7 @@
       // 新增空白商品圖標題
       const imageHeader = document.createElement('th');
       imageHeader.className = 'bv-product-image-col';
-      imageHeader.textContent = ''; // 空白標題
+      imageHeader.textContent = '';
       headerRow.insertBefore(imageHeader, headerRow.firstChild);
     }
     
@@ -4457,23 +4622,36 @@
       const nameCell = row.querySelector('.list-item-name');
       if (!nameCell) return;
       
-      // 提取圖片
-      const img = nameCell.querySelector('.orderProductImage');
-      
       // 創建圖片欄位
       const imageCell = document.createElement('td');
       imageCell.className = 'bv-product-image-col';
       
+      // 尋找圖片（可能在不同位置）
+      let img = nameCell.querySelector('.orderProductImage');
+      if (!img) {
+        img = nameCell.querySelector('img');
+      }
+      
       if (img) {
         const imgClone = img.cloneNode(true);
-        imgClone.style.display = 'block'; // 確保圖片顯示
+        
+        // 移除原始圖片的隱藏樣式
+        imgClone.style.display = 'block';
+        imgClone.style.visibility = 'visible';
         imgClone.style.width = '7mm';
         imgClone.style.height = '7mm';
         imgClone.style.objectFit = 'cover';
         imgClone.style.borderRadius = '2px';
+        imgClone.classList.add('bv-product-img');
+        
+        // 確保圖片 src 正確
+        if (imgClone.dataset.src) {
+          imgClone.src = imgClone.dataset.src;
+        }
         
         // 移除原始圖片
         img.remove();
+        
         // 將圖片放入新欄位
         imageCell.appendChild(imgClone);
       }
