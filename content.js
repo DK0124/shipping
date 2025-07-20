@@ -2157,6 +2157,1591 @@
     }    
     `;
   }
+
+  // === 取得樣式內容 ===
+  function getStyles() {
+    const fontSize = state.isConverted ? 
+      (document.getElementById('bv-font-size')?.value || '11') : 
+      '12';
+    
+    return `
+    /* Google Material Icons */
+    @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+    
+    /* 控制面板樣式 */
+    #bv-label-control-panel {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 380px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 16px;
+      box-shadow: 
+        0 4px 24px rgba(0, 0, 0, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      will-change: transform;
+    }
+    
+    #bv-label-control-panel.minimized {
+      opacity: 0;
+      transform: scale(0.8) translateY(-20px);
+      pointer-events: none;
+    }
+    
+    /* 玻璃質感面板 */
+    .bv-glass-panel {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .bv-glass-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.5) 50%, 
+        transparent 100%);
+    }
+    
+    /* 面板標題 */
+    .bv-panel-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: move;
+      user-select: none;
+    }
+    
+    .bv-header-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .bv-icon-wrapper {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 
+        0 2px 8px rgba(33, 150, 243, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    
+    .bv-icon-wrapper.bv-label-mode {
+      background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+      box-shadow: 
+        0 2px 8px rgba(156, 39, 176, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    
+    .bv-icon-wrapper.bv-shipping-mode {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+      box-shadow: 
+        0 2px 8px rgba(255, 152, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    
+    .bv-icon-wrapper .material-icons {
+      font-size: 28px;
+      color: #1976d2;
+    }
+    
+    .bv-icon-wrapper.bv-label-mode .material-icons {
+      color: #7b1fa2;
+    }
+    
+    .bv-icon-wrapper.bv-shipping-mode .material-icons {
+      color: #f57c00;
+    }
+    
+    .bv-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .bv-panel-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #000;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    
+    .bv-panel-subtitle {
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.5);
+      font-weight: 400;
+    }
+    
+    /* 按鈕樣式 */
+    .bv-glass-button {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .bv-glass-button:hover {
+      background: rgba(255, 255, 255, 0.95);
+      transform: translateY(-1px);
+      box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    
+    .bv-glass-button:active {
+      transform: translateY(0);
+      box-shadow: 
+        0 1px 3px rgba(0, 0, 0, 0.12),
+        inset 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+    
+    .bv-glass-button .material-icons {
+      font-size: 18px;
+      color: rgba(0, 0, 0, 0.6);
+    }
+    
+    .bv-glass-button.bv-primary {
+      background: rgba(81, 138, 255, 0.1);
+      border-color: rgba(81, 138, 255, 0.2);
+      color: #518aff;
+    }
+    
+    .bv-glass-button.bv-primary:hover {
+      background: rgba(81, 138, 255, 0.15);
+    }
+    
+    .bv-minimize-btn {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* 最小化按鈕 */
+    .bv-minimized-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 12px 20px;
+      border-radius: 24px;
+      box-shadow: 
+        0 4px 24px rgba(0, 0, 0, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.8);
+      transition: all 0.2s ease;
+      z-index: 9998;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    
+    .bv-minimized-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 6px 32px rgba(0, 0, 0, 0.12),
+        0 2px 4px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    
+    .bv-minimized-button .material-icons {
+      font-size: 20px;
+      color: #518aff;
+    }
+    
+    /* 面板內容區域 */
+    .bv-panel-body {
+      max-height: calc(80vh - 120px);
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+    
+    .bv-panel-body::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .bv-panel-body::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 3px;
+    }
+    
+    .bv-panel-body::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 3px;
+      transition: background 0.2s ease;
+    }
+    
+    .bv-panel-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.15);
+    }
+    
+    /* 主要按鈕區域 */
+    .bv-primary-section {
+      padding: 20px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    
+    .bv-primary-button {
+      width: 100%;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, #518aff 0%, #4a7ff7 100%);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 
+        0 4px 16px rgba(81, 138, 255, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    
+    .bv-primary-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 6px 24px rgba(81, 138, 255, 0.32),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    
+    .bv-primary-button:active {
+      transform: translateY(0);
+    }
+    
+    .bv-button-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .bv-button-icon .material-icons {
+      font-size: 24px;
+      color: white;
+    }
+    
+    .bv-button-content {
+      text-align: left;
+      flex: 1;
+    }
+    
+    .bv-button-title {
+      display: block;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    
+    .bv-button-subtitle {
+      display: block;
+      font-size: 12px;
+      opacity: 0.8;
+      font-weight: 400;
+    }
+    
+    /* 設定卡片 */
+    .bv-settings-card {
+      margin: 16px;
+      background: rgba(248, 250, 252, 0.5);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .bv-settings-card.collapsed .bv-card-content {
+      display: none;
+    }
+    
+    .bv-settings-card.collapsed .bv-collapse-icon .material-icons {
+      transform: rotate(-90deg);
+    }
+    
+    .bv-card-title {
+      padding: 14px 16px;
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s ease;
+    }
+    
+    .bv-card-title:hover {
+      background: rgba(0, 0, 0, 0.02);
+    }
+    
+    .bv-card-title .material-icons {
+      font-size: 20px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .bv-collapse-icon {
+      margin-left: auto;
+      transition: transform 0.3s ease;
+    }
+    
+    .bv-collapse-icon .material-icons {
+      font-size: 20px;
+      color: rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease;
+    }
+    
+    .bv-card-content {
+      padding: 16px;
+    }
+    
+    /* 設定項目 */
+    .bv-settings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .bv-setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 8px;
+      transition: background 0.2s ease;
+    }
+    
+    .bv-setting-item:hover {
+      background: rgba(255, 255, 255, 0.8);
+    }
+    
+    .bv-setting-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+    
+    .bv-setting-info .material-icons {
+      font-size: 20px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .bv-setting-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .bv-setting-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.8);
+    }
+    
+    .bv-setting-desc {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    /* 開關樣式 */
+    .bv-glass-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    
+    .bv-glass-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .bv-switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.12);
+      transition: all 0.3s ease;
+      border-radius: 24px;
+    }
+    
+    .bv-switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: all 0.3s ease;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .bv-glass-switch input:checked + .bv-switch-slider {
+      background-color: #518aff;
+    }
+    
+    .bv-glass-switch input:checked + .bv-switch-slider:before {
+      transform: translateX(20px);
+    }
+    
+    .bv-glass-switch.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    
+    /* 滑桿樣式 */
+    .bv-slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .bv-slider-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .bv-slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.7);
+    }
+    
+    .bv-value-label {
+      font-weight: 600;
+      color: #518aff;
+      font-size: 12px;
+      background: rgba(81, 138, 255, 0.08);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    
+    .bv-glass-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(0, 0, 0, 0.06);
+      outline: none;
+      transition: background 0.2s;
+    }
+    
+    .bv-glass-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #518aff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(81, 138, 255, 0.3);
+    }
+    
+    .bv-glass-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 2px 12px rgba(81, 138, 255, 0.4);
+    }
+    
+    .bv-glass-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #518aff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      box-shadow: 0 2px 8px rgba(81, 138, 255, 0.3);
+    }
+    
+    .bv-glass-slider::-moz-range-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 2px 12px rgba(81, 138, 255, 0.4);
+    }
+    
+    /* 輸入框樣式 */
+    .bv-glass-input {
+      width: 100%;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    
+    .bv-glass-input:focus {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: #518aff;
+      box-shadow: 0 0 0 3px rgba(81, 138, 255, 0.1);
+    }
+    
+    /* 面板底部 */
+    .bv-panel-footer {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      background: rgba(248, 250, 252, 0.5);
+    }
+    
+    .bv-glass-action-button {
+      width: 100%;
+      padding: 12px 20px;
+      background: rgba(81, 138, 255, 0.08);
+      border: 1px solid rgba(81, 138, 255, 0.2);
+      border-radius: 10px;
+      color: #518aff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .bv-glass-action-button:hover {
+      background: rgba(81, 138, 255, 0.12);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(81, 138, 255, 0.15);
+    }
+    
+    .bv-glass-action-button .material-icons {
+      font-size: 20px;
+    }
+    
+    /* 通知樣式 */
+    .bv-notification {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 12px 20px;
+      border-radius: 24px;
+      box-shadow: 
+        0 4px 24px rgba(0, 0, 0, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.04);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.8);
+      z-index: 10000;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    
+    .bv-notification.show {
+      transform: translateX(-50%) translateY(0);
+    }
+    
+    .bv-notification .material-icons {
+      font-size: 20px;
+    }
+    
+    .bv-notification-success .material-icons {
+      color: #4caf50;
+    }
+    
+    .bv-notification-warning .material-icons {
+      color: #ff9800;
+    }
+    
+    .bv-notification-error .material-icons {
+      color: #f44336;
+    }
+    
+    /* 標籤頁面樣式 */
+    .bv-converted {
+      background: #f5f5f5 !important;
+    }
+    
+    .bv-converted .order-content.bv-original {
+      display: none !important;
+    }
+    
+    .bv-page-container {
+      margin: 0 auto 20px;
+      width: 377px;
+    }
+    
+    .bv-label-page {
+      width: 377px;
+      height: 566px;
+      background: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+      page-break-after: always;
+      page-break-inside: avoid;
+    }
+    
+    .bv-label-page .bv-page-content {
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    /* 數量標示樣式 */
+    .bv-qty-star {
+      display: inline-block;
+      color: #ff5252;
+      font-weight: bold;
+      margin-right: 2px;
+      font-size: 1.1em;
+    }
+    
+    .bv-qty-star::before {
+      content: "★";
+    }
+    
+    .bv-qty-highlight {
+      color: #ff5252 !important;
+      font-weight: bold !important;
+    }
+    
+    /* 底圖樣式 */
+    .logo-background {
+      position: absolute;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .bv-label-page .bv-page-content {
+      position: relative;
+      z-index: 2;
+    }
+    
+    /* 底圖上傳區域 */
+    .bv-logo-upload-area {
+      width: 100%;
+      height: 120px;
+      border: 2px dashed rgba(0, 0, 0, 0.12);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.02);
+    }
+    
+    .bv-logo-upload-area:hover {
+      border-color: rgba(81, 138, 255, 0.3);
+      background: rgba(81, 138, 255, 0.02);
+    }
+    
+    .bv-logo-upload-area.has-logo {
+      border-style: solid;
+      border-color: rgba(81, 138, 255, 0.2);
+      background: rgba(81, 138, 255, 0.04);
+    }
+    
+    .bv-logo-preview {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    .bv-upload-hint {
+      color: rgba(0, 0, 0, 0.5);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    
+    .bv-logo-controls {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      display: none;
+    }
+    
+    .bv-logo-controls.active {
+      display: block;
+    }
+    
+    .bv-remove-logo-btn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 8px;
+      background: rgba(244, 67, 54, 0.08);
+      border: 1px solid rgba(244, 67, 54, 0.2);
+      border-radius: 6px;
+      color: #f44336;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-remove-logo-btn:hover {
+      background: rgba(244, 67, 54, 0.12);
+    }
+    
+    .bv-remove-logo-btn .material-icons {
+      font-size: 16px;
+    }
+    
+    /* 物流單相關樣式 */
+    .bv-integration-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    
+    .bv-integration-status.success {
+      background: rgba(76, 175, 80, 0.08);
+      border-color: rgba(76, 175, 80, 0.2);
+    }
+    
+    .bv-integration-status.warning {
+      background: rgba(255, 152, 0, 0.08);
+      border-color: rgba(255, 152, 0, 0.2);
+    }
+    
+    .bv-integration-status .material-icons {
+      font-size: 32px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .bv-integration-status.success .material-icons {
+      color: #4caf50;
+    }
+    
+    .bv-integration-status.warning .material-icons {
+      color: #ff9800;
+    }
+    
+    .bv-status-info {
+      flex: 1;
+    }
+    
+    .bv-status-info h4 {
+      margin: 0 0 4px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.8);
+    }
+    
+    .bv-status-info p {
+      margin: 0;
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    /* PDF 上傳區域 */
+    .bv-pdf-upload-area {
+      width: 100%;
+      min-height: 80px;
+      border: 2px dashed rgba(0, 0, 0, 0.12);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.02);
+      padding: 16px;
+    }
+    
+    .bv-pdf-upload-area:hover {
+      border-color: rgba(81, 138, 255, 0.3);
+      background: rgba(81, 138, 255, 0.02);
+    }
+    
+    .bv-pdf-upload-area.has-file {
+      border-style: solid;
+      border-color: rgba(76, 175, 80, 0.3);
+      background: rgba(76, 175, 80, 0.02);
+    }
+    
+    #bv-pdf-upload-prompt {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .bv-pdf-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+    
+    .bv-pdf-info .material-icons {
+      font-size: 32px;
+      color: #4caf50;
+    }
+    
+    .bv-pdf-pages-info {
+      flex: 1;
+    }
+    
+    .bv-pdf-pages-info h4 {
+      margin: 0 0 4px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.8);
+      word-break: break-all;
+    }
+    
+    .bv-pdf-pages-info p {
+      margin: 0;
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    /* PDF 轉換進度 */
+    .bv-conversion-progress {
+      display: none;
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(81, 138, 255, 0.04);
+      border-radius: 8px;
+    }
+    
+    .bv-conversion-progress.active {
+      display: block;
+    }
+    
+    .bv-conversion-progress h5 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #518aff;
+    }
+    
+    .bv-conversion-progress-bar {
+      width: 100%;
+      height: 6px;
+      background: rgba(81, 138, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .bv-conversion-progress-fill {
+      height: 100%;
+      background: #518aff;
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 3px;
+    }
+    
+    .bv-conversion-status {
+      margin-top: 6px;
+      font-size: 11px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    /* 物流單頁面樣式 */
+    .bv-shipping-page {
+      background: white;
+    }
+    
+    .bv-shipping-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    .bv-shipping-content img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+    }
+    
+    /* 訂單編號標籤 */
+    .bv-order-label {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(81, 138, 255, 0.9);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* 物流單頁面狀態 */
+    .bv-shipping-status {
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .bv-status-count {
+      font-size: 48px;
+      font-weight: 700;
+      color: #518aff;
+      margin-bottom: 8px;
+    }
+    
+    .bv-status-text {
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.6);
+    }
+    
+    /* 隱藏樣式 */
+    @media screen {
+      .bv-converted .order-content {
+        display: none !important;
+      }
+    }
+    
+    @media print {
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      #bv-label-control-panel,
+      #bv-minimized-button,
+      .bv-page-container > *:not(.bv-label-page),
+      .ignore-print {
+        display: none !important;
+      }
+      
+      .bv-page-container {
+        page-break-after: always;
+        margin: 0 !important;
+        width: 100% !important;
+      }
+      
+      .bv-label-page {
+        width: 10cm !important;
+        height: 15cm !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        page-break-after: always;
+        page-break-inside: avoid;
+      }
+      
+      .bv-label-page:last-child {
+        page-break-after: auto;
+      }
+    }
+    
+    @page {
+      size: 10cm 15cm;
+      margin: 0;
+    }
+    
+    /* 數量標示圖標 */
+    .bv-counter-icon {
+      width: 20px;
+      height: 20px;
+      background: rgba(255, 82, 82, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    .bv-counter-icon::before {
+      content: "2+";
+      font-size: 10px;
+      font-weight: 700;
+      color: #ff5252;
+    }
+    
+    /* 列印模式選擇器 */
+    .bv-print-mode-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .bv-mode-option {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-mode-option:hover {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: rgba(81, 138, 255, 0.2);
+    }
+    
+    .bv-mode-option.selected {
+      background: rgba(81, 138, 255, 0.08);
+      border-color: #518aff;
+    }
+    
+    .bv-mode-option input[type="radio"] {
+      margin-right: 12px;
+    }
+    
+    .bv-mode-info {
+      flex: 1;
+    }
+    
+    .bv-mode-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 2px;
+    }
+    
+    .bv-mode-desc {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .bv-sort-options {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    
+    .bv-sort-group {
+      flex: 1;
+    }
+    
+    .bv-sort-label {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+      margin-bottom: 4px;
+    }
+    
+    .bv-sort-buttons {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .bv-sort-button {
+      flex: 1;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-sort-button:hover {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(0, 0, 0, 0.12);
+    }
+    
+    .bv-sort-button.active {
+      background: rgba(81, 138, 255, 0.08);
+      border-color: #518aff;
+      color: #518aff;
+    }
+    
+    /* 超商物流單特殊處理 */
+    .bv-store-shipping-content {
+      transform: scale(0.9);
+      transform-origin: center center;
+    }
+    
+    .bv-store-shipping-content .div_frame,
+    .bv-store-shipping-content .print-area,
+    .bv-store-shipping-content .print_area,
+    .bv-store-shipping-content .printarea {
+      width: 100% !important;
+      height: auto !important;
+      max-width: none !important;
+      margin: 0 auto !important;
+    }
+    
+    /* 保護 QR Code */
+    .bv-store-shipping-content img[src*="qr"],
+    .bv-store-shipping-content img[src*="QR"],
+    .bv-store-shipping-content img[src*="barcode"],
+    .bv-store-shipping-content .qrcode,
+    .bv-store-shipping-content .QRCode {
+      image-rendering: pixelated !important;
+      image-rendering: -moz-crisp-edges !important;
+      image-rendering: crisp-edges !important;
+      width: auto !important;
+      height: auto !important;
+      max-width: 100% !important;
+    }
+    
+    /* 商品圖片欄位 - 加強版 */
+    .bv-product-image-col {
+      width: 8mm !important;
+      padding: 2px !important;
+      vertical-align: top !important;
+    }
+    
+    .bv-product-image-col img,
+    .bv-product-img {
+      display: block !important;
+      visibility: visible !important;
+      width: 7mm !important;
+      height: 7mm !important;
+      object-fit: cover !important;
+      border-radius: 2px !important;
+      max-width: 7mm !important;
+      min-width: 7mm !important;
+      max-height: 7mm !important;
+      min-height: 7mm !important;
+    }
+    
+    /* 確保 10×15 模式下圖片可見 */
+    .bv-label-page .bv-product-image-col img,
+    .bv-label-page .bv-product-img {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    /* 確保原始 orderProductImage 在原位置隱藏 */
+    .bv-converted .list-item-name .orderProductImage,
+    .bv-label-page .list-item-name .orderProductImage,
+    .bv-converted .list-item-name img:not(.bv-product-img),
+    .bv-label-page .list-item-name img:not(.bv-product-img) {
+      display: none !important;
+    }
+    
+    /* 商品圖片加表格寬度優化 */
+    .bv-converted .list,
+    .bv-label-page .list {
+      table-layout: fixed !important;
+    }
+    
+    /* 有商品圖片時的欄位配置 */
+    .bv-converted .has-product-image .bv-product-image-col,
+    .bv-label-page .has-product-image .bv-product-image-col {
+      width: 8mm !important;
+    }
+    
+    .bv-converted .has-product-image td:nth-child(2),
+    .bv-label-page .has-product-image td:nth-child(2) {
+      width: 12mm !important; /* 數量欄位 */
+    }
+    
+    .bv-converted .has-product-image td:nth-child(3),
+    .bv-label-page .has-product-image td:nth-child(3) {
+      width: auto !important; /* 商品名稱 - 自動調整 */
+    }
+    
+    .bv-converted .has-product-image td:last-child,
+    .bv-label-page .has-product-image td:last-child {
+      width: 18mm !important; /* 價格欄位 */
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+    
+    /* 價格文字大小調整 */
+    .bv-converted .list-item td:last-child,
+    .bv-label-page .list-item td:last-child {
+      font-size: ${parseFloat(fontSize) - 1.5}px !important;
+    }
+    
+    /* 適應性版面調整 */
+    .needs-compact td {
+      padding: 3px 3px !important;
+      font-size: ${parseFloat(fontSize) - 1}px !important;
+    }
+    
+    .needs-compact .bv-qty-star::before {
+      content: "▲" !important;
+      font-size: 0.8em !important;
+    }
+    
+    @media print {
+      .bv-product-image-col img,
+      .bv-product-img {
+        display: block !important;
+        visibility: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        opacity: 1 !important;
+      }
+    }
+    
+    /* 預設管理優化 */
+    .bv-preset-controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+    }
+    
+    .bv-preset-buttons {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    
+    .bv-preset-save-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 12px;
+      align-items: center;
+      width: 100%;
+    }
+    
+    /* 簡化的設定檔管理 */
+    .bv-preset-simple-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .bv-preset-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-preset-item:hover {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: rgba(81, 138, 255, 0.2);
+    }
+    
+    .bv-preset-item.active {
+      background: rgba(81, 138, 255, 0.08);
+      border-color: #518aff;
+    }
+    
+    .bv-preset-name {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    
+    .bv-preset-actions {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .bv-preset-action-btn {
+      width: 28px;
+      height: 28px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-preset-action-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .bv-preset-action-btn .material-icons {
+      font-size: 18px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .bv-preset-action-btn.delete:hover .material-icons {
+      color: #f44336;
+    }
+    
+    .bv-new-preset-input {
+      width: 100%;
+      margin-top: 12px;
+    }
+    
+    /* 物流單批次管理 */
+    .bv-batch-list {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .bv-batch-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: rgba(248, 250, 252, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    
+    .bv-batch-item-info {
+      flex: 1;
+    }
+    
+    .bv-batch-item-name {
+      font-weight: 500;
+      color: #000;
+    }
+    
+    .bv-batch-item-count {
+      color: rgba(0, 0, 0, 0.5);
+      font-size: 11px;
+    }
+    
+    .bv-batch-actions {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .bv-batch-order {
+      display: flex;
+      gap: 2px;
+    }
+    
+    .bv-batch-order-btn {
+      width: 24px;
+      height: 24px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-batch-order-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .bv-batch-order-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    .bv-batch-order-btn .material-icons {
+      font-size: 16px;
+      color: rgba(0, 0, 0, 0.7);
+    }
+    
+    /* 物流單反序開關 */
+    .bv-reverse-shipping-option {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(255, 245, 235, 0.5);
+      border: 1px solid rgba(255, 152, 0, 0.2);
+      border-radius: 8px;
+    }
+    
+    .bv-reverse-shipping-note {
+      font-size: 11px;
+      color: rgba(0, 0, 0, 0.5);
+      margin-top: 4px;
+    }
+    
+    /* 配對結果顯示 */
+    .bv-matching-results {
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(240, 248, 255, 0.5);
+      border: 1px solid rgba(81, 138, 255, 0.2);
+      border-radius: 8px;
+    }
+    
+    .bv-matching-results-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #518aff;
+      margin-bottom: 8px;
+    }
+    
+    .bv-matching-result-item {
+      font-size: 11px;
+      color: rgba(0, 0, 0, 0.7);
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .bv-matching-result-item:last-child {
+      border-bottom: none;
+    }
+    
+    /* 配對模式選擇 */
+    .bv-match-mode-selector {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(248, 250, 252, 0.5);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+    }
+    
+    .bv-match-mode-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #000;
+      margin-bottom: 8px;
+    }
+    
+    .bv-match-mode-options {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .bv-match-mode-option {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.7);
+    }
+    
+    .bv-match-mode-option input[type="radio"] {
+      margin-right: 8px;
+    }
+
+    .bv-reload-shipping-btn {
+      margin-top: 12px;
+      padding: 8px 16px;
+      background: rgba(81, 138, 255, 0.08);
+      color: #518aff;
+      border: 1px solid rgba(81, 138, 255, 0.2);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-reload-shipping-btn:hover {
+      background: rgba(81, 138, 255, 0.12);
+      transform: translateY(-1px);
+    }
+    
+    .bv-reload-shipping-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .bv-reload-shipping-btn .material-icons {
+      font-size: 18px;
+    }
+    
+    /* 確保商品圖片顯示 */
+    .bv-product-img {
+      display: block !important;
+      visibility: visible !important;
+      width: 7mm !important;
+      height: 7mm !important;
+      object-fit: cover !important;
+      border-radius: 2px !important;
+    }
+    
+    @media print {
+      .bv-label-page.bv-shipping-page {
+        padding: 3mm !important;
+      }
+      
+      .bv-product-img {
+        display: block !important;
+        visibility: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }    
+    `;
+  }
   
   // === 插入樣式 ===
   function insertStyles() {
