@@ -3348,6 +3348,7 @@
     // 收集所有訂單資料
     state.detailPages = [];
     state.shippingPages = [];
+    state.matchingResults = [];  // 重置配對結果
     
     // 根據列印模式處理
     if (state.printMode === CONFIG.PRINT_MODES.SHIPPING_ONLY) {
@@ -3488,11 +3489,11 @@
     
     updateLogos();
     applySortOrder();
-
-          // 顯示配對結果
-          if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH && state.matchingResults) {
-            showMatchingResults();
-          }    
+    
+    // 顯示配對結果
+    if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH && state.matchingResults) {
+      showMatchingResults();
+    }
   }
   
   function createShippingPages(shippingInfo, orderNo, showOrderLabel, orderIndex, pageContainer) {
@@ -3550,13 +3551,16 @@
     } else {
       // 一般物流單處理
       const page = createShippingPage(shippingInfo, orderNo, showOrderLabel, orderIndex);
-      if (page && pageContainer) {
-        pageContainer.appendChild(page);
+      if (page) {
+        pageContainer.appendChild(page);  // 確保頁面被加入容器
         state.shippingPages.push({
           orderNo: orderNo,
           index: orderIndex,
           page: page
         });
+        console.log('已創建物流單頁面:', orderNo);  // 加入除錯訊息
+      } else {
+        console.error('createShippingPage 返回 null');
       }
     }
   }
@@ -4960,7 +4964,7 @@
       });
     });
     
-  batchListEl.querySelectorAll('.delete').forEach(btn => {
+  batchListEl.querySelectorAll('.bv-preset-action-btn.delete').forEach(btn => {
     btn.addEventListener('click', function(e) {
       e.stopPropagation(); // 加上這行防止事件冒泡
       const batchId = parseInt(this.dataset.batchId);
