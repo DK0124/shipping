@@ -172,6 +172,8 @@
     
     // 7-11 四格處理
     sevenBatchCache: new Map()
+
+    autoCheckInterval: null
   };
 
   const fontLink = document.createElement('link');
@@ -198,6 +200,14 @@
         threshold: 0.01
       });
     }
+  }
+
+  // 載入 html2canvas
+  if (typeof html2canvas === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    script.async = true;
+    document.head.appendChild(script);
   }
   
   function detectCurrentPage() {
@@ -3128,6 +3138,23 @@
     
     // 初始化列印模式 UI
     updatePrintModeUI();
+
+  // 每 5 秒自動檢查一次是否有新的物流單資料
+    if (state.autoCheckInterval) {
+      clearInterval(state.autoCheckInterval);
+    }
+    
+    state.autoCheckInterval = setInterval(() => {
+      // 只在沒有資料時自動檢查
+      if (state.shippingData.length === 0 && state.pdfShippingData.length === 0) {
+        chrome.storage.local.get(['shippingDataBatches', 'shippingData', 'pdfShippingData'], (result) => {
+          if (result.shippingDataBatches || result.shippingData || result.pdfShippingData) {
+            checkShippingDataStatus();
+            updatePreview();
+          }
+        });
+      }
+    }, 5000);
   }
   
   function resetPdfUploadArea() {
@@ -3642,11 +3669,33 @@
             this.disabled = true;
             this.innerHTML = '<span class="material-icons">hourglass_empty</span> 載入中...';
             
-            // 重新檢查資料
-            setTimeout(() => {
-              checkShippingDataStatus();
-              updatePreview();
-            }, 500);
+            // 強制重新從 storage 載入所有資料
+            chrome.storage.local.get(['shippingDataBatches', 'shippingData', 'pdfShippingData', 'shippingProvider', 'shippingSubType'], (reloadResult) => {
+              // 更新狀態
+              if (reloadResult.shippingDataBatches) {
+                state.shippingDataBatches = reloadResult.shippingDataBatches;
+                mergeAllBatchData();
+                updateBatchList();
+              } else if (reloadResult.shippingData || reloadResult.pdfShippingData) {
+                state.shippingData = reloadResult.shippingData || [];
+                state.pdfShippingData = reloadResult.pdfShippingData || [];
+              }
+              
+              // 檢查是否有資料
+              const hasData = (state.shippingData.length + state.pdfShippingData.length) > 0;
+              
+              if (hasData) {
+                // 如果找到資料，重新顯示狀態
+                checkShippingDataStatus();
+                updatePreview();
+                showNotification('已重新載入物流單資料');
+              } else {
+                // 如果還是沒有資料，恢復按鈕
+                this.disabled = false;
+                this.innerHTML = '<span class="material-icons">refresh</span> 重新載入';
+                showNotification('未找到物流單資料', 'warning');
+              }
+            });
           });
         }
       }
@@ -4896,6 +4945,12 @@
   }
   
   function revertToOriginal() {
+    // 清除自動檢查
+      if (state.autoCheckInterval) {
+        clearInterval(state.autoCheckInterval);
+        state.autoCheckInterval = null;
+      }
+    
     // 移除轉換相關元素
     document.querySelectorAll('.bv-page-container').forEach(el => el.remove());
     document.querySelectorAll('.bv-label-page').forEach(el => el.remove());
