@@ -1102,10 +1102,13 @@
       padding-left: 1.2em;
     }
     
+    .bv-qty-star {
+      font-weight: 700;
+      color: inherit;
+    }
+    
     .bv-qty-star::before {
-      content: "▲";
-      position: absolute;
-      left: 0;
+      content: "▲ ";
       color: #000;
       font-weight: normal;
     }
@@ -1118,7 +1121,7 @@
       }
       
       .bv-qty-star::before {
-        content: "▲" !important;
+        content: "▲ " !important;
         color: #000 !important;
       }
     }
@@ -5406,72 +5409,31 @@
       removeQuantityHighlight();
     }
   }
-  
+    
   function applyQuantityHighlight() {
-    // 根據是否轉換選擇不同的容器
-    let containers;
-    if (state.isConverted) {
-      containers = document.querySelectorAll('.bv-label-page .bv-page-content');
-    } else {
-      containers = document.querySelectorAll('.order-content');
-    }
+    const containers = state.isConverted ? 
+      document.querySelectorAll('.bv-label-page') : 
+      document.querySelectorAll('.order-content');
     
     containers.forEach(container => {
-      const productTable = container.querySelector('.list');
-      if (!productTable) return;
-      
-      // 嘗試找出數量欄位的索引（通過標題列）
-      let qtyColumnIndex = 0; // 預設是第一欄
-      const headerRow = productTable.querySelector('.list-title');
-      if (headerRow && !state.hideTableHeader) {
-        const headers = headerRow.querySelectorAll('th');
-        headers.forEach((header, index) => {
-          const headerText = header.textContent.trim();
-          if (headerText === '數量' || headerText === '數' || headerText.toLowerCase() === 'qty') {
-            qtyColumnIndex = index;
+      container.querySelectorAll('.list-item').forEach(item => {
+        let qtyCell = null;
+        const cells = item.querySelectorAll('td');
+        
+        // 從右往左數第二個開始尋找純數字的欄位（排除最右邊的價格欄位）
+        for (let i = cells.length - 2; i >= 0; i--) {
+          const text = cells[i].textContent.trim();
+          if (/^\d+$/.test(text) && parseInt(text) > 0) {
+            qtyCell = cells[i];
+            break;
           }
-        });
-      }
-      
-      // 處理商品列
-      const productRows = productTable.querySelectorAll('.list-item');
-      
-      productRows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        
-        // 確保有足夠的欄位
-        if (cells.length <= qtyColumnIndex) return;
-        
-        // 取得數量欄位（考慮可能有商品圖片欄位）
-        let actualIndex = qtyColumnIndex;
-        if (container.querySelector('.bv-product-image-col')) {
-          // 如果有商品圖片欄位，索引要加 1
-          actualIndex = qtyColumnIndex + 1;
         }
         
-        const qtyCell = cells[actualIndex];
-        if (!qtyCell) return;
-        
-        // 如果已經有標記，先移除
-        const existingStar = qtyCell.querySelector('.bv-qty-star');
-        if (existingStar) {
-          qtyCell.textContent = existingStar.getAttribute('data-qty') || existingStar.textContent;
-        }
-        
-        // 檢查內容是否為數字
-        const qtyText = qtyCell.textContent.trim();
-        
-        if (/^\d+$/.test(qtyText)) {
-          const qty = parseInt(qtyText);
+        if (qtyCell && !qtyCell.querySelector('.bv-qty-star')) {
+          const qty = parseInt(qtyCell.textContent.trim());
           
-          if (!isNaN(qty) && qty >= 2) {
-            const span = document.createElement('span');
-            span.className = 'bv-qty-star';
-            span.textContent = qty;
-            span.setAttribute('data-qty', qty);
-            
-            qtyCell.textContent = '';
-            qtyCell.appendChild(span);
+          if (qty >= 2) {
+            qtyCell.innerHTML = `<span class="bv-qty-star">${qty}</span>`;
           }
         }
       });
