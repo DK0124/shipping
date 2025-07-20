@@ -171,17 +171,25 @@
     fontSize: '11',  // 預設11px
     
     // 7-11 四格處理
-    sevenBatchCache: new Map()
-      
+    sevenBatchCache: new Map(),
+    
     // 新增自動檢查 interval
     autoCheckInterval: null
   };
+
+  // 載入 html2canvas
+  if (typeof html2canvas === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    script.async = true;
+    document.head.appendChild(script);
+  }
 
   const fontLink = document.createElement('link');
   fontLink.rel = 'stylesheet';
   fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap';
   document.head.appendChild(fontLink);
-  
+    
   // 初始化 Lazy Load
   function initLazyLoad() {
     if ('IntersectionObserver' in window) {
@@ -201,14 +209,6 @@
         threshold: 0.01
       });
     }
-  }
-
-  // 載入 html2canvas
-  if (typeof html2canvas === 'undefined') {
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    script.async = true;
-    document.head.appendChild(script);
   }
   
   function detectCurrentPage() {
