@@ -3656,7 +3656,7 @@
           <span class="material-icons">check_circle</span>
           <div class="bv-status-info">
             <h4>已載入 ${totalCount} 張物流單</h4>
-            <p>${providerName} - 可與明細整合列印</p>
+            <p>${providerName} - 可整合列印</p>
           </div>
         `;
       } else {
@@ -3665,7 +3665,7 @@
           <span class="material-icons">warning</span>
           <div class="bv-status-info">
             <h4>尚無物流單資料</h4>
-            <p>請先前往物流單頁面抓取或上傳 PDF</p>
+            <p>請至物流單頁面抓取或上傳 PDF</p>
           </div>
         `;
       }
