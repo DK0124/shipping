@@ -2158,6 +2158,42 @@
     `;
   }
   
+  // === 插入樣式 ===
+  function insertStyles() {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'bv-label-styles';
+    styleEl.textContent = getStyles();
+    document.head.appendChild(styleEl);
+  }
+  
+  // === 插入控制面板 ===
+  function insertPanel() {
+    // 檢查是否已存在
+    if (document.getElementById('bv-label-control-panel')) return;
+    
+    const panel = document.createElement('div');
+    panel.id = 'bv-label-control-panel';
+    panel.className = state.isPanelMinimized ? 'minimized' : '';
+    panel.innerHTML = getPanelContent();
+    document.body.appendChild(panel);
+    
+    // 插入最小化按鈕
+    const minimizedButton = document.createElement('div');
+    minimizedButton.id = 'bv-minimized-button';
+    minimizedButton.className = 'bv-minimized-button';
+    minimizedButton.style.display = state.isPanelMinimized ? 'flex' : 'none';
+    minimizedButton.innerHTML = `
+      <span class="material-icons">settings</span>
+      <span>BV出貨助手</span>
+    `;
+    document.body.appendChild(minimizedButton);
+    
+    // 初始化拖曳功能
+    setTimeout(() => {
+      initDragFunction();
+    }, 100);
+  }
+
   // === 取得面板內容 ===
   function getPanelContent() {
     const collapseIcon = '<span class="bv-collapse-icon"><span class="material-icons">expand_more</span></span>';
