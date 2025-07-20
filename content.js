@@ -15,12 +15,11 @@
         selector: '.div_frame, table',
         type: 'store',
         patterns: {
-          order: [/寄件訂單編號[：:]\s*([A-Z0-9]+)/i, /訂單編號[：:]\s*([A-Z0-9]+)/i, /OrderNo[：:]\s*([A-Z0-9]+)/i],
-          store: [/取件\s*\n?\s*門市[：:]\s*([^,\n]+)/i, /門市名稱[：:]\s*([^,\n]+)/i, /取件門市[：:]\s*([^,\n]+)/i],
-          storeId: [/統一編號[：:]\s*(\d+)/i, /門市店號[：:]\s*(\d+)/i],
+          order: [/交貨便服務代碼[：:]\s*([A-Z0-9-]+)/i, /服務代碼[：:]\s*([A-Z0-9-]+)/i],  // 改為抓取服務代碼
+          store: [/門市名稱[：:]\s*([^,\n]+)/i, /取件門市[：:]\s*([^,\n]+)/i],
+          storeId: [/門市店號[：:]\s*(\d+)/i, /統一編號[：:]\s*(\d+)/i],
           recipient: [/取件人[：:]\s*([^\n]+)/i, /收件人[：:]\s*([^\n]+)/i],
-          phone: [/取件人電話[：:]\s*([\d-]+)/i, /電話[：:]\s*([\d-]+)/i],
-          barcode: [/物流條碼[：:]\s*([A-Z0-9]+)/i]
+          phone: [/取件人電話[：:]\s*([\d-]+)/i, /電話[：:]\s*([\d-]+)/i]
         }
       },
       FAMILY: { 
@@ -2625,15 +2624,16 @@
   async function extractShippingData(element, provider) {
     const data = {
       provider: state.currentProvider,
-      orderNo: '',
+      orderNo: '',  // 這個欄位會用來存放交貨便服務代碼
       storeId: '',
       storeName: '',
       recipientName: '',
       recipientPhone: '',
-      barcode: '',  // 新增條碼欄位
+      barcode: '',
+      logisticsNo: '',  // 新增專門的物流編號欄位
       html: '',
       timestamp: new Date().toISOString(),
-      isBatchPrint: false  // 新增批次列印標記
+      isBatchPrint: false
     };
     
     // 檢查是否為 7-11 批次列印格式
@@ -2651,31 +2651,60 @@
     
     const text = element.textContent || '';
     
-    // 使用提供者特定的模式
-    const currentPatterns = CONFIG.PROVIDERS[state.currentProvider]?.patterns;
-    
-    if (currentPatterns) {
-      for (const [key, patternList] of Object.entries(currentPatterns)) {
-        for (const pattern of patternList) {
-          const match = text.match(pattern);
-          if (match) {
-            switch(key) {
-              case 'order': data.orderNo = match[1].trim(); break;
-              case 'store': data.storeName = match[1].trim(); break;
-              case 'storeId': data.storeId = match[1].trim(); break;
-              case 'recipient': data.recipientName = match[1].trim(); break;
-              case 'phone': data.recipientPhone = match[1].trim(); break;
-              case 'barcode': data.barcode = match[1].trim(); break;
+    // 7-11 特殊處理：提取交貨便服務代碼
+    if (state.currentProvider === 'SEVEN') {
+      // 交貨便服務代碼的可能模式
+      const serviceCodePatterns = [
+        /交貨便服務代碼[：:]\s*([A-Z0-9-]+)/i,
+        /服務代碼[：:]\s*([A-Z0-9-]+)/i,
+        /Service\s*Code[：:]\s*([A-Z0-9-]+)/i
+      ];
+      
+      for (const pattern of serviceCodePatterns) {
+        const match = text.match(pattern);
+        if (match) {
+          data.orderNo = match[1].trim();  // 使用 orderNo 欄位存放服務代碼
+          data.logisticsNo = match[1].trim();  // 同時存入 logisticsNo
+          break;
+        }
+      }
+      
+      // 提取其他 7-11 相關資訊
+      const storePattern = /門市名稱[：:]\s*([^,\n]+)/i;
+      const storeMatch = text.match(storePattern);
+      if (storeMatch) data.storeName = storeMatch[1].trim();
+      
+      const storeIdPattern = /門市店號[：:]\s*(\d+)/i;
+      const storeIdMatch = text.match(storeIdPattern);
+      if (storeIdMatch) data.storeId = storeIdMatch[1].trim();
+      
+    } else {
+      // 其他物流商的一般處理
+      const currentPatterns = CONFIG.PROVIDERS[state.currentProvider]?.patterns;
+      
+      if (currentPatterns) {
+        for (const [key, patternList] of Object.entries(currentPatterns)) {
+          for (const pattern of patternList) {
+            const match = text.match(pattern);
+            if (match) {
+              switch(key) {
+                case 'order': data.orderNo = match[1].trim(); break;
+                case 'store': data.storeName = match[1].trim(); break;
+                case 'storeId': data.storeId = match[1].trim(); break;
+                case 'recipient': data.recipientName = match[1].trim(); break;
+                case 'phone': data.recipientPhone = match[1].trim(); break;
+                case 'barcode': data.barcode = match[1].trim(); break;
+              }
+              break;
             }
-            break;
           }
         }
       }
     }
     
-    return data.orderNo ? data : null;
-  }
-  
+    // 只要有服務代碼就算有效（針對 7-11）
+    return (data.orderNo || data.logisticsNo) ? data : null;
+  }  
   // 改進的抓取函數
   async function fetchShippingData() {
     try {
@@ -3660,8 +3689,9 @@
       logisticsNo: [
         /物流編號[：:]\s*([A-Z0-9-]+)/i,
         /物流單號[：:]\s*([A-Z0-9-]+)/i,
-        /交貨便服務代碼[：:]\s*([A-Z0-9-]+)/i,
-        /服務代碼[：:]\s*([A-Z0-9-]+)/i
+        /交貨便服務代碼[：:]\s*([A-Z0-9-]+)/i,  // 新增這個模式
+        /服務代碼[：:]\s*([A-Z0-9-]+)/i,
+        /配送編號[：:]\s*([A-Z0-9-]+)/i  // 可能的其他名稱
       ]
     };
     
@@ -3861,22 +3891,22 @@
     
     const allShippingData = [...state.shippingData, ...state.pdfShippingData];
     
-    // 清理物流編號格式
-    const cleanLogisticsNo = logisticsNo.replace(/[^A-Z0-9]/gi, '');
+    // 清理物流編號格式（保留連字號）
+    const cleanLogisticsNo = logisticsNo.trim().toUpperCase();
     
     // 尋找交貨便服務代碼相符的資料
     const match = allShippingData.find(data => {
       // 檢查各種可能的欄位
       const candidates = [
-        data.orderNo,
+        data.orderNo,      // 7-11 的服務代碼存在這裡
+        data.logisticsNo,  // 也可能存在專門的物流編號欄位
         data.barcode,
-        data.storeId,
-        data.logisticsNo  // 如果有專門的物流編號欄位
+        data.storeId
       ];
       
       for (const candidate of candidates) {
         if (candidate) {
-          const cleanCandidate = candidate.replace(/[^A-Z0-9]/gi, '');
+          const cleanCandidate = candidate.trim().toUpperCase();
           if (cleanCandidate === cleanLogisticsNo) {
             return true;
           }
