@@ -3023,7 +3023,7 @@
         }
       }
     }
-  }
+  } 
     
     function checkComplete() {
       if (processedCount === processedOrders.size) {
