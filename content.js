@@ -2750,9 +2750,13 @@
     clearTimeout(state.previewTimeout);
     state.previewTimeout = setTimeout(() => {
       handlePagination();
-      if (state.highlightQuantity) {
-        applyQuantityHighlight();
-      }
+      
+      // 確保在分頁處理完成後再套用數量標示
+      setTimeout(() => {
+        if (state.highlightQuantity) {
+          applyQuantityHighlight();
+        }
+      }, 100);
     }, 100);
   }
   
@@ -2815,7 +2819,7 @@
         if (orderLabelSetting) orderLabelSetting.style.display = 'none';
     }
   }
-  
+    
   function preparePrintWithMode() {
     // 根據列印模式準備頁面
     switch(state.printMode) {
@@ -2830,6 +2834,11 @@
       case CONFIG.PRINT_MODES.MANUAL_MATCH:
         prepareManualMatchPrint();
         break;
+    }
+    
+    // 確保數量標示在列印前套用
+    if (state.highlightQuantity) {
+      applyQuantityHighlight();
     }
     
     preparePrintStyles();
@@ -4111,14 +4120,11 @@
     updateLabelStyles();
     
     setTimeout(() => {
-      handlePagination();
-      
       if (state.highlightQuantity) {
-        setTimeout(() => {
-          applyQuantityHighlight();
-        }, 100);
+        applyQuantityHighlight();
       }
-    }, 100);
+    }, 200);
+  }, 100);
     
     state.isConverted = true;
     
@@ -5375,41 +5381,72 @@
   }
   
   function toggleQuantityHighlight() {
-    state.highlightQuantity = document.getElementById('bv-highlight-qty').checked;
+    const checkbox = document.getElementById('bv-highlight-qty');
+    if (!checkbox) return;
+    
+    state.highlightQuantity = checkbox.checked;
     saveSettings();
     
     if (state.highlightQuantity) {
+      console.log('啟用數量標示');
       applyQuantityHighlight();
     } else {
+      console.log('停用數量標示');
       removeQuantityHighlight();
     }
   }
   
   function applyQuantityHighlight() {
-    const selector = state.isConverted ? '.bv-label-page' : 'body';
-    const containers = document.querySelectorAll(selector);
+    // 根據是否轉換選擇不同的容器
+    let containers;
+    if (state.isConverted) {
+      // 10×15 模式：選擇所有標籤頁面
+      containers = document.querySelectorAll('.bv-label-page .bv-page-content');
+    } else {
+      // A4 模式：選擇所有訂單內容
+      containers = document.querySelectorAll('.order-content');
+    }
     
     containers.forEach(container => {
-      container.querySelectorAll('.list-item').forEach(item => {
-        const qtyCell = item.querySelector('td:first-child');
-        if (!qtyCell) return;
+      // 找到所有商品列
+      const productRows = container.querySelectorAll('.list-item');
+      
+      productRows.forEach(row => {
+        // 找到數量欄位（通常是第一個 td）
+        const cells = row.querySelectorAll('td');
+        let qtyCell = null;
         
-        // 清除舊的標記
-        const existingStar = qtyCell.querySelector('.bv-qty-star');
-        if (existingStar) {
-          qtyCell.textContent = existingStar.textContent;
+        // 尋找包含純數字的欄位
+        for (let cell of cells) {
+          const text = cell.textContent.trim();
+          if (/^\d+$/.test(text)) {
+            qtyCell = cell;
+            break;
+          }
         }
         
-        const qtyMatch = qtyCell.textContent.match(/^\s*(\d+)\s*$/);
-        if (qtyMatch) {
-          const qty = parseInt(qtyMatch[1]);
-          if (qty >= 2) {
-            const span = document.createElement('span');
-            span.className = 'bv-qty-star';
-            span.textContent = qty;
-            qtyCell.textContent = '';
-            qtyCell.appendChild(span);
-          }
+        if (!qtyCell) return;
+        
+        // 如果已經有標記，先移除
+        const existingStar = qtyCell.querySelector('.bv-qty-star');
+        if (existingStar) {
+          qtyCell.textContent = existingStar.getAttribute('data-qty') || existingStar.textContent;
+        }
+        
+        // 檢查數量
+        const qtyText = qtyCell.textContent.trim();
+        const qty = parseInt(qtyText);
+        
+        if (!isNaN(qty) && qty >= 2) {
+          // 創建標記元素
+          const span = document.createElement('span');
+          span.className = 'bv-qty-star';
+          span.textContent = qty;
+          span.setAttribute('data-qty', qty);
+          
+          // 清空原本內容並加入標記
+          qtyCell.textContent = '';
+          qtyCell.appendChild(span);
         }
       });
     });
@@ -5418,7 +5455,8 @@
   function removeQuantityHighlight() {
     document.querySelectorAll('.bv-qty-star').forEach(star => {
       const parent = star.parentElement;
-      parent.textContent = star.textContent;
+      const qty = star.getAttribute('data-qty') || star.textContent;
+      parent.textContent = qty;
     });
   }
   
