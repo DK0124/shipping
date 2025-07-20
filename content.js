@@ -4899,6 +4899,11 @@
       .bv-label-page .list-item {
         border-bottom: 0.2mm solid #ddd !important;
       }
+
+      .bv-converted .list-item:last-child,
+      .bv-label-page .list-item:last-child {
+        border-bottom: none !important;
+      }
       
       .bv-converted .list-item td,
       .bv-label-page .list-item td {
