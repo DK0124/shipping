@@ -22,7 +22,7 @@
   "content_scripts": [
     {
       "matches": [
-        "*://.bvshop-manage.bvshop.tw/order_print/*",
+        "*://.bvshop-manage.bvshop.tw/*",
         "*://*.7-11.com.tw/*",
         "*://*.family.com.tw/*",
         "*://*.hilife.com.tw/*",
