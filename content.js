@@ -1604,7 +1604,7 @@
     .bv-order-label {
       position: absolute;
       top: 10px;
-      right: 10px;
+      left: 10px;
       background: rgba(255, 255, 255, 0.95);
       padding: 6px 12px;
       border: 1px solid #333;
@@ -3275,7 +3275,6 @@
         btn.addEventListener('click', handleBatchAction);
       });
       
-      // 修正刪除按鈕的事件綁定
       batchListEl.querySelectorAll('.bv-preset-action-btn.delete').forEach(btn => {
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
@@ -3296,30 +3295,35 @@
     }
     
     // 更新物流單頁面的批次列表
-    if (shippingBatchListEl && state.shippingDataBatches.length > 0) {
-      shippingBatchListEl.style.display = 'block';
-      shippingBatchListEl.innerHTML = batchListEl.innerHTML;
-      
-      shippingBatchListEl.querySelectorAll('.bv-batch-order-btn').forEach(btn => {
-        btn.addEventListener('click', handleBatchAction);
-      });
-      
-      shippingBatchListEl.querySelectorAll('.bv-preset-action-btn.delete').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const batchId = parseInt(this.dataset.batchId);
+    if (shippingBatchListEl) {
+      if (state.shippingDataBatches.length > 0) {
+        shippingBatchListEl.style.display = 'block';
+        // 確保 batchListEl 存在且有內容才複製
+        if (batchListEl && batchListEl.innerHTML) {
+          shippingBatchListEl.innerHTML = batchListEl.innerHTML;
           
-          if (confirm('確定要刪除這批物流單嗎？')) {
-            state.shippingDataBatches = state.shippingDataBatches.filter(b => b.id !== batchId);
-            mergeAllBatchData();
-            updateBatchList();
-            saveShippingData();
-            updateShippingCount();
-          }
-        });
-      });
-    } else if (shippingBatchListEl) {
-      shippingBatchListEl.style.display = 'none';
+          shippingBatchListEl.querySelectorAll('.bv-batch-order-btn').forEach(btn => {
+            btn.addEventListener('click', handleBatchAction);
+          });
+          
+          shippingBatchListEl.querySelectorAll('.bv-preset-action-btn.delete').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+              e.stopPropagation();
+              const batchId = parseInt(this.dataset.batchId);
+              
+              if (confirm('確定要刪除這批物流單嗎？')) {
+                state.shippingDataBatches = state.shippingDataBatches.filter(b => b.id !== batchId);
+                mergeAllBatchData();
+                updateBatchList();
+                saveShippingData();
+                updateShippingCount();
+              }
+            });
+          });
+        }
+      } else {
+        shippingBatchListEl.style.display = 'none';
+      }
     }
   }
   
@@ -3970,12 +3974,22 @@
     // 收集所有訂單資料
     state.detailPages = [];
     state.shippingPages = [];
-    state.matchingResults = [];  // 重置配對結果
+    state.matchingResults = [];
+    
+    // 準備物流單資料（考慮反序）
+    let shippingDataToUse = state.shippingData;
+    let pdfDataToUse = state.pdfShippingData;
+    
+    if (state.reverseShipping && state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
+      // 反轉物流單資料
+      shippingDataToUse = [...state.shippingData].reverse();
+      pdfDataToUse = [...state.pdfShippingData].reverse();
+    }
     
     // 根據列印模式處理
     if (state.printMode === CONFIG.PRINT_MODES.SHIPPING_ONLY) {
       // 純印物流單模式
-      createShippingOnlyPages();
+      createShippingOnlyPages(shippingDataToUse, pdfDataToUse);
     } else {
       // 其他模式：處理出貨明細
       orderContents.forEach((orderContent, orderIndex) => {
@@ -3990,7 +4004,7 @@
           element: orderContent,
           pages: []
         };
-
+  
         // 先創建 pageContainer
         const pageContainer = document.createElement('div');
         pageContainer.className = 'bv-page-container';
@@ -4067,12 +4081,19 @@
           const matchType = state.matchMode || 'index';
           let shippingData = null;
           
+          // 使用可能已反序的資料
+          const allShippingData = [...shippingDataToUse, ...pdfDataToUse];
+          
           if (matchType === 'logistics' && orderInfo.logisticsNo) {
-            shippingData = findMatchingShippingDataByLogisticsNo(orderInfo.logisticsNo);
-          } else if (matchType === 'order' && orderInfo.orderNo) {
-            shippingData = findMatchingShippingDataByOrderNo(orderInfo.orderNo);
+            shippingData = findMatchingShippingDataByLogisticsNo(orderInfo.logisticsNo, allShippingData);
           } else {
-            shippingData = findMatchingShippingDataByIndex(orderIndex);
+            // 索引配對
+            if (allShippingData[orderIndex]) {
+              shippingData = {
+                type: allShippingData[orderIndex].imageData ? 'pdf' : 'html',
+                data: allShippingData[orderIndex]
+              };
+            }
           }
           
           if (shippingData) {
@@ -4246,10 +4267,11 @@
     return null;
   }
   
-  function findMatchingShippingDataByLogisticsNo(logisticsNo) {
+  function findMatchingShippingDataByLogisticsNo(logisticsNo, shippingDataArray) {
     if (!logisticsNo) return null;
     
-    const allShippingData = [...state.shippingData, ...state.pdfShippingData];
+    // 使用傳入的資料陣列，如果沒有則使用預設
+    const allShippingData = shippingDataArray || [...state.shippingData, ...state.pdfShippingData];
     
     // 清理物流編號格式（保留連字號）
     const cleanLogisticsNo = logisticsNo.trim().toUpperCase();
@@ -4315,10 +4337,10 @@
     `;
   }
   
-  function createShippingOnlyPages() {
-    // 創建純物流單頁面
-    const allShippingData = [...state.shippingData, ...state.pdfShippingData];
-    const showOrderLabel = false; // 純印物流單時不顯示訂單編號
+  function createShippingOnlyPages(shippingDataToUse, pdfDataToUse) {
+    // 使用傳入的資料（可能已反序）
+    const allShippingData = [...(shippingDataToUse || state.shippingData), ...(pdfDataToUse || state.pdfShippingData)];
+    const showOrderLabel = false;
     
     allShippingData.forEach((data, index) => {
       const pageContainer = document.createElement('div');
