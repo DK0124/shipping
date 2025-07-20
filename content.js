@@ -3045,6 +3045,20 @@
       });
     }
     
+    // 監聽商品圖片開關
+    const showProductImageCheckbox = document.querySelector('.ignore-print #showProductImage');
+    if (showProductImageCheckbox) {
+      // 移除舊的監聽器（如果有的話）
+      const newCheckbox = showProductImageCheckbox.cloneNode(true);
+      showProductImageCheckbox.parentNode.replaceChild(newCheckbox, showProductImageCheckbox);
+      
+      // 添加新的監聽器
+      newCheckbox.addEventListener('change', function() {
+        // 立即更新預覽
+        updatePreview();
+      });
+    }
+    
     const fontSizeSlider = document.getElementById('bv-font-size');
     if (fontSizeSlider) {
       fontSizeSlider.addEventListener('input', function() {
@@ -4064,15 +4078,42 @@
   }
   
   function observeOriginalControls() {
-    const checkboxes = document.querySelectorAll('.ignore-print input[type="checkbox"]:not(#showProductImage):not(#fontSize)');
+    // 監聽所有原始控制項的變更
+    const checkboxes = document.querySelectorAll('.ignore-print input[type="checkbox"]');
     checkboxes.forEach(checkbox => {
+      // 為每個 checkbox 添加變更監聽
       checkbox.addEventListener('change', () => {
         if (state.isConverted) {
-          saveSettings();
-          updatePreview();
+          // 如果是商品圖片開關，立即更新
+          if (checkbox.id === 'showProductImage') {
+            updatePreview();
+          } else {
+            saveSettings();
+            updatePreview();
+          }
         }
       });
     });
+    
+    // 特別處理字體大小選擇器
+    const fontSizeSelect = document.querySelector('.ignore-print #fontSize');
+    if (fontSizeSelect) {
+      fontSizeSelect.addEventListener('change', () => {
+        if (state.isConverted) {
+          // 同步更新滑桿
+          const fontSizeSlider = document.getElementById('bv-font-size');
+          if (fontSizeSlider) {
+            const sizeValue = parseInt(fontSizeSelect.value);
+            fontSizeSlider.value = sizeValue;
+            document.getElementById('bv-font-size-value').textContent = sizeValue.toFixed(1);
+            updateRangeProgress(fontSizeSlider);
+          }
+          saveSettings();
+          updateLabelStyles();
+          updatePreview();
+        }
+      });
+    }
   }
   
   function convertToLabelFormat() {
@@ -4119,6 +4160,9 @@
     state.isConverted = true;
     
     updatePanelContent();
+    
+    // 確保監聽原始控制項
+    observeOriginalControls();
     
     showNotification('已成功轉換為10×15cm標籤格式');
   }
@@ -4626,18 +4670,23 @@
   }
   
   function processProductImages(container) {
-    // 檢查是否顯示商品圖片
+    // 每次都重新檢查是否顯示商品圖片
     const showProductImage = document.querySelector('.ignore-print #showProductImage')?.checked;
-    
-    if (!showProductImage) return;
     
     // 找到商品表格
     const productTable = container.querySelector('.list');
     if (!productTable) return;
     
+    // 先清除所有現有的商品圖片欄位
+    container.querySelectorAll('.bv-product-image-col').forEach(col => col.remove());
+    container.querySelectorAll('.bv-product-img').forEach(img => img.remove());
+    
+    // 如果不顯示商品圖片，直接返回
+    if (!showProductImage) return;
+    
     // 處理標題列
     const headerRow = productTable.querySelector('.list-title');
-    if (headerRow && !state.hideTableHeader && !headerRow.querySelector('.bv-product-image-col')) {
+    if (headerRow && !state.hideTableHeader) {
       // 新增空白商品圖標題
       const imageHeader = document.createElement('th');
       imageHeader.className = 'bv-product-image-col';
@@ -4649,9 +4698,6 @@
     // 處理每個商品列
     const productRows = productTable.querySelectorAll('.list-item');
     productRows.forEach(row => {
-      // 檢查是否已經處理過
-      if (row.querySelector('.bv-product-image-col')) return;
-      
       const nameCell = row.querySelector('.list-item-name');
       if (!nameCell) return;
       
