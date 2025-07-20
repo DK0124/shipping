@@ -4939,7 +4939,8 @@
       }
     });
   });
-  
+}
+    
   function updateShippingBatchList(batchListEl) {
     if (state.shippingDataBatches.length === 0) {
       batchListEl.style.display = 'none';
