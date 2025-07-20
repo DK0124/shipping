@@ -262,6 +262,13 @@
       console.log('✓ 偵測到出貨明細頁面');
       loadMaterialIcons();
       createControlPanel();
+      
+      // 自動轉換為 10×15 模式
+      setTimeout(() => {
+        if (!state.isConverted) {
+          convertToLabelFormat();
+        }
+      }, 500);
       return;
     }
     
