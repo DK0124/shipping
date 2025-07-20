@@ -22,7 +22,7 @@
         "*://*.global-business.com.tw/*",
         "*://*.fedex.com/*"
       ],
-      "js": ["content.js"],
+      "js":  ["pdf.js", "content.js", "pdf.worker.js", "html2canvas.min.js"],
       "run_at": "document_idle"
     }
   ],
