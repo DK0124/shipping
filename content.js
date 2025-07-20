@@ -172,7 +172,8 @@
     
     // 7-11 四格處理
     sevenBatchCache: new Map()
-
+      
+    // 新增自動檢查 interval
     autoCheckInterval: null
   };
 
