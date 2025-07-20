@@ -3322,21 +3322,21 @@
       orderContents.forEach((orderContent, orderIndex) => {
         orderContent.classList.add('bv-original');
         
-        // 提取訂單和物流資訊
-        const orderInfo = extractOrderInfo(orderContent);
-        const orderData = {
-          orderNo: orderInfo.orderNo,
-          logisticsNo: orderInfo.logisticsNo,  // 新增物流編號
-          index: orderIndex,
-          element: orderContent,
-          pages: []
-        };
+      // 提取訂單和物流資訊
+      const orderInfo = extractOrderInfo(orderContent);
+      const orderData = {
+        orderNo: orderInfo.orderNo,
+        logisticsNo: orderInfo.logisticsNo,
+        index: orderIndex,
+        element: orderContent,
+        pages: []
+      };
   
         // 先創建 pageContainer
         const pageContainer = document.createElement('div');
         pageContainer.className = 'bv-page-container';
         pageContainer.setAttribute('data-order-index', orderIndex);
-        pageContainer.setAttribute('data-order-no', orderNo || '');
+        pageContainer.setAttribute('data-order-no', orderInfo.orderNo || '');
         orderContent.parentNode.insertBefore(pageContainer, orderContent.nextSibling);
         
         // 處理明細分頁
