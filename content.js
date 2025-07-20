@@ -2289,7 +2289,7 @@
                     <input type="radio" name="print-mode" value="manual_match" ${state.printMode === 'manual_match' ? 'checked' : ''}>
                     <div class="bv-mode-info">
                       <div class="bv-mode-title">出貨明細-物流單</div>
-                      <div class="bv-mode-desc">依設定順序列印</div>
+                      <div class="bv-mode-desc">依索引順序交錯列印</div>
                     </div>
                   </label>
                 </div>
@@ -2300,10 +2300,6 @@
                     <label class="bv-match-mode-option">
                       <input type="radio" name="match-mode" value="index" ${state.matchMode === 'index' ? 'checked' : ''}>
                       索引配對（依順序）
-                    </label>
-                    <label class="bv-match-mode-option">
-                      <input type="radio" name="match-mode" value="order" ${state.matchMode === 'order' ? 'checked' : ''}>
-                      訂單編號配對
                     </label>
                     <label class="bv-match-mode-option">
                       <input type="radio" name="match-mode" value="logistics" ${state.matchMode === 'logistics' ? 'checked' : ''}>
@@ -2344,7 +2340,7 @@
                       <span class="bv-switch-slider"></span>
                     </label>
                   </div>
-                  <div class="bv-reverse-shipping-note">請確認是否有配對</div>
+                  <div class="bv-reverse-shipping-note">用於物流單順序與明細相反時</div>
                 </div>
                 
                 <div class="bv-setting-item" id="bv-order-label-setting" style="margin-top: 12px; display: none;">
@@ -2799,16 +2795,16 @@
   }
   
   function reverseShippingPages() {
-    // 反轉每個訂單容器內的物流單頁面
-    document.querySelectorAll('.bv-page-container').forEach(container => {
-      const shippingPages = Array.from(container.querySelectorAll('.bv-shipping-page'));
-      if (shippingPages.length > 0) {
-        shippingPages.reverse();
-        shippingPages.forEach(page => {
-          container.appendChild(page);
-        });
-      }
-    });
+    // 收集所有物流單資料並反轉
+    const reversedShippingData = [...state.shippingData].reverse();
+    const reversedPdfData = [...state.pdfShippingData].reverse();
+    
+    // 暫時儲存反轉後的資料
+    state.tempShippingData = reversedShippingData;
+    state.tempPdfShippingData = reversedPdfData;
+    
+    // 在 handlePagination 中使用反轉後的資料
+    state.useReversedShipping = true;
   }
   
   function setupShippingEventListeners() {
@@ -5067,9 +5063,63 @@
   
   function hideOriginalControls() {
     const controls = document.querySelector('.ignore-print');
-    if (controls && controls.style.display !== 'none') {
-      controls.style.display = 'none';
-    }
+    if (!controls) return;
+    
+    // 不再隱藏，而是美化
+    const style = document.createElement('style');
+    style.id = 'bv-original-controls-style';
+    style.textContent = `
+      .ignore-print {
+        background: rgba(248, 250, 252, 0.95) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-radius: 12px !important;
+        padding: 20px !important;
+        margin: 20px auto !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+        max-width: 800px !important;
+      }
+      
+      .ignore-print h4 {
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        color: #000 !important;
+        margin-bottom: 16px !important;
+      }
+      
+      .ignore-print .form-check {
+        margin-bottom: 12px !important;
+      }
+      
+      .ignore-print .form-check-label {
+        font-size: 14px !important;
+        color: rgba(0, 0, 0, 0.7) !important;
+        cursor: pointer !important;
+      }
+      
+      .ignore-print .form-check-input {
+        cursor: pointer !important;
+      }
+      
+      .ignore-print select {
+        background: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        border-radius: 6px !important;
+        padding: 4px 8px !important;
+        font-size: 14px !important;
+      }
+      
+      @media print {
+        .ignore-print {
+          display: none !important;
+        }
+      }
+    `;
+    
+    // 移除舊樣式並新增新樣式
+    const oldStyle = document.getElementById('bv-original-controls-style');
+    if (oldStyle) oldStyle.remove();
+    document.head.appendChild(style);
   }
   
   function toggleQuantityHighlight() {
