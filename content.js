@@ -3322,14 +3322,16 @@
       orderContents.forEach((orderContent, orderIndex) => {
         orderContent.classList.add('bv-original');
         
-        const orderNo = extractOrderNumber(orderContent);
+        // 提取訂單和物流資訊
+        const orderInfo = extractOrderInfo(orderContent);
         const orderData = {
-          orderNo: orderNo,
+          orderNo: orderInfo.orderNo,
+          logisticsNo: orderInfo.logisticsNo,  // 新增物流編號
           index: orderIndex,
           element: orderContent,
           pages: []
         };
-        
+  
         // 先創建 pageContainer
         const pageContainer = document.createElement('div');
         pageContainer.className = 'bv-page-container';
@@ -3400,22 +3402,30 @@
         }
         
         state.detailPages.push(orderData);
-        
+                
         // 根據列印模式決定是否插入物流單
         if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
           // 嘗試自動配對
           let shippingData = null;
           let matchType = 'none';
           
-          // 優先使用訂單編號配對
-          if (orderNo) {
-            shippingData = findMatchingShippingDataByOrderNo(orderNo);
+          // 優先使用物流編號配對
+          if (orderInfo.logisticsNo) {
+            shippingData = findMatchingShippingDataByLogisticsNo(orderInfo.logisticsNo);
             if (shippingData) {
-              matchType = 'auto';
+              matchType = 'auto-logistics';
             }
           }
           
-          // 如果訂單編號配對失敗，使用索引配對（手動配對）
+          // 其次使用訂單編號配對
+          if (!shippingData && orderInfo.orderNo) {
+            shippingData = findMatchingShippingDataByOrderNo(orderInfo.orderNo);
+            if (shippingData) {
+              matchType = 'auto-order';
+            }
+          }
+          
+          // 如果自動配對失敗，使用索引配對（手動配對）
           if (!shippingData) {
             shippingData = findMatchingShippingDataByIndex(orderIndex);
             if (shippingData) {
@@ -3424,15 +3434,16 @@
           }
           
           if (shippingData) {
-            createShippingPages(shippingData, orderNo, showOrderLabel, orderIndex, pageContainer);
+            createShippingPages(shippingData, orderInfo.orderNo, showOrderLabel, orderIndex, pageContainer);
             
             // 記錄配對狀態
             state.matchingResults = state.matchingResults || [];
             state.matchingResults.push({
-              orderNo: orderNo,
+              orderNo: orderInfo.orderNo,
+              logisticsNo: orderInfo.logisticsNo,
               orderIndex: orderIndex,
               matchType: matchType,
-              shippingOrderNo: shippingData.data.orderNo
+              shippingOrderNo: shippingData.data.orderNo || shippingData.data.barcode
             });
           }
         }
@@ -3638,24 +3649,47 @@
     });
   }
   
-  function extractOrderNumber(orderContent) {
-    const patterns = [
-      /訂單編號[：:]\s*([A-Z0-9]+)/i,
-      /訂單號碼[：:]\s*([A-Z0-9]+)/i,
-      /Order\s*No[：:]\s*([A-Z0-9]+)/i,
-      /訂單\s*([A-Z0-9]+)/i
-    ];
+  function extractOrderInfo(orderContent) {
+    const patterns = {
+      orderNo: [
+        /訂單編號[：:]\s*([A-Z0-9]+)/i,
+        /訂單號碼[：:]\s*([A-Z0-9]+)/i,
+        /Order\s*No[：:]\s*([A-Z0-9]+)/i,
+        /訂單\s*([A-Z0-9]+)/i
+      ],
+      logisticsNo: [
+        /物流編號[：:]\s*([A-Z0-9-]+)/i,
+        /物流單號[：:]\s*([A-Z0-9-]+)/i,
+        /交貨便服務代碼[：:]\s*([A-Z0-9-]+)/i,
+        /服務代碼[：:]\s*([A-Z0-9-]+)/i
+      ]
+    };
     
     const text = orderContent.textContent || '';
+    const result = {
+      orderNo: null,
+      logisticsNo: null
+    };
     
-    for (const pattern of patterns) {
+    // 提取訂單編號
+    for (const pattern of patterns.orderNo) {
       const match = text.match(pattern);
       if (match) {
-        return match[1].trim();
+        result.orderNo = match[1].trim();
+        break;
       }
     }
     
-    return null;
+    // 提取物流編號
+    for (const pattern of patterns.logisticsNo) {
+      const match = text.match(pattern);
+      if (match) {
+        result.logisticsNo = match[1].trim();
+        break;
+      }
+    }
+    
+    return result;
   }
   
   function findMatchingShippingDataByOrderNo(orderNo) {
@@ -3820,6 +3854,45 @@
     
     // 替換原有的 order-info
     orderInfo.parentNode.replaceChild(simplifiedInfo, orderInfo);
+  }
+
+  function findMatchingShippingDataByLogisticsNo(logisticsNo) {
+    if (!logisticsNo) return null;
+    
+    const allShippingData = [...state.shippingData, ...state.pdfShippingData];
+    
+    // 清理物流編號格式
+    const cleanLogisticsNo = logisticsNo.replace(/[^A-Z0-9]/gi, '');
+    
+    // 尋找交貨便服務代碼相符的資料
+    const match = allShippingData.find(data => {
+      // 檢查各種可能的欄位
+      const candidates = [
+        data.orderNo,
+        data.barcode,
+        data.storeId,
+        data.logisticsNo  // 如果有專門的物流編號欄位
+      ];
+      
+      for (const candidate of candidates) {
+        if (candidate) {
+          const cleanCandidate = candidate.replace(/[^A-Z0-9]/gi, '');
+          if (cleanCandidate === cleanLogisticsNo) {
+            return true;
+          }
+        }
+      }
+      return false;
+    });
+    
+    if (match) {
+      return {
+        type: match.imageData ? 'pdf' : 'html',
+        data: match
+      };
+    }
+    
+    return null;
   }
   
   function triggerOriginalPageUpdate() {
@@ -4651,12 +4724,6 @@
     const statusEl = document.getElementById('bv-conversion-status');
     const pdfUploadArea = document.getElementById('bv-pdf-upload-area');
     
-    if (uploadPrompt) uploadPrompt.style.display = 'none';
-    if (pdfInfo) {
-      pdfInfo.style.display = 'flex';
-      filenameEl.textContent = files.length > 1 ? `${files.length} 個檔案` : files[0].name;
-    }
-    if (pdfUploadArea) pdfUploadArea.classList.add('has-file');
     if (progressEl) progressEl.classList.add('active');
     
     try {
@@ -4857,21 +4924,21 @@
       });
     });
     
-    batchListEl.querySelectorAll('.delete').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const batchId = parseInt(this.dataset.batchId);
-        
-        if (confirm('確定要刪除這批物流單嗎？')) {
-          state.shippingDataBatches = state.shippingDataBatches.filter(b => b.id !== batchId);
-          mergeAllBatchData();
-          updateBatchList();
-          saveShippingData();
-          checkShippingDataStatus();
-          updatePreview();
-        }
-      });
+  batchListEl.querySelectorAll('.delete').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation(); // 加上這行防止事件冒泡
+      const batchId = parseInt(this.dataset.batchId);
+      
+      if (confirm('確定要刪除這批物流單嗎？')) {
+        state.shippingDataBatches = state.shippingDataBatches.filter(b => b.id !== batchId);
+        mergeAllBatchData();
+        updateBatchList();
+        saveShippingData();
+        checkShippingDataStatus();
+        updatePreview();
+      }
     });
-  }
+  });
   
   function updateShippingBatchList(batchListEl) {
     if (state.shippingDataBatches.length === 0) {
@@ -5044,9 +5111,6 @@
         const pdfInfo = document.getElementById('bv-pdf-info');
         const pdfInput = document.getElementById('bv-pdf-input');
         
-        if (pdfUploadArea) pdfUploadArea.classList.remove('has-file');
-        if (uploadPrompt) uploadPrompt.style.display = 'flex';
-        if (pdfInfo) pdfInfo.style.display = 'none';
         if (pdfInput) pdfInput.value = '';
       });
     }
@@ -5268,21 +5332,26 @@
   function showMatchingResults() {
     if (!state.matchingResults || state.matchingResults.length === 0) return;
     
-    const autoMatches = state.matchingResults.filter(r => r.matchType === 'auto').length;
+    const autoLogisticsMatches = state.matchingResults.filter(r => r.matchType === 'auto-logistics').length;
+    const autoOrderMatches = state.matchingResults.filter(r => r.matchType === 'auto-order').length;
     const manualMatches = state.matchingResults.filter(r => r.matchType === 'manual').length;
     const totalOrders = state.matchingResults.length;
     
     let message = `配對完成：共 ${totalOrders} 筆訂單`;
     
-    if (autoMatches > 0) {
-      message += `\n自動配對成功：${autoMatches} 筆`;
+    if (autoLogisticsMatches > 0) {
+      message += `\n物流編號自動配對：${autoLogisticsMatches} 筆`;
+    }
+    
+    if (autoOrderMatches > 0) {
+      message += `\n訂單編號自動配對：${autoOrderMatches} 筆`;
     }
     
     if (manualMatches > 0) {
       message += `\n手動配對（依順序）：${manualMatches} 筆`;
     }
     
-    const unmatched = totalOrders - autoMatches - manualMatches;
+    const unmatched = totalOrders - autoLogisticsMatches - autoOrderMatches - manualMatches;
     if (unmatched > 0) {
       message += `\n未配對：${unmatched} 筆`;
     }
@@ -5290,13 +5359,15 @@
     // 使用 console 顯示詳細配對資訊
     console.log('=== 配對詳情 ===');
     state.matchingResults.forEach((result, index) => {
-      console.log(`訂單 ${index + 1}: ${result.orderNo || '無編號'} => ${
-        result.matchType === 'auto' ? '自動配對' : 
+      console.log(`訂單 ${index + 1}: ${result.orderNo || '無編號'} / 物流：${result.logisticsNo || '無'} => ${
+        result.matchType === 'auto-logistics' ? '物流編號配對' :
+        result.matchType === 'auto-order' ? '訂單編號配對' : 
         result.matchType === 'manual' ? '手動配對' : '未配對'
       } => 物流單: ${result.shippingOrderNo || '無'}`);
     });
     
-    showNotification(message.replace(/\n/g, '、'), autoMatches === totalOrders ? 'success' : 'warning');
+    const totalAutoMatches = autoLogisticsMatches + autoOrderMatches;
+    showNotification(message.replace(/\n/g, '、'), totalAutoMatches === totalOrders ? 'success' : 'warning');
     
     // 清除配對結果
     state.matchingResults = [];
