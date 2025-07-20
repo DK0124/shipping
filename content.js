@@ -2825,9 +2825,14 @@
       return;
     }
     
+    // 清除該提供商的舊批次資料
+    state.shippingDataBatches = state.shippingDataBatches.filter(batch => 
+      batch.provider !== state.currentProvider
+    );
+    
     const newBatch = {
       id: Date.now(),
-      type: 'html',
+      type: 'screenshot',  // 改為截圖類型
       provider: state.currentProvider,
       name: `${provider.name} - ${new Date().toLocaleTimeString()}`,
       data: [],
@@ -2836,101 +2841,65 @@
     
     const processedOrders = new Set();
     
-    // 7-11 四格特殊處理
-    if (state.currentProvider === 'SEVEN') {
-      const batchMap = new Map();
+    // 處理每個物流單元素
+    elements.forEach((element, index) => {
+      const data = extractShippingData(element);
+      if (!data || !data.orderNo || processedOrders.has(data.orderNo)) return;
       
-      elements.forEach((element, index) => {
-        const frame = element.querySelector('.div_frame') || element;
-        const data = extractShippingData(frame);
-        if (data && data.orderNo && !processedOrders.has(data.orderNo)) {
-          processedOrders.add(data.orderNo);
-          
-          // 檢查是否為批次列印格式
-          if (frame.classList.contains('div_frame')) {
-            const parentDiv = frame.closest('td > div') || frame.parentElement;
-            const position = getSevenElevenPosition(frame, parentDiv);
+      processedOrders.add(data.orderNo);
+      
+      // 使用 html2canvas 截圖
+      html2canvas(element, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        allowTaint: true
+      }).then(canvas => {
+        const imageData = canvas.toDataURL('image/png');
+        
+        newBatch.data.push({
+          ...data,
+          imageData: imageData,  // 儲存截圖
+          index: newBatch.data.length,
+          width: canvas.width,
+          height: canvas.height
+        });
+        
+        // 如果處理完所有元素
+        if (newBatch.data.length === processedOrders.size) {
+          if (newBatch.data.length > 0) {
+            state.shippingDataBatches.push(newBatch);
+            mergeAllBatchData();
+            updateBatchList();
+            updateShippingCount();
             
-            // 使用父元素作為批次識別
-            const batchKey = parentDiv;
-            if (!batchMap.has(batchKey)) {
-              batchMap.set(batchKey, {
-                element: parentDiv,
-                frames: []
-              });
-            }
-            
-            batchMap.get(batchKey).frames.push({
-              position: position,
-              data: data,
-              element: frame
-            });
-          } else {
-            // 單張物流單
-            newBatch.data.push({
-              ...data,
-              index: newBatch.data.length
+            // 立即儲存
+            chrome.storage.local.set({
+              shippingDataBatches: state.shippingDataBatches,
+              shippingData: state.shippingData,
+              pdfShippingData: state.pdfShippingData,
+              shippingProvider: state.currentProvider,
+              shippingTimestamp: new Date().toISOString()
+            }, () => {
+              showNotification(`成功抓取並儲存 ${newBatch.data.length} 張物流單`);
             });
           }
         }
+      }).catch(err => {
+        console.error('截圖失敗:', err);
       });
-      
-      // 處理 7-11 批次
-      batchMap.forEach((batch, key) => {
-        if (batch.frames.length === 4) {
-          // 儲存完整的四格 HTML
-          const fullHtml = batch.element.outerHTML;
-          batch.frames.forEach(frame => {
-            newBatch.data.push({
-              ...frame.data,
-              index: newBatch.data.length,
-              isBatchPrint: true,
-              batchHtml: fullHtml,
-              sectionIndex: frame.position
-            });
-          });
-        } else {
-          // 不完整的批次，個別處理
-          batch.frames.forEach(frame => {
-            newBatch.data.push({
-              ...frame.data,
-              index: newBatch.data.length
-            });
-          });
-        }
-      });
-    } else {
-      // 其他物流商的一般處理
-      elements.forEach((element, index) => {
-        const data = extractShippingData(element);
-        if (data && data.orderNo && !processedOrders.has(data.orderNo)) {
-          processedOrders.add(data.orderNo);
-          newBatch.data.push({
-            ...data,
-            index: newBatch.data.length
-          });
-        }
-      });
-    }
+    });
     
-    if (newBatch.data.length > 0) {
-      state.shippingDataBatches.push(newBatch);
-      mergeAllBatchData();
-      updateBatchList();
-      updateShippingCount();
-      
-      // 立即儲存
-      chrome.storage.local.set({
-        shippingDataBatches: state.shippingDataBatches,
-        shippingData: state.shippingData,
-        pdfShippingData: state.pdfShippingData,
-        shippingProvider: state.currentProvider,
-        shippingTimestamp: new Date().toISOString()
-      }, () => {
-        showNotification(`成功抓取並儲存 ${newBatch.data.length} 張物流單`);
-      });
-    } else {
-      showNotification('未抓取到有效的物流單', 'warning');
+    // 載入 html2canvas
+    if (typeof html2canvas === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      script.onload = () => {
+        // 重新執行函數
+        fetchAndSaveShippingData();
+      };
+      document.head.appendChild(script);
     }
   }
   
@@ -3048,7 +3017,7 @@
     if (pdfInput) pdfInput.value = '';
     if (pdfUploadArea) pdfUploadArea.classList.remove('has-file');
   }
-  
+    
   async function handleMultiplePdfUpload(files) {
     const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
     const pdfInfo = document.getElementById('bv-pdf-info');
@@ -3058,7 +3027,9 @@
     const progressFill = document.getElementById('bv-conversion-progress-fill');
     const statusEl = document.getElementById('bv-conversion-status');
     const pdfUploadArea = document.getElementById('bv-pdf-upload-area');
+    const pdfInput = document.getElementById('bv-pdf-input');
     
+    // 顯示檔案資訊
     if (uploadPrompt) uploadPrompt.style.display = 'none';
     if (pdfInfo) {
       pdfInfo.style.display = 'flex';
@@ -3079,6 +3050,7 @@
         timestamp: new Date().toISOString()
       };
       
+      // 處理 PDF 檔案...（原有的 PDF 處理邏輯）
       for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
         const file = files[fileIndex];
         
@@ -3169,9 +3141,16 @@
         updateBatchList();
         updatePreview();
         
+        // 1秒後恢復上傳區域
         setTimeout(() => {
           progressEl.classList.remove('active');
           progressFill.style.width = '0%';
+          
+          // 重置上傳區域
+          if (uploadPrompt) uploadPrompt.style.display = 'flex';
+          if (pdfInfo) pdfInfo.style.display = 'none';
+          if (pdfUploadArea) pdfUploadArea.classList.remove('has-file');
+          if (pdfInput) pdfInput.value = ''; // 清空輸入，允許重新選擇相同檔案
         }, 1000);
       });
       
@@ -3235,6 +3214,9 @@
     
     state.shippingDataBatches.forEach(batch => {
       if (batch.type === 'pdf') {
+        state.pdfShippingData.push(...batch.data);
+      } else if (batch.type === 'screenshot') {
+        // 截圖類型也加入 pdfShippingData，因為處理方式相同
         state.pdfShippingData.push(...batch.data);
       } else {
         state.shippingData.push(...batch.data);
@@ -4383,7 +4365,8 @@
     const isStore = shippingInfo.data.provider && 
                    CONFIG.PROVIDERS[shippingInfo.data.provider]?.type === 'store';
     
-    if (shippingInfo.type === 'pdf') {
+    // 使用截圖或 PDF 圖片
+    if (shippingInfo.type === 'pdf' || shippingInfo.data.imageData) {
       const img = document.createElement('img');
       img.src = shippingInfo.data.imageData;
       img.style.cssText = `
@@ -4392,7 +4375,8 @@
         object-fit: contain;
       `;
       content.appendChild(img);
-    } else {
+    } else if (shippingInfo.data.html) {
+      // 舊版 HTML 顯示（相容性）
       const wrapper = document.createElement('div');
       wrapper.className = isStore ? 'bv-store-shipping-content' : 'bv-shipping-wrapper-inner';
       wrapper.innerHTML = shippingInfo.data.html;
@@ -4467,7 +4451,7 @@
     
     // 處理標題列
     const headerRow = productTable.querySelector('.list-title');
-    if (headerRow && !state.hideTableHeader) {
+    if (headerRow && !state.hideTableHeader && !headerRow.querySelector('.bv-product-image-col')) {
       // 新增空白商品圖標題
       const imageHeader = document.createElement('th');
       imageHeader.className = 'bv-product-image-col';
@@ -4478,6 +4462,9 @@
     // 處理每個商品列
     const productRows = productTable.querySelectorAll('.list-item');
     productRows.forEach(row => {
+      // 檢查是否已經處理過
+      if (row.querySelector('.bv-product-image-col')) return;
+      
       const nameCell = row.querySelector('.list-item-name');
       if (!nameCell) return;
       
@@ -4490,6 +4477,12 @@
       
       if (img) {
         const imgClone = img.cloneNode(true);
+        imgClone.style.display = 'block'; // 確保圖片顯示
+        imgClone.style.width = '7mm';
+        imgClone.style.height = '7mm';
+        imgClone.style.objectFit = 'cover';
+        imgClone.style.borderRadius = '2px';
+        
         // 移除原始圖片
         img.remove();
         // 將圖片放入新欄位
@@ -5087,7 +5080,7 @@
     const controls = document.querySelector('.ignore-print');
     if (!controls) return;
     
-    // 不再隱藏，而是美化
+    // 美化樣式
     const style = document.createElement('style');
     style.id = 'bv-original-controls-style';
     style.textContent = `
@@ -5129,6 +5122,13 @@
         border-radius: 6px !important;
         padding: 4px 8px !important;
         font-size: 14px !important;
+      }
+      
+      /* 10×15 模式下隱藏特定元素 */
+      body.bv-converted .ignore-print button[onclick="printPage()"],
+      body.bv-converted .ignore-print #baseImageOpacityLabel,
+      body.bv-converted .ignore-print label:has(#fontSize) {
+        display: none !important;
       }
       
       @media print {
