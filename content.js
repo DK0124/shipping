@@ -5411,31 +5411,45 @@
     // 根據是否轉換選擇不同的容器
     let containers;
     if (state.isConverted) {
-      // 10×15 模式：選擇所有標籤頁面
       containers = document.querySelectorAll('.bv-label-page .bv-page-content');
     } else {
-      // A4 模式：選擇所有訂單內容
       containers = document.querySelectorAll('.order-content');
     }
     
     containers.forEach(container => {
-      // 找到所有商品列
-      const productRows = container.querySelectorAll('.list-item');
+      const productTable = container.querySelector('.list');
+      if (!productTable) return;
+      
+      // 嘗試找出數量欄位的索引（通過標題列）
+      let qtyColumnIndex = 0; // 預設是第一欄
+      const headerRow = productTable.querySelector('.list-title');
+      if (headerRow && !state.hideTableHeader) {
+        const headers = headerRow.querySelectorAll('th');
+        headers.forEach((header, index) => {
+          const headerText = header.textContent.trim();
+          if (headerText === '數量' || headerText === '數' || headerText.toLowerCase() === 'qty') {
+            qtyColumnIndex = index;
+          }
+        });
+      }
+      
+      // 處理商品列
+      const productRows = productTable.querySelectorAll('.list-item');
       
       productRows.forEach(row => {
-        // 找到數量欄位（通常是第一個 td）
         const cells = row.querySelectorAll('td');
-        let qtyCell = null;
         
-        // 尋找包含純數字的欄位
-        for (let cell of cells) {
-          const text = cell.textContent.trim();
-          if (/^\d+$/.test(text)) {
-            qtyCell = cell;
-            break;
-          }
+        // 確保有足夠的欄位
+        if (cells.length <= qtyColumnIndex) return;
+        
+        // 取得數量欄位（考慮可能有商品圖片欄位）
+        let actualIndex = qtyColumnIndex;
+        if (container.querySelector('.bv-product-image-col')) {
+          // 如果有商品圖片欄位，索引要加 1
+          actualIndex = qtyColumnIndex + 1;
         }
         
+        const qtyCell = cells[actualIndex];
         if (!qtyCell) return;
         
         // 如果已經有標記，先移除
@@ -5444,20 +5458,21 @@
           qtyCell.textContent = existingStar.getAttribute('data-qty') || existingStar.textContent;
         }
         
-        // 檢查數量
+        // 檢查內容是否為數字
         const qtyText = qtyCell.textContent.trim();
-        const qty = parseInt(qtyText);
         
-        if (!isNaN(qty) && qty >= 2) {
-          // 創建標記元素
-          const span = document.createElement('span');
-          span.className = 'bv-qty-star';
-          span.textContent = qty;
-          span.setAttribute('data-qty', qty);
+        if (/^\d+$/.test(qtyText)) {
+          const qty = parseInt(qtyText);
           
-          // 清空原本內容並加入標記
-          qtyCell.textContent = '';
-          qtyCell.appendChild(span);
+          if (!isNaN(qty) && qty >= 2) {
+            const span = document.createElement('span');
+            span.className = 'bv-qty-star';
+            span.textContent = qty;
+            span.setAttribute('data-qty', qty);
+            
+            qtyCell.textContent = '';
+            qtyCell.appendChild(span);
+          }
         }
       });
     });
