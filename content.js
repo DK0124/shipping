@@ -3023,35 +3023,6 @@
         }
       }
     }
-  } 
-    
-    function checkComplete() {
-      if (processedCount === processedOrders.size) {
-        if (newBatch.data.length > 0) {
-          state.shippingDataBatches.push(newBatch);
-          mergeAllBatchData();
-          updateBatchList();
-          updateShippingCount();
-          
-          // 立即儲存
-          chrome.storage.local.set({
-            shippingDataBatches: state.shippingDataBatches,
-            shippingData: state.shippingData,
-            pdfShippingData: state.pdfShippingData,
-            shippingProvider: state.currentProvider,
-            shippingTimestamp: new Date().toISOString()
-          }, () => {
-            showNotification(`成功抓取並儲存 ${newBatch.data.length} 張物流單`);
-          });
-        }
-      }
-    }
-  }
-  
-  function getSevenElevenPosition(frame, parentDiv) {
-    const allFrames = parentDiv.querySelectorAll('.div_frame');
-    const frameArray = Array.from(allFrames);
-    return frameArray.indexOf(frame);
   }
   
   function setupLabelModeEventListeners() {
