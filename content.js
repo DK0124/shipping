@@ -2447,7 +2447,6 @@
                       <span class="material-icons">swap_vert</span>
                       <div class="bv-setting-text">
                         <span class="bv-setting-label">物流單反序</span>
-                        <span class="bv-setting-desc">將物流單順序反轉</span>
                       </div>
                     </div>
                     <label class="bv-glass-switch">
