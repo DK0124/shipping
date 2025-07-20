@@ -2890,17 +2890,6 @@
         console.error('截圖失敗:', err);
       });
     });
-    
-    // 載入 html2canvas
-    if (typeof html2canvas === 'undefined') {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-      script.onload = () => {
-        // 重新執行函數
-        fetchAndSaveShippingData();
-      };
-      document.head.appendChild(script);
-    }
   }
   
   function getSevenElevenPosition(frame, parentDiv) {
