@@ -5252,9 +5252,6 @@
   // 初始化
   initialize();
   
-  // 清理函數
-  const cleanupFunctions = [];
-  
   // 監聽頁面卸載
   window.addEventListener('beforeunload', () => {
     cleanupFunctions.forEach(cleanup => cleanup());
