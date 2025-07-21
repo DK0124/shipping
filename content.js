@@ -493,8 +493,7 @@
         padding: 3mm !important;
       }
     }
-    `;
-    
+       
     .bv-glass-panel {
       width: 100%;
       height: 100%;
