@@ -1698,13 +1698,14 @@
             
             // 10×10 卡片
             const card2 = BVWizard.Utils.DOM.createElement('div', {
-                className: 'bv-format-card',
-                innerHTML: `
-                    <div class="bv-format-card-icon">📋</div>
-                    <div class="bv-format-card-title">10×10cm</div>
-                    <div class="bv-format-card-desc">正方形貼紙格式</div>
-                `
-            });
+                const card2 = BVWizard.Utils.DOM.createElement('div', {
+                    className: 'bv-format-card',
+                    innerHTML: `
+                        <div class="bv-format-card-icon">📋</div>
+                        <div class="bv-format-card-title">10×10cm</div>
+                        <div class="bv-format-card-desc">正方形貼紙格式</div>
+                    `
+                });
             
             // 點擊事件
             [card1, card2].forEach(card => {
