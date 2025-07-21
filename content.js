@@ -4564,7 +4564,7 @@
       // 10×10 格式下需要更多縮放
       if (state.labelFormat === '10x10') {
           content.style.cssText = `
-              transform: scale(0.67);
+              transform: scale(1);
               transform-origin: center center;
               width: 150%;
               height: 150%;
