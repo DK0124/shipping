@@ -4302,14 +4302,7 @@
     
     const orderContents = document.querySelectorAll('.order-content');
     const showOrderLabel = document.getElementById('bv-show-order-label')?.checked ?? false;
-    
-    const paddingMm = 5;
-    const pageHeight = 566;
-    const contentHeight = pageHeight - (paddingPx * 2);
-    
-    const orderContents = document.querySelectorAll('.order-content');
-    const showOrderLabel = document.getElementById('bv-show-order-label')?.checked ?? false;
-    
+        
     // 收集所有訂單資料
     state.detailPages = [];
     state.shippingPages = [];
