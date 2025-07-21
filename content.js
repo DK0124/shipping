@@ -4804,7 +4804,7 @@
               background: white;
               margin: 0;
               box-sizing: border-box;
-              transform: scale(0.67); /* 10×10 需要更多縮放 */
+              transform: scale(1); /* 10×10 需要更多縮放 */
               transform-origin: center center;
           `;
       }
