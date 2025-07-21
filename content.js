@@ -10,10 +10,7 @@
   iconLink.rel = 'stylesheet';
   iconLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
   document.head.appendChild(iconLink);
-  
-  // === 清理函數陣列 ===
-  let cleanupFunctions = [];
-  
+    
   // 強制載入 Material Icons 樣式
   const iconStyle = document.createElement('style');
   iconStyle.textContent = `
