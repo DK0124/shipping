@@ -154,6 +154,67 @@
       LOGISTICS: 'logistics'
     }
   };
+
+  function init() {
+    // 檢查頁面類型
+    detectPageType();
+    
+    // 根據頁面類型初始化
+    if (state.currentPageType === CONFIG.PAGE_TYPES.NONE) {
+      return; // 不是目標頁面，不執行任何操作
+    }
+    
+    // 插入樣式
+    const style = document.createElement('style');
+    style.textContent = getStyles();
+    document.head.appendChild(style);
+    
+    // 創建控制面板
+    createControlPanel();
+    
+    // 創建最小化按鈕
+    createMinimizedButton();
+    
+    // 設置事件監聽器
+    setupEventListeners();
+    
+    // 初始化拖曳功能
+    initDragFunction();
+    
+    // 恢復設定
+    chrome.storage.local.get(['bvPanelMinimized', 'bvLabelSettings'], (result) => {
+      if (result.bvPanelMinimized !== undefined) {
+        state.isPanelMinimized = result.bvPanelMinimized;
+        
+        if (state.isPanelMinimized) {
+          const panel = document.getElementById('bv-label-control-panel');
+          const minButton = document.getElementById('bv-minimized-button');
+          if (panel) panel.classList.add('minimized');
+          if (minButton) minButton.style.display = 'flex';
+        }
+      }
+      
+      if (result.bvLabelSettings) {
+        // 恢復上次的設定
+        Object.keys(result.bvLabelSettings).forEach(key => {
+          if (state.hasOwnProperty(key)) {
+            state[key] = result.bvLabelSettings[key];
+          }
+        });
+      }
+    });
+    
+    // 如果是物流單頁面，執行特殊初始化
+    if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
+      initShippingMode();
+    }
+    
+    // 如果頁面已經轉換過，恢復轉換狀態
+    if (document.body.classList.contains('bv-converted')) {
+      state.isConverted = true;
+      updatePanelContent();
+    }
+  }
   
   let state = {
     isConverted: false,
