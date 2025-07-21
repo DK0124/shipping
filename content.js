@@ -4304,7 +4304,6 @@
     const showOrderLabel = document.getElementById('bv-show-order-label')?.checked ?? false;
     
     const paddingMm = 5;
-    const paddingPx = paddingMm * 3.78;
     const pageHeight = 566;
     const contentHeight = pageHeight - (paddingPx * 2);
     
