@@ -4287,200 +4287,199 @@
   }
   
   function handlePagination() {
-    // 清除現有快取
-    state.previewCache.clear();
-    
-    document.querySelectorAll('.bv-page-container').forEach(container => container.remove());
-    document.querySelectorAll('.bv-label-page').forEach(page => page.remove());
-
-    // 根據選擇的格式獲取尺寸
-    const format = CONFIG.LABEL_FORMATS[state.labelFormat];
-    const paddingPx = format.padding * 3.78;
-    const pageHeight = format.heightPx;
-    const pageWidth = format.widthPx;
-    const contentHeight = pageHeight - (paddingPx * 2);
-    
-    const orderContents = document.querySelectorAll('.order-content');
-    const showOrderLabel = document.getElementById('bv-show-order-label')?.checked ?? false;
-        
-    // 收集所有訂單資料
-    state.detailPages = [];
-    state.shippingPages = [];
-    state.matchingResults = [];
-    
-    // 準備物流單資料（考慮反序）
-    let shippingDataToUse = state.shippingData;
-    let pdfDataToUse = state.pdfShippingData;
-    
-    if (state.reverseShipping && state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
-      // 反轉物流單資料
-      shippingDataToUse = [...state.shippingData].reverse();
-      pdfDataToUse = [...state.pdfShippingData].reverse();
-    }
-    
-    // 根據列印模式處理
-    if (state.printMode === CONFIG.PRINT_MODES.SHIPPING_ONLY) {
-      // 純印物流單模式
-      createShippingOnlyPages(shippingDataToUse, pdfDataToUse);
-    } else {
-      // 其他模式：處理出貨明細
-      orderContents.forEach((orderContent, orderIndex) => {
-        orderContent.classList.add('bv-original');
-        
-        // 提取訂單和物流資訊
-        const orderInfo = extractOrderInfo(orderContent);
-        const orderData = {
-          orderNo: orderInfo.orderNo,
-          logisticsNo: orderInfo.logisticsNo,
-          index: orderIndex,
-          element: orderContent,
-          pages: []
-        };
-  
-        // 先創建 pageContainer
-        const pageContainer = document.createElement('div');
-        pageContainer.className = 'bv-page-container';
-        pageContainer.setAttribute('data-order-index', orderIndex);
-        pageContainer.setAttribute('data-order-no', orderInfo.orderNo || '');
-        orderContent.parentNode.insertBefore(pageContainer, orderContent.nextSibling);
-        
-        // 處理明細分頁
-        if (state.printMode !== CONFIG.PRINT_MODES.SHIPPING_ONLY) {
-          const orderContentClone = orderContent.cloneNode(true);
-          
-          // 先處理商品圖片（在精簡模式之前）
-          processProductImages(orderContentClone);
-          
-          // 再處理精簡模式
-          if (state.hideExtraInfo) {
-            processExtraInfoHiding(orderContentClone);
-          }
-          
-          const elements = Array.from(orderContentClone.children);
-          let currentPage = null;
-          let currentPageContent = null;
-          let currentHeight = 0;
-          
-          elements.forEach((element, index) => {
-            if (state.hideTableHeader && element.classList.contains('list-title')) {
-              return;
-            }
-            
-            const clone = element.cloneNode(true);
-            const wrapper = document.createElement('div');
-            wrapper.style.cssText = `
-              position: absolute;
-              visibility: hidden;
-              width: ${377 - paddingPx * 2}px;
-            `;
-            wrapper.appendChild(clone);
-            document.body.appendChild(wrapper);
-            
-            const elementHeight = wrapper.offsetHeight;
-            document.body.removeChild(wrapper);
-            
-            if (elementHeight === 0) return;
-            
-            if (!currentPage || (currentHeight + elementHeight > contentHeight && currentHeight > 0)) {
-              currentPage = document.createElement('div');
-              currentPage.className = 'bv-label-page';
-              currentPage.setAttribute('data-page-type', 'detail');
-              currentPage.setAttribute('data-order-index', orderIndex);
-              currentPage.setAttribute('data-order-no', orderInfo.orderNo || '');
-              currentPageContent = document.createElement('div');
-              currentPageContent.className = 'bv-page-content';
-              currentPage.appendChild(currentPageContent);
+      // 清除現有快取
+      state.previewCache.clear();
+      
+      document.querySelectorAll('.bv-page-container').forEach(container => container.remove());
+      document.querySelectorAll('.bv-label-page').forEach(page => page.remove());
+      
+      // 根據選擇的格式獲取尺寸
+      const format = CONFIG.LABEL_FORMATS[state.labelFormat];
+      const paddingPx = format.padding * 3.78;
+      const pageHeight = format.heightPx;
+      const pageWidth = format.widthPx;
+      const contentHeight = pageHeight - (paddingPx * 2);
+      
+      const orderContents = document.querySelectorAll('.order-content');
+      const showOrderLabel = document.getElementById('bv-show-order-label')?.checked ?? false;
+      
+      // 收集所有訂單資料
+      state.detailPages = [];
+      state.shippingPages = [];
+      state.matchingResults = [];
+      
+      // 準備物流單資料（考慮反序）
+      let shippingDataToUse = state.shippingData;
+      let pdfDataToUse = state.pdfShippingData;
+      
+      if (state.reverseShipping && state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
+          // 反轉物流單資料
+          shippingDataToUse = [...state.shippingData].reverse();
+          pdfDataToUse = [...state.pdfShippingData].reverse();
+      }
+      
+      // 根據列印模式處理
+      if (state.printMode === CONFIG.PRINT_MODES.SHIPPING_ONLY) {
+          // 純印物流單模式
+          createShippingOnlyPages(shippingDataToUse, pdfDataToUse);
+      } else {
+          // 其他模式：處理出貨明細
+          orderContents.forEach((orderContent, orderIndex) => {
+              orderContent.classList.add('bv-original');
               
-              pageContainer.appendChild(currentPage);
-              orderData.pages.push(currentPage);
-              currentHeight = 0;
-              
-              // Lazy load 圖片
-              setupLazyLoadForPage(currentPage);
-            }
-            
-            const elementClone = element.cloneNode(true);
-            currentPageContent.appendChild(elementClone);
-            currentHeight += elementHeight;
-          });
-        }
-        
-        state.detailPages.push(orderData);
-
-        // 創建頁面時加入格式類別
-        currentPage = document.createElement('div');
-        currentPage.className = `bv-label-page format-${state.labelFormat}`;
-        currentPage.style.padding = `${format.padding}mm`;
-        currentPage.style.width = `${pageWidth}px`;
-        currentPage.style.height = `${pageHeight}px`;
-        
-        // 根據列印模式決定是否插入物流單
-        if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
-          const matchType = state.matchMode || 'index';
-          let shippingData = null;
-          
-          // 使用可能已反序的資料
-          const allShippingData = [...shippingDataToUse, ...pdfDataToUse];
-          
-          if (matchType === 'logistics' && orderInfo.logisticsNo) {
-            shippingData = findMatchingShippingDataByLogisticsNo(orderInfo.logisticsNo, allShippingData);
-          } else {
-            // 索引配對
-            if (allShippingData[orderIndex]) {
-              shippingData = {
-                type: allShippingData[orderIndex].imageData ? 'pdf' : 'html',
-                data: allShippingData[orderIndex]
-              };
-            }
-          }
-          
-          if (shippingData) {
-            // 處理 7-11 四格的情況
-            if (shippingData.data.sectionIndex !== undefined) {
-              createSevenElevenBatchPages(shippingData, orderInfo.orderNo, showOrderLabel, orderIndex, pageContainer);
-            } else {
-              const shippingPage = createShippingPage(shippingData, orderInfo.orderNo, showOrderLabel, orderIndex);
-              if (shippingPage) {
-                pageContainer.appendChild(shippingPage);
-                
-                state.shippingPages.push({
+              // 提取訂單和物流資訊
+              const orderInfo = extractOrderInfo(orderContent);
+              const orderData = {
                   orderNo: orderInfo.orderNo,
+                  logisticsNo: orderInfo.logisticsNo,
                   index: orderIndex,
-                  page: shippingPage
-                });
+                  element: orderContent,
+                  pages: []
+              };
+              
+              // 先創建 pageContainer
+              const pageContainer = document.createElement('div');
+              pageContainer.className = 'bv-page-container';
+              pageContainer.setAttribute('data-order-index', orderIndex);
+              pageContainer.setAttribute('data-order-no', orderInfo.orderNo || '');
+              orderContent.parentNode.insertBefore(pageContainer, orderContent.nextSibling);
+              
+              // 處理明細分頁
+              if (state.printMode !== CONFIG.PRINT_MODES.SHIPPING_ONLY) {
+                  const orderContentClone = orderContent.cloneNode(true);
+                  
+                  // 先處理商品圖片（在精簡模式之前）
+                  processProductImages(orderContentClone);
+                  
+                  // 再處理精簡模式
+                  if (state.hideExtraInfo) {
+                      processExtraInfoHiding(orderContentClone);
+                  }
+                  
+                  const elements = Array.from(orderContentClone.children);
+                  let currentPage = null;  // 在這裡宣告 currentPage
+                  let currentPageContent = null;
+                  let currentHeight = 0;
+                  
+                  elements.forEach((element, index) => {
+                      if (state.hideTableHeader && element.classList.contains('list-title')) {
+                          return;
+                      }
+                      
+                      const clone = element.cloneNode(true);
+                      const wrapper = document.createElement('div');
+                      wrapper.style.cssText = `
+                          position: absolute;
+                          visibility: hidden;
+                          width: ${pageWidth - paddingPx * 2}px;
+                      `;
+                      wrapper.appendChild(clone);
+                      document.body.appendChild(wrapper);
+                      
+                      const elementHeight = wrapper.offsetHeight;
+                      document.body.removeChild(wrapper);
+                      
+                      if (elementHeight === 0) return;
+                      
+                      if (!currentPage || (currentHeight + elementHeight > contentHeight && currentHeight > 0)) {
+                          // 創建新頁面時使用正確的格式
+                          currentPage = document.createElement('div');
+                          currentPage.className = `bv-label-page format-${state.labelFormat}`;
+                          currentPage.style.padding = `${format.padding}mm`;
+                          currentPage.style.width = `${pageWidth}px`;
+                          currentPage.style.height = `${pageHeight}px`;
+                          currentPage.setAttribute('data-page-type', 'detail');
+                          currentPage.setAttribute('data-order-index', orderIndex);
+                          currentPage.setAttribute('data-order-no', orderInfo.orderNo || '');
+                          
+                          currentPageContent = document.createElement('div');
+                          currentPageContent.className = 'bv-page-content';
+                          currentPage.appendChild(currentPageContent);
+                          
+                          pageContainer.appendChild(currentPage);
+                          orderData.pages.push(currentPage);
+                          currentHeight = 0;
+                          
+                          // Lazy load 圖片
+                          setupLazyLoadForPage(currentPage);
+                      }
+                      
+                      const elementClone = element.cloneNode(true);
+                      currentPageContent.appendChild(elementClone);
+                      currentHeight += elementHeight;
+                  });
               }
-            }
-            
-            // 記錄配對狀態
-            state.matchingResults.push({
-              orderNo: orderInfo.orderNo,
-              logisticsNo: orderInfo.logisticsNo,
-              orderIndex: orderIndex,
-              matchType: matchType,
-              shippingOrderNo: shippingData.data.orderNo || shippingData.data.barcode,
-              matched: true
-            });
-          } else {
-            // 記錄未配對狀態
-            state.matchingResults.push({
-              orderNo: orderInfo.orderNo,
-              logisticsNo: orderInfo.logisticsNo,
-              orderIndex: orderIndex,
-              matchType: matchType,
-              matched: false
-            });
-          }
-        }
-      });
-    }
-    
-    updateLogos();
-    applySortOrder();
-    
-    // 顯示配對結果
-    if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH && state.matchingResults) {
-      showMatchingResults();
-    }
+              
+              state.detailPages.push(orderData);
+              
+              // 根據列印模式決定是否插入物流單
+              if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH) {
+                  const matchType = state.matchMode || 'index';
+                  let shippingData = null;
+                  
+                  // 使用可能已反序的資料
+                  const allShippingData = [...shippingDataToUse, ...pdfDataToUse];
+                  
+                  if (matchType === 'logistics' && orderInfo.logisticsNo) {
+                      shippingData = findMatchingShippingDataByLogisticsNo(orderInfo.logisticsNo, allShippingData);
+                  } else {
+                      // 索引配對
+                      if (allShippingData[orderIndex]) {
+                          shippingData = {
+                              type: allShippingData[orderIndex].imageData ? 'pdf' : 'html',
+                              data: allShippingData[orderIndex]
+                          };
+                      }
+                  }
+                  
+                  if (shippingData) {
+                      // 處理 7-11 四格的情況
+                      if (shippingData.data.sectionIndex !== undefined) {
+                          createSevenElevenBatchPages(shippingData, orderInfo.orderNo, showOrderLabel, orderIndex, pageContainer);
+                      } else {
+                          const shippingPage = createShippingPage(shippingData, orderInfo.orderNo, showOrderLabel, orderIndex);
+                          if (shippingPage) {
+                              pageContainer.appendChild(shippingPage);
+                              
+                              state.shippingPages.push({
+                                  orderNo: orderInfo.orderNo,
+                                  index: orderIndex,
+                                  page: shippingPage
+                              });
+                          }
+                      }
+                      
+                      // 記錄配對狀態
+                      state.matchingResults.push({
+                          orderNo: orderInfo.orderNo,
+                          logisticsNo: orderInfo.logisticsNo,
+                          orderIndex: orderIndex,
+                          matchType: matchType,
+                          shippingOrderNo: shippingData.data.orderNo || shippingData.data.barcode,
+                          matched: true
+                      });
+                  } else {
+                      // 記錄未配對狀態
+                      state.matchingResults.push({
+                          orderNo: orderInfo.orderNo,
+                          logisticsNo: orderInfo.logisticsNo,
+                          orderIndex: orderIndex,
+                          matchType: matchType,
+                          matched: false
+                      });
+                  }
+              }
+          });
+      }
+      
+      updateLogos();
+      applySortOrder();
+      applyTableAutoAdjust(); // 套用表格自動調整
+      
+      // 顯示配對結果
+      if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH && state.matchingResults) {
+          showMatchingResults();
+      }
   }
   
   function createSevenElevenBatchPages(shippingInfo, orderNo, showOrderLabel, orderIndex, pageContainer) {
