@@ -1,9 +1,45 @@
-// BV SHOP 出貨助手 (v7.0)
+// BV SHOP 出貨助手 (完整整合版 v6.0)
 (function() {
   'use strict';
   
-  // === 全域變數與配置 ===
+  // 修正 Material Icons 載入
+  const iconLink = document.createElement('link');
+  iconLink.rel = 'stylesheet';
+  iconLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
+  document.head.appendChild(iconLink);
+  
+  // === 清理函數陣列 ===
   let cleanupFunctions = [];
+  
+  // 強制載入 Material Icons 樣式
+  const iconStyle = document.createElement('style');
+  iconStyle.textContent = `
+    @font-face {
+      font-family: 'Material Icons';
+      font-style: normal;
+      font-weight: 400;
+      src: url(https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
+    }
+    
+    .material-icons {
+      font-family: 'Material Icons' !important;
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  `;
+  document.head.appendChild(iconStyle);
   
   const CONFIG = {
     PAGE_TYPES: {
@@ -138,54 +174,18 @@
     fontSize: '11',  // 預設11px
     
     // 7-11 四格處理
-    sevenBatchCache: new Map()
+    sevenBatchCache: new Map(),
+    
+    // Storage 監聽器
+    storageListener: null
   };
 
-  // === 初始化樣式 ===
-  function initializeStyles() {
-    // Material Icons
-    const iconLink = document.createElement('link');
-    iconLink.rel = 'stylesheet';
-    iconLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
-    document.head.appendChild(iconLink);
+  const fontLink = document.createElement('link');
+  fontLink.rel = 'stylesheet';
+  fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap';
+  document.head.appendChild(fontLink);
     
-    const iconStyle = document.createElement('style');
-    iconStyle.textContent = `
-      @font-face {
-        font-family: 'Material Icons';
-        font-style: normal;
-        font-weight: 400;
-        src: url(https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
-      }
-      
-      .material-icons {
-        font-family: 'Material Icons' !important;
-        font-weight: normal;
-        font-style: normal;
-        font-size: 24px;
-        line-height: 1;
-        letter-spacing: normal;
-        text-transform: none;
-        display: inline-block;
-        white-space: nowrap;
-        word-wrap: normal;
-        direction: ltr;
-        font-feature-settings: 'liga';
-        -webkit-font-smoothing: antialiased;
-        text-rendering: optimizeLegibility;
-        -moz-osx-font-smoothing: grayscale;
-      }
-    `;
-    document.head.appendChild(iconStyle);
-    
-    // Noto Sans TC
-    const fontLink = document.createElement('link');
-    fontLink.rel = 'stylesheet';
-    fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap';
-    document.head.appendChild(fontLink);
-  }
-    
-  // === 初始化 Lazy Load ===
+  // 初始化 Lazy Load
   function initLazyLoad() {
     if ('IntersectionObserver' in window) {
       state.lazyLoadObserver = new IntersectionObserver((entries) => {
@@ -206,7 +206,6 @@
     }
   }
   
-  // === 頁面偵測 ===
   function detectCurrentPage() {
     const hostname = window.location.hostname;
     const pathname = window.location.pathname;
@@ -306,9 +305,10 @@
     console.log('✗ 未偵測到支援的頁面類型');
   }
   
-  // === 創建控制面板 ===
   function createControlPanel() {
+    // 只在支援的頁面創建面板
     if (!state.currentPageType) return;
+    
     if (document.getElementById('bv-label-control-panel')) return;
     
     const panel = document.createElement('div');
@@ -340,7 +340,6 @@
     }
   }
   
-  // === 取得面板樣式 ===
   function getPanelStyles() {
     return `
     * {
@@ -1804,7 +1803,8 @@
       display: none !important;
     }
     
-    /* 商品圖片加表格寬度優化 */
+    /* === 版面配置優化 === */
+    /* 商品表格欄位寬度優化 */
     .bv-converted .list,
     .bv-label-page .list {
       table-layout: fixed !important;
@@ -1837,13 +1837,13 @@
     /* 價格文字大小調整 */
     .bv-converted .list-item td:last-child,
     .bv-label-page .list-item td:last-child {
-      font-size: ${parseFloat(fontSize) - 1.5}px !important;
+      font-size: ${parseFloat(state.fontSize) - 1.5}px !important;
     }
     
-    /* 適應性版面調整 */
+    /* 需要壓縮版面時的樣式 */
     .needs-compact td {
       padding: 3px 3px !important;
-      font-size: ${parseFloat(fontSize) - 1}px !important;
+      font-size: ${parseFloat(state.fontSize) - 1}px !important;
     }
     
     .needs-compact .bv-qty-star::before {
@@ -2156,1630 +2156,10 @@
       }
     }    
     `;
-  }
-
-  // === 取得樣式內容 ===
-  function getStyles() {
-    const fontSize = state.isConverted ? 
-      (document.getElementById('bv-font-size')?.value || '11') : 
-      '12';
     
-    return `
-    /* Google Material Icons */
-    @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
-    
-    /* 控制面板樣式 */
-    #bv-label-control-panel {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      width: 380px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 16px;
-      box-shadow: 
-        0 4px 24px rgba(0, 0, 0, 0.08),
-        0 1px 2px rgba(0, 0, 0, 0.04),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
-      z-index: 9999;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      will-change: transform;
-    }
-    
-    #bv-label-control-panel.minimized {
-      opacity: 0;
-      transform: scale(0.8) translateY(-20px);
-      pointer-events: none;
-    }
-    
-    /* 玻璃質感面板 */
-    .bv-glass-panel {
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .bv-glass-panel::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, 
-        transparent 0%, 
-        rgba(255, 255, 255, 0.5) 50%, 
-        transparent 100%);
-    }
-    
-    /* 面板標題 */
-    .bv-panel-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: move;
-      user-select: none;
-    }
-    
-    .bv-header-content {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    
-    .bv-icon-wrapper {
-      width: 48px;
-      height: 48px;
-      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 
-        0 2px 8px rgba(33, 150, 243, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    }
-    
-    .bv-icon-wrapper.bv-label-mode {
-      background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-      box-shadow: 
-        0 2px 8px rgba(156, 39, 176, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    }
-    
-    .bv-icon-wrapper.bv-shipping-mode {
-      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-      box-shadow: 
-        0 2px 8px rgba(255, 152, 0, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    }
-    
-    .bv-icon-wrapper .material-icons {
-      font-size: 28px;
-      color: #1976d2;
-    }
-    
-    .bv-icon-wrapper.bv-label-mode .material-icons {
-      color: #7b1fa2;
-    }
-    
-    .bv-icon-wrapper.bv-shipping-mode .material-icons {
-      color: #f57c00;
-    }
-    
-    .bv-title-group {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    
-    .bv-panel-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #000;
-      margin: 0;
-      letter-spacing: -0.02em;
-    }
-    
-    .bv-panel-subtitle {
-      font-size: 13px;
-      color: rgba(0, 0, 0, 0.5);
-      font-weight: 400;
-    }
-    
-    /* 按鈕樣式 */
-    .bv-glass-button {
-      background: rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      padding: 8px 16px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-    
-    .bv-glass-button:hover {
-      background: rgba(255, 255, 255, 0.95);
-      transform: translateY(-1px);
-      box-shadow: 
-        0 4px 12px rgba(0, 0, 0, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    }
-    
-    .bv-glass-button:active {
-      transform: translateY(0);
-      box-shadow: 
-        0 1px 3px rgba(0, 0, 0, 0.12),
-        inset 0 1px 2px rgba(0, 0, 0, 0.08);
-    }
-    
-    .bv-glass-button .material-icons {
-      font-size: 18px;
-      color: rgba(0, 0, 0, 0.6);
-    }
-    
-    .bv-glass-button.bv-primary {
-      background: rgba(81, 138, 255, 0.1);
-      border-color: rgba(81, 138, 255, 0.2);
-      color: #518aff;
-    }
-    
-    .bv-glass-button.bv-primary:hover {
-      background: rgba(81, 138, 255, 0.15);
-    }
-    
-    .bv-minimize-btn {
-      width: 36px;
-      height: 36px;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    /* 最小化按鈕 */
-    .bv-minimized-button {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      padding: 12px 20px;
-      border-radius: 24px;
-      box-shadow: 
-        0 4px 24px rgba(0, 0, 0, 0.08),
-        0 1px 2px rgba(0, 0, 0, 0.04),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
-      cursor: pointer;
-      display: none;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      color: rgba(0, 0, 0, 0.8);
-      transition: all 0.2s ease;
-      z-index: 9998;
-      border: 1px solid rgba(0, 0, 0, 0.06);
-    }
-    
-    .bv-minimized-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 
-        0 6px 32px rgba(0, 0, 0, 0.12),
-        0 2px 4px rgba(0, 0, 0, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    }
-    
-    .bv-minimized-button .material-icons {
-      font-size: 20px;
-      color: #518aff;
-    }
-    
-    /* 面板內容區域 */
-    .bv-panel-body {
-      max-height: calc(80vh - 120px);
-      overflow-y: auto;
-      scroll-behavior: smooth;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.02);
-      border-radius: 3px;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.1);
-      border-radius: 3px;
-      transition: background 0.2s ease;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.15);
-    }
-    
-    /* 主要按鈕區域 */
-    .bv-primary-section {
-      padding: 20px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    }
-    
-    .bv-primary-button {
-      width: 100%;
-      padding: 14px 20px;
-      background: linear-gradient(135deg, #518aff 0%, #4a7ff7 100%);
-      border: none;
-      border-radius: 12px;
-      color: white;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      box-shadow: 
-        0 4px 16px rgba(81, 138, 255, 0.24),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-    
-    .bv-primary-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 
-        0 6px 24px rgba(81, 138, 255, 0.32),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-    
-    .bv-primary-button:active {
-      transform: translateY(0);
-    }
-    
-    .bv-button-icon {
-      width: 40px;
-      height: 40px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    
-    .bv-button-icon .material-icons {
-      font-size: 24px;
-      color: white;
-    }
-    
-    .bv-button-content {
-      text-align: left;
-      flex: 1;
-    }
-    
-    .bv-button-title {
-      display: block;
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
-    
-    .bv-button-subtitle {
-      display: block;
-      font-size: 12px;
-      opacity: 0.8;
-      font-weight: 400;
-    }
-    
-    /* 設定卡片 */
-    .bv-settings-card {
-      margin: 16px;
-      background: rgba(248, 250, 252, 0.5);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 12px;
-      overflow: hidden;
-      transition: all 0.3s ease;
-    }
-    
-    .bv-settings-card.collapsed .bv-card-content {
-      display: none;
-    }
-    
-    .bv-settings-card.collapsed .bv-collapse-icon .material-icons {
-      transform: rotate(-90deg);
-    }
-    
-    .bv-card-title {
-      padding: 14px 16px;
-      margin: 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      user-select: none;
-      transition: background 0.2s ease;
-    }
-    
-    .bv-card-title:hover {
-      background: rgba(0, 0, 0, 0.02);
-    }
-    
-    .bv-card-title .material-icons {
-      font-size: 20px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-collapse-icon {
-      margin-left: auto;
-      transition: transform 0.3s ease;
-    }
-    
-    .bv-collapse-icon .material-icons {
-      font-size: 20px;
-      color: rgba(0, 0, 0, 0.3);
-      transition: transform 0.3s ease;
-    }
-    
-    .bv-card-content {
-      padding: 16px;
-    }
-    
-    /* 設定項目 */
-    .bv-settings-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    
-    .bv-setting-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      background: rgba(255, 255, 255, 0.6);
-      border-radius: 8px;
-      transition: background 0.2s ease;
-    }
-    
-    .bv-setting-item:hover {
-      background: rgba(255, 255, 255, 0.8);
-    }
-    
-    .bv-setting-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex: 1;
-    }
-    
-    .bv-setting-info .material-icons {
-      font-size: 20px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-setting-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    
-    .bv-setting-label {
-      font-size: 14px;
-      font-weight: 500;
-      color: rgba(0, 0, 0, 0.8);
-    }
-    
-    .bv-setting-desc {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    /* 開關樣式 */
-    .bv-glass-switch {
-      position: relative;
-      display: inline-block;
-      width: 44px;
-      height: 24px;
-    }
-    
-    .bv-glass-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    
-    .bv-switch-slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.12);
-      transition: all 0.3s ease;
-      border-radius: 24px;
-    }
-    
-    .bv-switch-slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: all 0.3s ease;
-      border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    
-    .bv-glass-switch input:checked + .bv-switch-slider {
-      background-color: #518aff;
-    }
-    
-    .bv-glass-switch input:checked + .bv-switch-slider:before {
-      transform: translateX(20px);
-    }
-    
-    .bv-glass-switch.disabled {
-      opacity: 0.5;
-      pointer-events: none;
-    }
-    
-    /* 滑桿樣式 */
-    .bv-slider-group {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    
-    .bv-slider-item {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .bv-slider-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-      color: rgba(0, 0, 0, 0.7);
-    }
-    
-    .bv-value-label {
-      font-weight: 600;
-      color: #518aff;
-      font-size: 12px;
-      background: rgba(81, 138, 255, 0.08);
-      padding: 2px 8px;
-      border-radius: 4px;
-    }
-    
-    .bv-glass-slider {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 6px;
-      border-radius: 3px;
-      background: rgba(0, 0, 0, 0.06);
-      outline: none;
-      transition: background 0.2s;
-    }
-    
-    .bv-glass-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #518aff;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 8px rgba(81, 138, 255, 0.3);
-    }
-    
-    .bv-glass-slider::-webkit-slider-thumb:hover {
-      transform: scale(1.2);
-      box-shadow: 0 2px 12px rgba(81, 138, 255, 0.4);
-    }
-    
-    .bv-glass-slider::-moz-range-thumb {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #518aff;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      border: none;
-      box-shadow: 0 2px 8px rgba(81, 138, 255, 0.3);
-    }
-    
-    .bv-glass-slider::-moz-range-thumb:hover {
-      transform: scale(1.2);
-      box-shadow: 0 2px 12px rgba(81, 138, 255, 0.4);
-    }
-    
-    /* 輸入框樣式 */
-    .bv-glass-input {
-      width: 100%;
-      padding: 10px 14px;
-      background: rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      font-size: 14px;
-      transition: all 0.2s ease;
-      outline: none;
-    }
-    
-    .bv-glass-input:focus {
-      background: rgba(255, 255, 255, 0.95);
-      border-color: #518aff;
-      box-shadow: 0 0 0 3px rgba(81, 138, 255, 0.1);
-    }
-    
-    /* 面板底部 */
-    .bv-panel-footer {
-      padding: 16px 20px;
-      border-top: 1px solid rgba(0, 0, 0, 0.06);
-      background: rgba(248, 250, 252, 0.5);
-    }
-    
-    .bv-glass-action-button {
-      width: 100%;
-      padding: 12px 20px;
-      background: rgba(81, 138, 255, 0.08);
-      border: 1px solid rgba(81, 138, 255, 0.2);
-      border-radius: 10px;
-      color: #518aff;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    
-    .bv-glass-action-button:hover {
-      background: rgba(81, 138, 255, 0.12);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(81, 138, 255, 0.15);
-    }
-    
-    .bv-glass-action-button .material-icons {
-      font-size: 20px;
-    }
-    
-    /* 通知樣式 */
-    .bv-notification {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      padding: 12px 20px;
-      border-radius: 24px;
-      box-shadow: 
-        0 4px 24px rgba(0, 0, 0, 0.08),
-        0 1px 2px rgba(0, 0, 0, 0.04);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      color: rgba(0, 0, 0, 0.8);
-      z-index: 10000;
-      transition: all 0.3s ease;
-      border: 1px solid rgba(0, 0, 0, 0.06);
-    }
-    
-    .bv-notification.show {
-      transform: translateX(-50%) translateY(0);
-    }
-    
-    .bv-notification .material-icons {
-      font-size: 20px;
-    }
-    
-    .bv-notification-success .material-icons {
-      color: #4caf50;
-    }
-    
-    .bv-notification-warning .material-icons {
-      color: #ff9800;
-    }
-    
-    .bv-notification-error .material-icons {
-      color: #f44336;
-    }
-    
-    /* 標籤頁面樣式 */
-    .bv-converted {
-      background: #f5f5f5 !important;
-    }
-    
-    .bv-converted .order-content.bv-original {
-      display: none !important;
-    }
-    
-    .bv-page-container {
-      margin: 0 auto 20px;
-      width: 377px;
-    }
-    
-    .bv-label-page {
-      width: 377px;
-      height: 566px;
-      background: white;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      margin: 0 auto;
-      position: relative;
-      overflow: hidden;
-      page-break-after: always;
-      page-break-inside: avoid;
-    }
-    
-    .bv-label-page .bv-page-content {
-      height: 100%;
-      overflow: hidden;
-    }
-    
-    /* 數量標示樣式 */
-    .bv-qty-star {
-      display: inline-block;
-      color: #ff5252;
-      font-weight: bold;
-      margin-right: 2px;
-      font-size: 1.1em;
-    }
-    
-    .bv-qty-star::before {
-      content: "★";
-    }
-    
-    .bv-qty-highlight {
-      color: #ff5252 !important;
-      font-weight: bold !important;
-    }
-    
-    /* 底圖樣式 */
-    .logo-background {
-      position: absolute;
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-      z-index: 1;
-    }
-    
-    .bv-label-page .bv-page-content {
-      position: relative;
-      z-index: 2;
-    }
-    
-    /* 底圖上傳區域 */
-    .bv-logo-upload-area {
-      width: 100%;
-      height: 120px;
-      border: 2px dashed rgba(0, 0, 0, 0.12);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
-      overflow: hidden;
-      background: rgba(0, 0, 0, 0.02);
-    }
-    
-    .bv-logo-upload-area:hover {
-      border-color: rgba(81, 138, 255, 0.3);
-      background: rgba(81, 138, 255, 0.02);
-    }
-    
-    .bv-logo-upload-area.has-logo {
-      border-style: solid;
-      border-color: rgba(81, 138, 255, 0.2);
-      background: rgba(81, 138, 255, 0.04);
-    }
-    
-    .bv-logo-preview {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-    
-    .bv-upload-hint {
-      color: rgba(0, 0, 0, 0.5);
-      font-size: 13px;
-      margin-top: 8px;
-    }
-    
-    .bv-logo-controls {
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid rgba(0, 0, 0, 0.06);
-      display: none;
-    }
-    
-    .bv-logo-controls.active {
-      display: block;
-    }
-    
-    .bv-remove-logo-btn {
-      width: 100%;
-      margin-top: 12px;
-      padding: 8px;
-      background: rgba(244, 67, 54, 0.08);
-      border: 1px solid rgba(244, 67, 54, 0.2);
-      border-radius: 6px;
-      color: #f44336;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-remove-logo-btn:hover {
-      background: rgba(244, 67, 54, 0.12);
-    }
-    
-    .bv-remove-logo-btn .material-icons {
-      font-size: 16px;
-    }
-    
-    /* 物流單相關樣式 */
-    .bv-integration-status {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.6);
-      border-radius: 8px;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-    }
-    
-    .bv-integration-status.success {
-      background: rgba(76, 175, 80, 0.08);
-      border-color: rgba(76, 175, 80, 0.2);
-    }
-    
-    .bv-integration-status.warning {
-      background: rgba(255, 152, 0, 0.08);
-      border-color: rgba(255, 152, 0, 0.2);
-    }
-    
-    .bv-integration-status .material-icons {
-      font-size: 32px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-integration-status.success .material-icons {
-      color: #4caf50;
-    }
-    
-    .bv-integration-status.warning .material-icons {
-      color: #ff9800;
-    }
-    
-    .bv-status-info {
-      flex: 1;
-    }
-    
-    .bv-status-info h4 {
-      margin: 0 0 4px 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: rgba(0, 0, 0, 0.8);
-    }
-    
-    .bv-status-info p {
-      margin: 0;
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    /* PDF 上傳區域 */
-    .bv-pdf-upload-area {
-      width: 100%;
-      min-height: 80px;
-      border: 2px dashed rgba(0, 0, 0, 0.12);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
-      overflow: hidden;
-      background: rgba(0, 0, 0, 0.02);
-      padding: 16px;
-    }
-    
-    .bv-pdf-upload-area:hover {
-      border-color: rgba(81, 138, 255, 0.3);
-      background: rgba(81, 138, 255, 0.02);
-    }
-    
-    .bv-pdf-upload-area.has-file {
-      border-style: solid;
-      border-color: rgba(76, 175, 80, 0.3);
-      background: rgba(76, 175, 80, 0.02);
-    }
-    
-    #bv-pdf-upload-prompt {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-pdf-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-    }
-    
-    .bv-pdf-info .material-icons {
-      font-size: 32px;
-      color: #4caf50;
-    }
-    
-    .bv-pdf-pages-info {
-      flex: 1;
-    }
-    
-    .bv-pdf-pages-info h4 {
-      margin: 0 0 4px 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: rgba(0, 0, 0, 0.8);
-      word-break: break-all;
-    }
-    
-    .bv-pdf-pages-info p {
-      margin: 0;
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    /* PDF 轉換進度 */
-    .bv-conversion-progress {
-      display: none;
-      margin-top: 16px;
-      padding: 12px;
-      background: rgba(81, 138, 255, 0.04);
-      border-radius: 8px;
-    }
-    
-    .bv-conversion-progress.active {
-      display: block;
-    }
-    
-    .bv-conversion-progress h5 {
-      margin: 0 0 8px 0;
-      font-size: 13px;
-      font-weight: 600;
-      color: #518aff;
-    }
-    
-    .bv-conversion-progress-bar {
-      width: 100%;
-      height: 6px;
-      background: rgba(81, 138, 255, 0.1);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    
-    .bv-conversion-progress-fill {
-      height: 100%;
-      background: #518aff;
-      width: 0%;
-      transition: width 0.3s ease;
-      border-radius: 3px;
-    }
-    
-    .bv-conversion-status {
-      margin-top: 6px;
-      font-size: 11px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    /* 物流單頁面樣式 */
-    .bv-shipping-page {
-      background: white;
-    }
-    
-    .bv-shipping-content {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-    
-    .bv-shipping-content img {
-      max-width: 100%;
-      max-height: 100%;
-      width: auto;
-      height: auto;
-      object-fit: contain;
-    }
-    
-    /* 訂單編號標籤 */
-    .bv-order-label {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(81, 138, 255, 0.9);
-      color: white;
-      padding: 4px 12px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 600;
-      z-index: 10;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
-    
-    /* 物流單頁面狀態 */
-    .bv-shipping-status {
-      padding: 20px;
-      text-align: center;
-    }
-    
-    .bv-status-count {
-      font-size: 48px;
-      font-weight: 700;
-      color: #518aff;
-      margin-bottom: 8px;
-    }
-    
-    .bv-status-text {
-      font-size: 14px;
-      color: rgba(0, 0, 0, 0.6);
-    }
-    
-    /* 隱藏樣式 */
-    @media screen {
-      .bv-converted .order-content {
-        display: none !important;
-      }
-    }
-    
-    @media print {
-      body {
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      
-      #bv-label-control-panel,
-      #bv-minimized-button,
-      .bv-page-container > *:not(.bv-label-page),
-      .ignore-print {
-        display: none !important;
-      }
-      
-      .bv-page-container {
-        page-break-after: always;
-        margin: 0 !important;
-        width: 100% !important;
-      }
-      
-      .bv-label-page {
-        width: 10cm !important;
-        height: 15cm !important;
-        margin: 0 !important;
-        box-shadow: none !important;
-        page-break-after: always;
-        page-break-inside: avoid;
-      }
-      
-      .bv-label-page:last-child {
-        page-break-after: auto;
-      }
-    }
-    
-    @page {
-      size: 10cm 15cm;
-      margin: 0;
-    }
-    
-    /* 數量標示圖標 */
-    .bv-counter-icon {
-      width: 20px;
-      height: 20px;
-      background: rgba(255, 82, 82, 0.1);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-    
-    .bv-counter-icon::before {
-      content: "2+";
-      font-size: 10px;
-      font-weight: 700;
-      color: #ff5252;
-    }
-    
-    /* 列印模式選擇器 */
-    .bv-print-mode-selector {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .bv-mode-option {
-      display: flex;
-      align-items: center;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.6);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-mode-option:hover {
-      background: rgba(255, 255, 255, 0.8);
-      border-color: rgba(81, 138, 255, 0.2);
-    }
-    
-    .bv-mode-option.selected {
-      background: rgba(81, 138, 255, 0.08);
-      border-color: #518aff;
-    }
-    
-    .bv-mode-option input[type="radio"] {
-      margin-right: 12px;
-    }
-    
-    .bv-mode-info {
-      flex: 1;
-    }
-    
-    .bv-mode-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #000;
-      margin-bottom: 2px;
-    }
-    
-    .bv-mode-desc {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-sort-options {
-      display: flex;
-      gap: 12px;
-      margin-top: 12px;
-    }
-    
-    .bv-sort-group {
-      flex: 1;
-    }
-    
-    .bv-sort-label {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-      margin-bottom: 4px;
-    }
-    
-    .bv-sort-buttons {
-      display: flex;
-      gap: 4px;
-    }
-    
-    .bv-sort-button {
-      flex: 1;
-      padding: 6px 12px;
-      background: rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 6px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-sort-button:hover {
-      background: rgba(255, 255, 255, 0.9);
-      border-color: rgba(0, 0, 0, 0.12);
-    }
-    
-    .bv-sort-button.active {
-      background: rgba(81, 138, 255, 0.08);
-      border-color: #518aff;
-      color: #518aff;
-    }
-    
-    /* 超商物流單特殊處理 */
-    .bv-store-shipping-content {
-      transform: scale(0.9);
-      transform-origin: center center;
-    }
-    
-    .bv-store-shipping-content .div_frame,
-    .bv-store-shipping-content .print-area,
-    .bv-store-shipping-content .print_area,
-    .bv-store-shipping-content .printarea {
-      width: 100% !important;
-      height: auto !important;
-      max-width: none !important;
-      margin: 0 auto !important;
-    }
-    
-    /* 保護 QR Code */
-    .bv-store-shipping-content img[src*="qr"],
-    .bv-store-shipping-content img[src*="QR"],
-    .bv-store-shipping-content img[src*="barcode"],
-    .bv-store-shipping-content .qrcode,
-    .bv-store-shipping-content .QRCode {
-      image-rendering: pixelated !important;
-      image-rendering: -moz-crisp-edges !important;
-      image-rendering: crisp-edges !important;
-      width: auto !important;
-      height: auto !important;
-      max-width: 100% !important;
-    }
-    
-    /* 商品圖片欄位 - 加強版 */
-    .bv-product-image-col {
-      width: 8mm !important;
-      padding: 2px !important;
-      vertical-align: top !important;
-    }
-    
-    .bv-product-image-col img,
-    .bv-product-img {
-      display: block !important;
-      visibility: visible !important;
-      width: 7mm !important;
-      height: 7mm !important;
-      object-fit: cover !important;
-      border-radius: 2px !important;
-      max-width: 7mm !important;
-      min-width: 7mm !important;
-      max-height: 7mm !important;
-      min-height: 7mm !important;
-    }
-    
-    /* 確保 10×15 模式下圖片可見 */
-    .bv-label-page .bv-product-image-col img,
-    .bv-label-page .bv-product-img {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-    
-    /* 確保原始 orderProductImage 在原位置隱藏 */
-    .bv-converted .list-item-name .orderProductImage,
-    .bv-label-page .list-item-name .orderProductImage,
-    .bv-converted .list-item-name img:not(.bv-product-img),
-    .bv-label-page .list-item-name img:not(.bv-product-img) {
-      display: none !important;
-    }
-    
-    /* 商品圖片加表格寬度優化 */
-    .bv-converted .list,
-    .bv-label-page .list {
-      table-layout: fixed !important;
-    }
-    
-    /* 有商品圖片時的欄位配置 */
-    .bv-converted .has-product-image .bv-product-image-col,
-    .bv-label-page .has-product-image .bv-product-image-col {
-      width: 8mm !important;
-    }
-    
-    .bv-converted .has-product-image td:nth-child(2),
-    .bv-label-page .has-product-image td:nth-child(2) {
-      width: 12mm !important; /* 數量欄位 */
-    }
-    
-    .bv-converted .has-product-image td:nth-child(3),
-    .bv-label-page .has-product-image td:nth-child(3) {
-      width: auto !important; /* 商品名稱 - 自動調整 */
-    }
-    
-    .bv-converted .has-product-image td:last-child,
-    .bv-label-page .has-product-image td:last-child {
-      width: 18mm !important; /* 價格欄位 */
-      white-space: nowrap !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-    }
-    
-    /* 價格文字大小調整 */
-    .bv-converted .list-item td:last-child,
-    .bv-label-page .list-item td:last-child {
-      font-size: ${parseFloat(fontSize) - 1.5}px !important;
-    }
-    
-    /* 適應性版面調整 */
-    .needs-compact td {
-      padding: 3px 3px !important;
-      font-size: ${parseFloat(fontSize) - 1}px !important;
-    }
-    
-    .needs-compact .bv-qty-star::before {
-      content: "▲" !important;
-      font-size: 0.8em !important;
-    }
-    
-    @media print {
-      .bv-product-image-col img,
-      .bv-product-img {
-        display: block !important;
-        visibility: visible !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        opacity: 1 !important;
-      }
-    }
-    
-    /* 預設管理優化 */
-    .bv-preset-controls {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: center;
-      width: 100%;
-    }
-    
-    .bv-preset-buttons {
-      display: flex;
-      gap: 4px;
-      flex-shrink: 0;
-    }
-    
-    .bv-preset-save-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      margin-top: 12px;
-      align-items: center;
-      width: 100%;
-    }
-    
-    /* 簡化的設定檔管理 */
-    .bv-preset-simple-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .bv-preset-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.6);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-preset-item:hover {
-      background: rgba(255, 255, 255, 0.8);
-      border-color: rgba(81, 138, 255, 0.2);
-    }
-    
-    .bv-preset-item.active {
-      background: rgba(81, 138, 255, 0.08);
-      border-color: #518aff;
-    }
-    
-    .bv-preset-name {
-      flex: 1;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    
-    .bv-preset-actions {
-      display: flex;
-      gap: 4px;
-    }
-    
-    .bv-preset-action-btn {
-      width: 28px;
-      height: 28px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 6px;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-preset-action-btn:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-    
-    .bv-preset-action-btn .material-icons {
-      font-size: 18px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-preset-action-btn.delete:hover .material-icons {
-      color: #f44336;
-    }
-    
-    .bv-new-preset-input {
-      width: 100%;
-      margin-top: 12px;
-    }
-    
-    /* 物流單批次管理 */
-    .bv-batch-list {
-      margin-top: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .bv-batch-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      background: rgba(248, 250, 252, 0.8);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 6px;
-      font-size: 12px;
-    }
-    
-    .bv-batch-item-info {
-      flex: 1;
-    }
-    
-    .bv-batch-item-name {
-      font-weight: 500;
-      color: #000;
-    }
-    
-    .bv-batch-item-count {
-      color: rgba(0, 0, 0, 0.5);
-      font-size: 11px;
-    }
-    
-    .bv-batch-actions {
-      display: flex;
-      gap: 4px;
-    }
-    
-    .bv-batch-order {
-      display: flex;
-      gap: 2px;
-    }
-    
-    .bv-batch-order-btn {
-      width: 24px;
-      height: 24px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-batch-order-btn:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-    
-    .bv-batch-order-btn:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-    
-    .bv-batch-order-btn .material-icons {
-      font-size: 16px;
-      color: rgba(0, 0, 0, 0.7);
-    }
-    
-    /* 物流單反序開關 */
-    .bv-reverse-shipping-option {
-      margin-top: 12px;
-      padding: 12px;
-      background: rgba(255, 245, 235, 0.5);
-      border: 1px solid rgba(255, 152, 0, 0.2);
-      border-radius: 8px;
-    }
-    
-    .bv-reverse-shipping-note {
-      font-size: 11px;
-      color: rgba(0, 0, 0, 0.5);
-      margin-top: 4px;
-    }
-    
-    /* 配對結果顯示 */
-    .bv-matching-results {
-      margin-top: 16px;
-      padding: 12px;
-      background: rgba(240, 248, 255, 0.5);
-      border: 1px solid rgba(81, 138, 255, 0.2);
-      border-radius: 8px;
-    }
-    
-    .bv-matching-results-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #518aff;
-      margin-bottom: 8px;
-    }
-    
-    .bv-matching-result-item {
-      font-size: 11px;
-      color: rgba(0, 0, 0, 0.7);
-      padding: 4px 0;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    
-    .bv-matching-result-item:last-child {
-      border-bottom: none;
-    }
-    
-    /* 配對模式選擇 */
-    .bv-match-mode-selector {
-      margin-top: 12px;
-      padding: 12px;
-      background: rgba(248, 250, 252, 0.5);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-    }
-    
-    .bv-match-mode-title {
-      font-size: 13px;
-      font-weight: 500;
-      color: #000;
-      margin-bottom: 8px;
-    }
-    
-    .bv-match-mode-options {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    
-    .bv-match-mode-option {
-      display: flex;
-      align-items: center;
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.7);
-    }
-    
-    .bv-match-mode-option input[type="radio"] {
-      margin-right: 8px;
-    }
-
-    .bv-reload-shipping-btn {
-      margin-top: 12px;
-      padding: 8px 16px;
-      background: rgba(81, 138, 255, 0.08);
-      color: #518aff;
-      border: 1px solid rgba(81, 138, 255, 0.2);
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-reload-shipping-btn:hover {
-      background: rgba(81, 138, 255, 0.12);
-      transform: translateY(-1px);
-    }
-    
-    .bv-reload-shipping-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-    
-    .bv-reload-shipping-btn .material-icons {
-      font-size: 18px;
-    }
-    
-    /* 確保商品圖片顯示 */
-    .bv-product-img {
-      display: block !important;
-      visibility: visible !important;
-      width: 7mm !important;
-      height: 7mm !important;
-      object-fit: cover !important;
-      border-radius: 2px !important;
-    }
-    
-    @media print {
-      .bv-label-page.bv-shipping-page {
-        padding: 3mm !important;
-      }
-      
-      .bv-product-img {
-        display: block !important;
-        visibility: visible !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-    }    
-    `;
+    document.head.appendChild(labelStyles);
   }
   
-  // === 插入樣式 ===
-  function insertStyles() {
-    const styleEl = document.createElement('style');
-    styleEl.id = 'bv-label-styles';
-    styleEl.textContent = getStyles();
-    document.head.appendChild(styleEl);
-  }
-  
-  // === 插入控制面板 ===
-  function insertPanel() {
-    // 檢查是否已存在
-    if (document.getElementById('bv-label-control-panel')) return;
-    
-    const panel = document.createElement('div');
-    panel.id = 'bv-label-control-panel';
-    panel.className = state.isPanelMinimized ? 'minimized' : '';
-    panel.innerHTML = getPanelContent();
-    document.body.appendChild(panel);
-    
-    // 插入最小化按鈕
-    const minimizedButton = document.createElement('div');
-    minimizedButton.id = 'bv-minimized-button';
-    minimizedButton.className = 'bv-minimized-button';
-    minimizedButton.style.display = state.isPanelMinimized ? 'flex' : 'none';
-    minimizedButton.innerHTML = `
-      <span class="material-icons">settings</span>
-      <span>BV出貨助手</span>
-    `;
-    document.body.appendChild(minimizedButton);
-    
-    // 初始化拖曳功能
-    setTimeout(() => {
-      initDragFunction();
-    }, 100);
-  }
-
-  // === 取得面板內容 ===
   function getPanelContent() {
     const collapseIcon = '<span class="bv-collapse-icon"><span class="material-icons">expand_more</span></span>';
     
@@ -4273,7 +2653,6 @@
     `;
   }
   
-  // === 物流單模式初始化 ===
   function initShippingMode() {
     if (state.currentProvider === 'DELIVERY') {
       const deliveryPrintBtn = document.getElementById('bv-delivery-print');
@@ -4287,7 +2666,6 @@
     }
   }
   
-  // === 設置事件監聽器 ===
   function setupEventListeners() {
     const convertBtn = document.getElementById('bv-convert-btn');
     const revertBtn = document.getElementById('bv-revert-btn');
@@ -4418,7 +2796,6 @@
     setupCollapsibleCards();
   }
   
-  // === 更新預覽 ===
   function updatePreview() {
     if (!state.isConverted) return;
     
@@ -4436,7 +2813,6 @@
     }, 100);
   }
   
-  // === 更新列印模式 UI ===
   function updatePrintModeUI() {
     const sortOptions = document.getElementById('bv-sort-options');
     const detailSortGroup = document.getElementById('bv-detail-sort-group');
@@ -4497,7 +2873,6 @@
     }
   }
     
-  // === 準備列印 ===
   function preparePrintWithMode() {
     // 根據列印模式準備頁面
     switch(state.printMode) {
@@ -4606,7 +2981,6 @@
     state.useReversedShipping = true;
   }
   
-  // === 設置物流單事件監聽器 ===
   function setupShippingEventListeners() {
     const fetchSaveBtn = document.getElementById('bv-fetch-save-shipping');
     
@@ -4615,7 +2989,6 @@
     }
   }
   
-  // === 抓取並儲存物流單資料 ===
   function fetchAndSaveShippingData() {
     const provider = CONFIG.PROVIDERS[state.currentProvider];
     if (!provider) return;
@@ -4718,7 +3091,29 @@
     }
   }
   
-  // === 設置標籤模式事件監聽器 ===
+  // === 新增 setupAutoCheck 函數 ===
+  function setupAutoCheck() {
+    // 使用 Chrome Storage 監聽器取代定時檢查
+    state.storageListener = (changes, areaName) => {
+      if (areaName === 'local') {
+        if (changes.shippingDataBatches || changes.shippingData || changes.pdfShippingData) {
+          checkShippingDataStatus();
+          updatePreview();
+        }
+      }
+    };
+    
+    chrome.storage.onChanged.addListener(state.storageListener);
+    
+    // 加入清理函數
+    cleanupFunctions.push(() => {
+      if (state.storageListener) {
+        chrome.storage.onChanged.removeListener(state.storageListener);
+        state.storageListener = null;
+      }
+    });
+  }
+  
   function setupLabelModeEventListeners() {
     const hideExtraInfoCheckbox = document.getElementById('bv-hide-extra-info');
     if (hideExtraInfoCheckbox) {
@@ -4833,33 +3228,6 @@
     updatePrintModeUI();
   }
   
-  // === 新增自動檢查函數 ===
-  function setupAutoCheck() {
-    // 清除舊的定時器
-    if (state.autoCheckInterval) {
-      clearInterval(state.autoCheckInterval);
-      state.autoCheckInterval = null;
-    }
-    
-    // 使用 Chrome Storage 監聽器取代定時檢查
-    const storageListener = (changes, areaName) => {
-      if (areaName === 'local') {
-        if (changes.shippingDataBatches || changes.shippingData || changes.pdfShippingData) {
-          checkShippingDataStatus();
-          updatePreview();
-        }
-      }
-    };
-    
-    chrome.storage.onChanged.addListener(storageListener);
-    
-    // 加入清理函數
-    cleanupFunctions.push(() => {
-      chrome.storage.onChanged.removeListener(storageListener);
-    });
-  }
-  
-  // === 重置 PDF 上傳區域 ===
   function resetPdfUploadArea() {
     const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
     const pdfInfo = document.getElementById('bv-pdf-info');
@@ -4872,7 +3240,6 @@
     if (pdfUploadArea) pdfUploadArea.classList.remove('has-file');
   }
     
-  // === 處理多個 PDF 上傳 ===
   async function handleMultiplePdfUpload(files) {
     const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
     const pdfInfo = document.getElementById('bv-pdf-info');
@@ -4905,7 +3272,7 @@
         timestamp: new Date().toISOString()
       };
       
-      // 處理 PDF 檔案
+      // 處理 PDF 檔案...（原有的 PDF 處理邏輯）
       for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
         const file = files[fileIndex];
         
@@ -5018,7 +3385,7 @@
     }
   }
   
-  // === 從文字中提取物流編號 ===
+  // 從文字中提取物流編號
   function extractShippingNumberFromText(text) {
     // 各物流商的編號模式
     const patterns = {
@@ -5047,7 +3414,6 @@
     return null;
   }
   
-  // === 載入物流單資料 ===
   function loadShippingData() {
     chrome.storage.local.get(['shippingDataBatches', 'shippingData'], (result) => {
       if (result.shippingDataBatches) {
@@ -5063,7 +3429,6 @@
     });
   }
   
-  // === 合併所有批次資料 ===
   function mergeAllBatchData() {
     // 合併所有批次的資料
     state.shippingData = [];
@@ -5081,7 +3446,6 @@
     });
   }
   
-  // === 更新批次列表 ===
   function updateBatchList() {
     const batchListEl = document.getElementById('bv-batch-list');
     const shippingBatchListEl = document.getElementById('bv-shipping-batch-list');
@@ -5167,7 +3531,6 @@
     }
   }
   
-  // === 儲存物流單資料 ===
   function saveShippingData() {
     chrome.storage.local.set({
       shippingDataBatches: state.shippingDataBatches,
@@ -5178,7 +3541,6 @@
     });
   }
   
-  // === 處理批次動作 ===
   function handleBatchAction(e) {
     const action = e.currentTarget.dataset.action;
     const index = parseInt(e.currentTarget.dataset.index);
@@ -5214,7 +3576,6 @@
     });
   }
   
-  // === 更新物流單計數 ===
   function updateShippingCount() {
     const countEl = document.getElementById('bv-shipping-count');
     if (countEl) {
@@ -5223,7 +3584,6 @@
     }
   }
   
-  // === 提取物流單資料 ===
   function extractShippingData(element, provider = null) {
     const data = {
       provider: state.currentProvider,
@@ -5309,7 +3669,6 @@
     return (data.orderNo || data.logisticsNo) ? data : null;
   }
   
-  // === 移除腳本標籤 ===
   function removeScripts(element) {
     const scripts = element.querySelectorAll('script');
     scripts.forEach(script => script.remove());
@@ -5318,7 +3677,6 @@
     onclickElements.forEach(el => el.removeAttribute('onclick'));
   }
   
-  // === 檢查物流單資料狀態 ===
   function checkShippingDataStatus() {
     chrome.storage.local.get(['shippingDataBatches', 'shippingData', 'shippingProvider', 'pdfShippingData', 'shippingSubType'], (result) => {
       const statusEl = document.getElementById('bv-integration-status');
@@ -5374,7 +3732,6 @@
     });
   }
   
-  // === 設置可收摺卡片 ===
   function setupCollapsibleCards() {
     document.querySelectorAll('.bv-card-title').forEach(title => {
       title.addEventListener('click', function() {
@@ -5405,7 +3762,6 @@
     });
   }
     
-  // === 恢復收摺狀態 ===
   function restoreCollapsedStates() {
     Object.keys(state.collapsedSections).forEach(sectionId => {
       if (state.collapsedSections[sectionId]) {
@@ -5417,7 +3773,6 @@
     });
   }
   
-  // === 初始化拖曳功能 ===
   function initDragFunction() {
     const panel = document.getElementById('bv-label-control-panel');
     const header = panel.querySelector('.bv-panel-header');
@@ -5515,7 +3870,6 @@
     document.addEventListener('touchend', dragEnd);
   }
   
-  // === 初始化底圖上傳 ===
   function initLogoUpload() {
     const logoUploadArea = document.getElementById('logo-upload-area');
     const logoInput = document.getElementById('logo-input');
@@ -5614,7 +3968,6 @@
     }
   }
   
-  // === 初始化預設系統 ===
   function initPresetSystem() {
     const presetList = document.getElementById('bv-preset-list');
     const addPresetBtn = document.getElementById('bv-add-preset');
@@ -5686,7 +4039,6 @@
     }
   }
   
-  // === 載入預設列表 ===
   function loadPresetList() {
     const presetListEl = document.getElementById('bv-preset-list');
     if (!presetListEl) return;
@@ -5759,7 +4111,6 @@
     });
   }
   
-  // === 觀察原始控制項 ===
   function observeOriginalControls() {
     // 監聽所有原始控制項的變更
     const checkboxes = document.querySelectorAll('.ignore-print input[type="checkbox"]');
@@ -5799,7 +4150,6 @@
     }
   }
   
-  // === 轉換為標籤格式 ===
   function convertToLabelFormat() {
     if (state.isConverted) return;
     
@@ -5859,7 +4209,6 @@
     showNotification('已成功轉換為10×15cm標籤格式');
   }
   
-  // === 處理分頁 ===
   function handlePagination() {
     // 清除現有快取
     state.previewCache.clear();
@@ -6050,7 +4399,6 @@
     }
   }
   
-  // === 創建 7-11 批次頁面 ===
   function createSevenElevenBatchPages(shippingInfo, orderNo, showOrderLabel, orderIndex, pageContainer) {
     if (!shippingInfo.data.batchHtml) return;
     
@@ -6097,7 +4445,6 @@
     });
   }
   
-  // === 提取訂單資訊 ===
   function extractOrderInfo(orderContent) {
     const patterns = {
       orderNo: [
@@ -6142,7 +4489,38 @@
     return result;
   }
   
-  // === 根據物流編號尋找配對資料 ===
+  function findMatchingShippingDataByIndex(index) {
+    const allShippingData = [...state.shippingData, ...state.pdfShippingData];
+    
+    if (allShippingData[index]) {
+      return {
+        type: allShippingData[index].imageData ? 'pdf' : 'html',
+        data: allShippingData[index]
+      };
+    }
+    
+    return null;
+  }
+  
+  function findMatchingShippingDataByOrderNo(orderNo) {
+    if (!orderNo) return null;
+    
+    const allShippingData = [...state.shippingData, ...state.pdfShippingData];
+    
+    const match = allShippingData.find(data => {
+      return data.orderNo === orderNo;
+    });
+    
+    if (match) {
+      return {
+        type: match.imageData ? 'pdf' : 'html',
+        data: match
+      };
+    }
+    
+    return null;
+  }
+  
   function findMatchingShippingDataByLogisticsNo(logisticsNo, shippingDataArray) {
     if (!logisticsNo) return null;
     
@@ -6183,7 +4561,6 @@
     return null;
   }
   
-  // === 顯示配對結果 ===
   function showMatchingResults() {
     const resultsEl = document.getElementById('bv-matching-results');
     if (!resultsEl) return;
@@ -6214,38 +4591,38 @@
     `;
   }
   
-  // === 創建純物流單頁面 ===
   function createShippingOnlyPages(shippingDataToUse, pdfDataToUse) {
     // 使用傳入的資料（可能已反序）
     const allShippingData = [...(shippingDataToUse || state.shippingData), ...(pdfDataToUse || state.pdfShippingData)];
+    const showOrderLabel = false;
     
     allShippingData.forEach((data, index) => {
       const pageContainer = document.createElement('div');
       pageContainer.className = 'bv-page-container';
       pageContainer.setAttribute('data-shipping-index', index);
-      document.body.appendChild(pageContainer);
       
       const shippingInfo = {
         type: data.imageData ? 'pdf' : 'html',
         data: data
       };
       
-      const page = createShippingPage(shippingInfo, null, false, index);
-      if (page) {
-        pageContainer.appendChild(page);
+      const orderNo = data.orderNo || `單號_${index + 1}`;
+      const shippingPage = createShippingPage(shippingInfo, orderNo, showOrderLabel, index);
+      
+      if (shippingPage) {
+        pageContainer.appendChild(shippingPage);
+        document.body.appendChild(pageContainer);
+        
         state.shippingPages.push({
-          orderNo: data.orderNo,
+          orderNo: orderNo,
           index: index,
-          page: page
+          page: shippingPage
         });
       }
     });
   }
   
-  // === 創建物流單頁面 ===
   function createShippingPage(shippingInfo, orderNo, showOrderLabel, orderIndex) {
-    if (!shippingInfo || !shippingInfo.data) return null;
-    
     const page = document.createElement('div');
     page.className = 'bv-label-page bv-shipping-page';
     page.style.padding = '0';
@@ -6257,41 +4634,26 @@
     content.className = 'bv-shipping-content';
     
     if (shippingInfo.type === 'pdf') {
-      // PDF 或截圖類型
+      // PDF 圖片類型
       const img = document.createElement('img');
       img.src = shippingInfo.data.imageData;
       img.style.cssText = `
         width: 100%;
         height: auto;
         display: block;
-        max-width: 100%;
-        object-fit: contain;
       `;
       content.appendChild(img);
-      
-      // 特殊處理超商物流單
-      if (shippingInfo.data.provider === 'SEVEN' || shippingInfo.data.provider === 'FAMILY') {
-        content.classList.add('bv-store-shipping-content');
-        img.style.cssText = `
-          width: auto;
-          height: auto;
-          max-width: 100%;
-          max-height: 100%;
-          margin: 0 auto;
-          display: block;
-        `;
-      }
     } else {
       // HTML 類型
       content.innerHTML = shippingInfo.data.html;
       
-      // 特殊處理超商物流單
-      if (shippingInfo.data.provider === 'SEVEN' || shippingInfo.data.provider === 'FAMILY') {
+      // 7-11 特殊處理
+      if (shippingInfo.data.provider === 'SEVEN') {
         content.classList.add('bv-store-shipping-content');
       }
     }
     
-    // 新增訂單編號標籤
+    // 添加訂單編號標籤
     if (showOrderLabel && orderNo) {
       const label = document.createElement('div');
       label.className = 'bv-order-label';
@@ -6303,556 +4665,330 @@
     return page;
   }
   
-  // === 處理商品圖片 ===
-  function processProductImages(orderContentClone) {
-    const showImages = document.querySelector('.ignore-print #showProductImage')?.checked || false;
+  function applySortOrder() {
+    if (state.printMode === CONFIG.PRINT_MODES.DETAIL_ONLY) {
+      sortDetailPages();
+    } else if (state.printMode === CONFIG.PRINT_MODES.SHIPPING_ONLY) {
+      sortShippingPages();
+    }
+    // 手動配對模式在列印時才處理排序
+  }
+  
+  function processProductImages(orderContent) {
+    // 檢查商品圖片開關
+    const showProductImage = document.querySelector('.ignore-print #showProductImage')?.checked ?? false;
     
-    if (!showImages) {
-      // 如果不顯示圖片，確保移除所有圖片
-      orderContentClone.querySelectorAll('.orderProductImage').forEach(img => {
+    if (!showProductImage) {
+      // 如果關閉商品圖片，移除所有商品圖片
+      orderContent.querySelectorAll('.orderProductImage').forEach(img => {
         img.remove();
       });
-      
-      // 移除之前插入的圖片欄位
-      orderContentClone.querySelectorAll('.bv-product-image-col').forEach(col => {
-        col.remove();
-      });
-      
-      orderContentClone.querySelectorAll('.bv-product-img').forEach(img => {
-        img.remove();
-      });
-      
-      // 移除 has-product-image 類別
-      orderContentClone.querySelectorAll('.has-product-image').forEach(el => {
-        el.classList.remove('has-product-image');
-      });
-      
       return;
     }
     
-    // 為每個商品列加入圖片欄位
-    const listItems = orderContentClone.querySelectorAll('.list-item:not(.product-name)');
-    listItems.forEach(item => {
-      const nameCell = item.querySelector('.list-item-name');
-      const originalImage = nameCell?.querySelector('.orderProductImage');
+    // 標記有商品圖片的商品列表
+    const hasProductImages = orderContent.querySelectorAll('.orderProductImage').length > 0;
+    if (hasProductImages) {
+      const list = orderContent.querySelector('.list');
+      if (list) {
+        list.classList.add('has-product-image');
+      }
+    }
+    
+    // 處理每個商品行的圖片
+    orderContent.querySelectorAll('.list-item').forEach(row => {
+      const nameCell = row.querySelector('.list-item-name');
+      const productImage = nameCell ? nameCell.querySelector('.orderProductImage') : null;
       
-      if (originalImage) {
-        // 如果已經有圖片欄位，跳過
-        if (item.querySelector('.bv-product-image-col')) {
-          return;
-        }
-        
-        // 標記這個列有商品圖片
-        item.classList.add('has-product-image');
-        
+      if (productImage && showProductImage) {
         // 創建新的圖片欄位
         const imageCell = document.createElement('td');
         imageCell.className = 'bv-product-image-col';
         
-        // 複製圖片到新欄位
-        const newImage = originalImage.cloneNode(true);
-        newImage.classList.add('bv-product-img');
-        newImage.classList.remove('orderProductImage');
-        imageCell.appendChild(newImage);
+        // 克隆圖片並設定樣式
+        const imgClone = productImage.cloneNode(true);
+        imgClone.className = 'bv-product-img';
+        imgClone.removeAttribute('style'); // 移除內聯樣式
         
-        // 插入到第一個欄位
-        item.insertBefore(imageCell, item.firstChild);
+        imageCell.appendChild(imgClone);
         
-        // 隱藏原始圖片
-        originalImage.style.display = 'none';
+        // 插入到第一個位置
+        row.insertBefore(imageCell, row.firstChild);
+        
+        // 從原位置移除圖片
+        productImage.remove();
       }
     });
   }
   
-  // === 處理精簡模式 ===
-  function processExtraInfoHiding(orderContentClone) {
-    const elementsToRemove = [
-      '.print-header',
-      '.company-info',
-      'hr',
-      '.purchase-items-table',
-      '.bill-remark',
-      '.bill-footer'
+  function processExtraInfoHiding(orderContent) {
+    if (!state.hideExtraInfo) return;
+    
+    // 隱藏的元素選擇器
+    const selectorsToHide = [
+      '.order-detail:has(span:contains("訂單日期"))',
+      '.order-detail:has(span:contains("付款方式"))',
+      '.order-detail:has(span:contains("寄送方式"))',
+      '.order-detail:has(span:contains("發票號碼"))',
+      '.list-summary',
+      '.order-memo',
+      '.print-memo'
     ];
     
-    elementsToRemove.forEach(selector => {
-      orderContentClone.querySelectorAll(selector).forEach(el => el.remove());
+    selectorsToHide.forEach(selector => {
+      orderContent.querySelectorAll(selector).forEach(el => {
+        el.style.display = 'none';
+      });
     });
     
-    const extraSections = orderContentClone.querySelectorAll('table:not(.list)');
-    extraSections.forEach(section => {
-      const hasImportantInfo = section.textContent.includes('訂單編號') ||
-                              section.textContent.includes('物流編號') ||
-                              section.textContent.includes('交貨便服務代碼') ||
-                              section.textContent.includes('收件人');
-      if (!hasImportantInfo) {
-        section.remove();
+    // 處理訂單詳情區塊
+    orderContent.querySelectorAll('.order-detail').forEach(detail => {
+      const text = detail.textContent;
+      if (text.includes('訂單日期') || 
+          text.includes('付款方式') || 
+          text.includes('寄送方式') || 
+          text.includes('發票號碼')) {
+        detail.style.display = 'none';
       }
     });
   }
   
-  // === 設置圖片懶加載 ===
   function setupLazyLoadForPage(page) {
-    const images = page.querySelectorAll('img');
-    images.forEach(img => {
-      const src = img.src;
-      if (src) {
-        img.dataset.src = src;
-        img.src = '';
-        img.classList.add('lazy-load');
-      }
-    });
-    
-    // 使用 IntersectionObserver 進行懶加載
-    if ('IntersectionObserver' in window) {
-      const imageObserver = new IntersectionObserver((entries, observer) => {
+    // 使用 Intersection Observer 實現圖片懶載入
+    if (!state.lazyLoadObserver) {
+      state.lazyLoadObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             const img = entry.target;
-            img.src = img.dataset.src;
-            img.classList.remove('lazy-load');
-            imageObserver.unobserve(img);
+            if (img.dataset.src && !img.src) {
+              img.src = img.dataset.src;
+            }
           }
         });
-      });
-      
-      images.forEach(img => imageObserver.observe(img));
-    } else {
-      // 如果不支持 IntersectionObserver，直接載入
-      images.forEach(img => {
-        img.src = img.dataset.src;
-        img.classList.remove('lazy-load');
+      }, {
+        rootMargin: '50px'
       });
     }
-  }
-  
-  // === 更新底圖 ===
-  function updateLogos() {
-    document.querySelectorAll('.logo-background').forEach(logo => logo.remove());
     
-    if (!state.logoDataUrl) return;
-    
-    const sliders = {
-      size: document.getElementById('logo-size-slider'),
-      x: document.getElementById('logo-x-slider'),
-      y: document.getElementById('logo-y-slider'),
-      opacity: document.getElementById('logo-opacity-slider')
-    };
-    
-    const values = {
-      size: sliders.size ? sliders.size.value : 30,
-      x: sliders.x ? sliders.x.value : 50,
-      y: sliders.y ? sliders.y.value : 50,
-      opacity: sliders.opacity ? sliders.opacity.value : 20
-    };
-    
-    document.querySelectorAll('.bv-label-page').forEach(page => {
-      const logo = document.createElement('div');
-      logo.className = 'logo-background';
-      
-      const size = values.size;
-      let width, height;
-      
-      if (state.logoAspectRatio > 1) {
-        width = size;
-        height = size / state.logoAspectRatio;
-      } else {
-        height = size;
-        width = size * state.logoAspectRatio;
-      }
-      
-      logo.style.cssText = `
-        background-image: url(${state.logoDataUrl});
-        width: ${width}%;
-        height: ${height}%;
-        left: ${values.x}%;
-        top: ${values.y}%;
-        opacity: ${values.opacity / 100};
-      `;
-      
-      page.appendChild(logo);
+    // 觀察頁面中的所有圖片
+    page.querySelectorAll('img[data-src]').forEach(img => {
+      state.lazyLoadObserver.observe(img);
     });
   }
   
-  // === 套用排序 ===
-  function applySortOrder() {
-    const containers = Array.from(document.querySelectorAll('.bv-page-container'));
-    
-    if (state.detailSortOrder === CONFIG.SORT_ORDERS.DESC) {
-      containers.reverse();
+  function updateLabelStyles() {
+    // 移除舊的動態樣式
+    const oldStyle = document.getElementById('bv-dynamic-styles');
+    if (oldStyle) {
+      oldStyle.remove();
     }
     
-    const parent = containers[0]?.parentNode;
-    if (parent) {
-      containers.forEach(container => {
-        parent.appendChild(container);
-      });
+    const dynamicStyles = document.createElement('style');
+    dynamicStyles.id = 'bv-dynamic-styles';
+    
+    let stylesContent = `
+      .bv-converted .order-content {
+        font-size: ${state.fontSize}px !important;
+      }
+      
+      .bv-label-page .order-content,
+      .bv-label-page .order-content * {
+        font-size: ${state.fontSize}px !important;
+      }
+      
+      .bv-label-page .list-item td {
+        font-size: ${parseFloat(state.fontSize) - 0.5}px !important;
+      }
+      
+      .bv-label-page .list-item td:last-child {
+        font-size: ${parseFloat(state.fontSize) - 1.5}px !important;
+      }
+      
+      /* 需要壓縮版面時的樣式 */
+      .needs-compact td {
+        font-size: ${parseFloat(state.fontSize) - 1}px !important;
+      }
+    `;
+    
+    // 隱藏表格標題
+    if (state.hideTableHeader) {
+      stylesContent += `
+        .bv-label-page .list-title {
+          display: none !important;
+        }
+      `;
     }
+    
+    // 底圖樣式
+    if (state.logoDataUrl) {
+      const logoSize = document.getElementById('logo-size-slider')?.value || 30;
+      const logoX = document.getElementById('logo-x-slider')?.value || 50;
+      const logoY = document.getElementById('logo-y-slider')?.value || 50;
+      const logoOpacity = document.getElementById('logo-opacity-slider')?.value || 20;
+      
+      stylesContent += `
+        .bv-label-page::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-image: url('${state.logoDataUrl}');
+          background-repeat: no-repeat;
+          background-position: ${logoX}% ${logoY}%;
+          background-size: ${logoSize}%;
+          opacity: ${logoOpacity / 100};
+          pointer-events: none;
+          z-index: 0;
+        }
+        
+        .bv-label-page .bv-page-content {
+          position: relative;
+          z-index: 1;
+        }
+      `;
+    }
+    
+    dynamicStyles.textContent = stylesContent;
+    document.head.appendChild(dynamicStyles);
   }
   
-  // === 恢復原始格式 ===
+  function updateLogos() {
+    if (!state.logoDataUrl) return;
+    
+    document.querySelectorAll('.bv-label-page').forEach(page => {
+      // CSS ::before 會自動處理底圖
+    });
+  }
+  
   function revertToOriginal() {
     if (!state.isConverted) return;
     
-    // 恢復 body 樣式
+    document.body.classList.remove('bv-converted');
+    
+    // 恢復原始 body 樣式
     if (state.originalBodyStyle) {
       Object.keys(state.originalBodyStyle).forEach(prop => {
         document.body.style[prop] = state.originalBodyStyle[prop];
       });
     }
     
-    document.body.classList.remove('bv-converted');
-    
-    // 移除所有生成的標籤頁面
+    // 移除所有標籤頁面
     document.querySelectorAll('.bv-page-container').forEach(container => container.remove());
     document.querySelectorAll('.bv-label-page').forEach(page => page.remove());
     
     // 顯示原始內容
-    document.querySelectorAll('.order-content').forEach(content => {
+    document.querySelectorAll('.order-content.bv-original').forEach(content => {
       content.classList.remove('bv-original');
       content.style.display = '';
     });
     
     state.isConverted = false;
     
-    // 更新控制面板內容
+    // 清理快取
+    state.previewCache.clear();
+    state.sevenBatchCache.clear();
+    
+    // 移除 lazy load observer
+    if (state.lazyLoadObserver) {
+      state.lazyLoadObserver.disconnect();
+    }
+    
     updatePanelContent();
     
-    // 清理數量標示
-    removeQuantityHighlight();
-    
-    showNotification('已恢復為原始A4格式');
+    showNotification('已還原為原始格式');
   }
   
-  // === 更新標籤樣式 ===
-  function updateLabelStyles() {
-    let styleEl = document.getElementById('bv-label-style');
-    if (!styleEl) {
-      styleEl = document.createElement('style');
-      styleEl.id = 'bv-label-style';
-      document.head.appendChild(styleEl);
+  function updatePanelContent() {
+    const panel = document.getElementById('bv-label-control-panel');
+    if (!panel) return;
+    
+    const oldContent = panel.querySelector('.bv-glass-panel');
+    if (oldContent) {
+      oldContent.remove();
     }
     
-    const fontSize = document.getElementById('bv-font-size')?.value || 
-                    (document.querySelector('.ignore-print #fontSize')?.value?.replace('px', '') || '11');
-    const hideTableHeader = document.getElementById('bv-hide-table-header')?.checked || false;
+    panel.insertAdjacentHTML('afterbegin', getPanelContent());
     
-    // 計算適應性調整
-    const baseFontSize = parseFloat(fontSize);
-    const adaptiveFontSize = baseFontSize - 0.5;
-    const compactFontSize = baseFontSize - 1.5;
+    // 重新綁定事件
+    setupEventListeners();
     
-    styleEl.textContent = `
-      .bv-converted .order-content,
-      .bv-label-page {
-        font-size: ${fontSize}px !important;
-      }
-      
-      /* 隱藏表格標題 */
-      ${hideTableHeader ? `
-      .bv-label-page .list-title,
-      .bv-converted .list-title {
-        display: none !important;
-      }
-      ` : ''}
-      
-      /* 適應性字體大小 */
-      .bv-label-page .needs-adaptive {
-        font-size: ${adaptiveFontSize}px !important;
-      }
-      
-      .bv-label-page .needs-compact {
-        font-size: ${compactFontSize}px !important;
-      }
-      
-      .bv-label-page .needs-compact td {
-        padding: 2px 3px !important;
-      }
-      
-      /* 價格欄位特殊處理 */
-      .bv-label-page .list-item td:last-child {
-        font-size: ${baseFontSize - 1}px !important;
-      }
-    `;
-  }
-  
-  // === 套用並列印 ===
-  function preparePrintStyles() {
-    let printStyle = document.getElementById('bv-print-style');
-    if (!printStyle) {
-      printStyle = document.createElement('style');
-      printStyle.id = 'bv-print-style';
-      document.head.appendChild(printStyle);
-    }
+    // 恢復設定值
+    restoreSettings();
     
-    const css = `
-      @media print {
-        body {
-          margin: 0 !important;
-          padding: 0 !important;
-          width: 100% !important;
-          max-width: none !important;
-        }
-        
-        .bv-page-container {
-          page-break-after: always !important;
-          page-break-inside: avoid !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-        
-        .bv-label-page {
-          margin: 0 !important;
-          box-shadow: none !important;
-          border: none !important;
-        }
-        
-        /* 隱藏原始控制面板和內容 */
-        .ignore-print,
-        #bv-label-control-panel,
-        #bv-minimized-button,
-        .bv-original {
-          display: none !important;
-        }
-        
-        /* 商品圖片列印優化 */
-        .bv-product-img {
-          display: block !important;
-          visibility: visible !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-      }
-      
-      @page {
-        size: 10cm 15cm;
-        margin: 0;
-      }
-    `;
+    // 重新初始化拖曳
+    initDragFunction();
     
-    printStyle.textContent = css;
-  }
-  
-  // === 隱藏原始控制項 ===
-  function hideOriginalControls() {
-    const originalControls = document.querySelector('.ignore-print');
-    if (originalControls) {
-      originalControls.style.display = 'none';
+    // 恢復收摺狀態
+    restoreCollapsedStates();
+    
+    // 如果是標籤模式，檢查物流單狀態
+    if (state.isConverted) {
+      checkShippingDataStatus();
     }
   }
   
-  // === 觸發原始頁面更新 ===
-  function triggerOriginalPageUpdate() {
-    const selects = document.querySelectorAll('.ignore-print select');
-    selects.forEach(select => {
-      const event = new Event('change', { bubbles: true });
-      select.dispatchEvent(event);
-    });
-    
-    const checkboxes = document.querySelectorAll('.ignore-print input[type="checkbox"]');
-    checkboxes.forEach(checkbox => {
-      const event = new Event('change', { bubbles: true });
-      checkbox.dispatchEvent(event);
-    });
-  }
-  
-  // === 套用數量標示 ===
-  function applyQuantityHighlight() {
-    removeQuantityHighlight();
-    
-    if (!state.highlightQuantity) return;
-    
-    const selector = state.isConverted ? '.bv-label-page' : '.order-content';
-    
-    document.querySelectorAll(selector).forEach(container => {
-      container.querySelectorAll('.list-item').forEach(row => {
-        const qtyCell = row.querySelector('td:nth-child(2)');
-        if (!qtyCell) return;
-        
-        const hasImage = row.classList.contains('has-product-image');
-        const actualQtyCell = hasImage ? row.querySelector('td:nth-child(3)') : qtyCell;
-        
-        if (!actualQtyCell) return;
-        
-        const qtyText = actualQtyCell.textContent.trim();
-        const qty = parseInt(qtyText);
-        
-        if (qty >= 2 && !isNaN(qty)) {
-          actualQtyCell.classList.add('bv-qty-highlight');
-          
-          if (!actualQtyCell.querySelector('.bv-qty-star')) {
-            const star = document.createElement('span');
-            star.className = 'bv-qty-star';
-            actualQtyCell.insertBefore(star, actualQtyCell.firstChild);
-          }
-        }
-      });
-    });
-  }
-  
-  // === 移除數量標示 ===
-  function removeQuantityHighlight() {
-    document.querySelectorAll('.bv-qty-highlight').forEach(el => {
-      el.classList.remove('bv-qty-highlight');
-    });
-    
-    document.querySelectorAll('.bv-qty-star').forEach(el => {
-      el.remove();
-    });
-  }
-  
-  // === 切換數量標示 ===
-  function toggleQuantityHighlight() {
-    state.highlightQuantity = document.getElementById('bv-highlight-qty').checked;
-    
-    if (state.highlightQuantity) {
-      applyQuantityHighlight();
-    } else {
-      removeQuantityHighlight();
+  function restoreSettings() {
+    // 恢復各項設定到 UI
+    const highlightQty = document.getElementById('bv-highlight-qty');
+    if (highlightQty) {
+      highlightQty.checked = state.highlightQuantity;
     }
     
-    saveSettings();
-  }
-  
-  // === 更新滑桿進度條 ===
-  function updateRangeProgress(slider) {
-    const min = slider.min;
-    const max = slider.max;
-    const val = slider.value;
-    const percentage = ((val - min) / (max - min)) * 100;
-    
-    slider.style.background = `linear-gradient(to right, #518aff 0%, #518aff ${percentage}%, rgba(0, 0, 0, 0.06) ${percentage}%, rgba(0, 0, 0, 0.06) 100%)`;
-  }
-  
-  // === 儲存設定 ===
-  function saveSettings() {
-    const settings = getCurrentSettings();
-    chrome.storage.local.set({ bvSettings: settings });
-  }
-  
-  // === 取得當前設定 ===
-  function getCurrentSettings() {
-    const fontSizeEl = document.getElementById('bv-font-size');
-    const fontSize = fontSizeEl ? fontSizeEl.value : 
-                    (document.querySelector('.ignore-print #fontSize')?.value?.replace('px', '') || '11');
-    
-    return {
-      fontSize: fontSize,
-      highlightQuantity: state.highlightQuantity,
-      hideExtraInfo: state.hideExtraInfo,
-      hideTableHeader: state.hideTableHeader,
-      logoDataUrl: state.logoDataUrl,
-      logoAspectRatio: state.logoAspectRatio,
-      logoSettings: {
-        size: document.getElementById('logo-size-slider')?.value || 30,
-        x: document.getElementById('logo-x-slider')?.value || 50,
-        y: document.getElementById('logo-y-slider')?.value || 50,
-        opacity: document.getElementById('logo-opacity-slider')?.value || 20
-      },
-      printMode: state.printMode,
-      matchMode: state.matchMode,
-      detailSortOrder: state.detailSortOrder,
-      shippingSortOrder: state.shippingSortOrder,
-      reverseShipping: state.reverseShipping,
-      showOrderLabel: document.getElementById('bv-show-order-label')?.checked || false
-    };
-  }
-  
-  // === 套用預設設定 ===
-  function applyPresetSettings(settings) {
-    // 套用字體大小
     const fontSizeSlider = document.getElementById('bv-font-size');
-    if (fontSizeSlider && settings.fontSize) {
-      fontSizeSlider.value = settings.fontSize;
-      document.getElementById('bv-font-size-value').textContent = parseFloat(settings.fontSize).toFixed(1);
+    if (fontSizeSlider) {
+      fontSizeSlider.value = state.fontSize;
+      document.getElementById('bv-font-size-value').textContent = parseFloat(state.fontSize).toFixed(1);
       updateRangeProgress(fontSizeSlider);
+    }
+    
+    const hideExtraInfo = document.getElementById('bv-hide-extra-info');
+    if (hideExtraInfo) {
+      hideExtraInfo.checked = state.hideExtraInfo;
+    }
+    
+    const hideTableHeader = document.getElementById('bv-hide-table-header');
+    if (hideTableHeader) {
+      hideTableHeader.checked = state.hideTableHeader;
+    }
+    
+    const showOrderLabel = document.getElementById('bv-show-order-label');
+    if (showOrderLabel) {
+      showOrderLabel.checked = state.showOrderLabel;
+    }
+    
+    const reverseShipping = document.getElementById('bv-reverse-shipping');
+    if (reverseShipping) {
+      reverseShipping.checked = state.reverseShipping;
+    }
+    
+    // 恢復列印模式
+    const printModeRadio = document.querySelector(`input[name="print-mode"][value="${state.printMode}"]`);
+    if (printModeRadio) {
+      printModeRadio.checked = true;
+      printModeRadio.closest('.bv-mode-option').classList.add('selected');
+    }
+    
+    // 恢復配對模式
+    const matchModeRadio = document.querySelector(`input[name="match-mode"][value="${state.matchMode}"]`);
+    if (matchModeRadio) {
+      matchModeRadio.checked = true;
+    }
+    
+    // 恢復排序按鈕狀態
+    document.querySelectorAll('.bv-sort-button').forEach(btn => {
+      btn.classList.remove('active');
       
-      // 同步原始控制項
-      const originalFontSize = document.querySelector('.ignore-print #fontSize');
-      if (originalFontSize) {
-        originalFontSize.value = Math.round(parseFloat(settings.fontSize)) + 'px';
-        if (typeof $ !== 'undefined') {
-          $(originalFontSize).trigger('change');
-        }
+      if (btn.dataset.type === 'detail' && btn.dataset.order === state.detailSortOrder) {
+        btn.classList.add('active');
+      } else if (btn.dataset.type === 'shipping' && btn.dataset.order === state.shippingSortOrder) {
+        btn.classList.add('active');
       }
-    }
+    });
     
-    // 套用數量標示
-    const highlightQtyCheckbox = document.getElementById('bv-highlight-qty');
-    if (highlightQtyCheckbox && settings.highlightQuantity !== undefined) {
-      highlightQtyCheckbox.checked = settings.highlightQuantity;
-      state.highlightQuantity = settings.highlightQuantity;
-    }
-    
-    // 套用精簡模式
-    const hideExtraInfoCheckbox = document.getElementById('bv-hide-extra-info');
-    if (hideExtraInfoCheckbox && settings.hideExtraInfo !== undefined) {
-      hideExtraInfoCheckbox.checked = settings.hideExtraInfo;
-      state.hideExtraInfo = settings.hideExtraInfo;
-    }
-    
-    // 套用隱藏標題
-    const hideTableHeaderCheckbox = document.getElementById('bv-hide-table-header');
-    if (hideTableHeaderCheckbox && settings.hideTableHeader !== undefined) {
-      hideTableHeaderCheckbox.checked = settings.hideTableHeader;
-      state.hideTableHeader = settings.hideTableHeader;
-    }
-    
-    // 套用列印模式
-    if (settings.printMode) {
-      state.printMode = settings.printMode;
-      const printModeRadio = document.querySelector(`input[name="print-mode"][value="${settings.printMode}"]`);
-      if (printModeRadio) {
-        printModeRadio.checked = true;
-        document.querySelectorAll('.bv-mode-option').forEach(option => {
-          option.classList.remove('selected');
-        });
-        printModeRadio.closest('.bv-mode-option').classList.add('selected');
-      }
-    }
-    
-    // 套用配對模式
-    if (settings.matchMode) {
-      state.matchMode = settings.matchMode;
-      const matchModeRadio = document.querySelector(`input[name="match-mode"][value="${settings.matchMode}"]`);
-      if (matchModeRadio) {
-        matchModeRadio.checked = true;
-      }
-    }
-    
-    // 套用排序設定
-    if (settings.detailSortOrder) {
-      state.detailSortOrder = settings.detailSortOrder;
-      document.querySelectorAll('.bv-sort-button[data-type="detail"]').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.order === settings.detailSortOrder);
-      });
-    }
-    
-    if (settings.shippingSortOrder) {
-      state.shippingSortOrder = settings.shippingSortOrder;
-      document.querySelectorAll('.bv-sort-button[data-type="shipping"]').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.order === settings.shippingSortOrder);
-      });
-    }
-    
-    // 套用物流單反序
-    const reverseShippingCheckbox = document.getElementById('bv-reverse-shipping');
-    if (reverseShippingCheckbox && settings.reverseShipping !== undefined) {
-      reverseShippingCheckbox.checked = settings.reverseShipping;
-      state.reverseShipping = settings.reverseShipping;
-    }
-    
-    // 套用訂單標籤顯示
-    const showOrderLabelCheckbox = document.getElementById('bv-show-order-label');
-    if (showOrderLabelCheckbox && settings.showOrderLabel !== undefined) {
-      showOrderLabelCheckbox.checked = settings.showOrderLabel;
-    }
-    
-    // 套用底圖設定
-    if (settings.logoDataUrl) {
-      state.logoDataUrl = settings.logoDataUrl;
-      state.logoAspectRatio = settings.logoAspectRatio || 1;
-      
+    // 恢復底圖設定
+    if (state.logoDataUrl) {
       const logoPreview = document.getElementById('logo-preview');
       const uploadPrompt = document.getElementById('upload-prompt');
       const logoUploadArea = document.getElementById('logo-upload-area');
@@ -6867,100 +5003,106 @@
       if (logoControls) logoControls.classList.add('active');
     }
     
-    // 套用底圖控制項設定
-    if (settings.logoSettings) {
-      const logoSliders = {
-        'logo-size-slider': settings.logoSettings.size,
-        'logo-x-slider': settings.logoSettings.x,
-        'logo-y-slider': settings.logoSettings.y,
-        'logo-opacity-slider': settings.logoSettings.opacity
-      };
-      
-      Object.entries(logoSliders).forEach(([sliderId, value]) => {
-        const slider = document.getElementById(sliderId);
-        if (slider && value) {
-          slider.value = value;
-          document.getElementById(sliderId.replace('-slider', '')).textContent = value + '%';
+    ['logo-size-slider', 'logo-x-slider', 'logo-y-slider', 'logo-opacity-slider'].forEach(id => {
+      const slider = document.getElementById(id);
+      if (slider) {
+        const key = id.replace('-slider', '').replace(/-/g, '');
+        const stateKey = key.charAt(0).toLowerCase() + key.slice(1);
+        if (state[stateKey] !== undefined) {
+          slider.value = state[stateKey];
+          const labelId = id.replace('-slider', '');
+          const label = document.getElementById(labelId);
+          if (label) {
+            label.textContent = state[stateKey] + '%';
+          }
           updateRangeProgress(slider);
         }
-      });
-    }
-    
-    updatePrintModeUI();
-    updateLabelStyles();
-  }
-  
-  // === 更新面板內容 ===
-  function updatePanelContent() {
-    const panel = document.getElementById('bv-label-control-panel');
-    if (!panel) return;
-    
-    panel.innerHTML = getPanelContent();
-    
-    // 重新設置事件監聽器
-    setupEventListeners();
-    
-    // 重新初始化特定功能
-    if (state.isConverted) {
-      setupLabelModeEventListeners();
-    }
-    
-    // 載入設定
-    loadSettings();
-    
-    // 恢復收摺狀態
-    restoreCollapsedStates();
-  }
-  
-  // === 載入設定 ===
-  function loadSettings() {
-    chrome.storage.local.get(['bvSettings', 'bvCollapsedSections', 'lastSelectedPreset'], (result) => {
-      if (result.bvSettings) {
-        const settings = result.bvSettings;
-        
-        // 只在標籤模式下套用設定
-        if (state.isConverted) {
-          applyPresetSettings(settings);
-        } else {
-          // A4 模式只套用數量標示
-          const highlightQtyCheckbox = document.getElementById('bv-highlight-qty');
-          if (highlightQtyCheckbox && settings.highlightQuantity !== undefined) {
-            highlightQtyCheckbox.checked = settings.highlightQuantity;
-            state.highlightQuantity = settings.highlightQuantity;
-          }
-        }
-      }
-      
-      if (result.bvCollapsedSections) {
-        state.collapsedSections = result.bvCollapsedSections;
-      }
-      
-      if (result.lastSelectedPreset) {
-        // 標記最後選擇的預設
-        const presetItems = document.querySelectorAll('.bv-preset-item');
-        presetItems.forEach(item => {
-          const nameEl = item.querySelector('.bv-preset-name');
-          if (nameEl && nameEl.dataset.preset === result.lastSelectedPreset) {
-            item.classList.add('active');
-          }
-        });
-      }
-      
-      // 在標籤模式下檢查物流單資料
-      if (state.isConverted) {
-        checkShippingDataStatus();
       }
     });
   }
   
-  // === 顯示通知 ===
+  function updateRangeProgress(slider) {
+    const min = slider.min || 0;
+    const max = slider.max || 100;
+    const value = slider.value;
+    const percentage = ((value - min) / (max - min)) * 100;
+    
+    slider.style.setProperty('--progress', `${percentage}%`);
+  }
+  
+  function saveSettings() {
+    const settings = getCurrentSettings();
+    chrome.storage.local.set(settings);
+  }
+  
+  function getCurrentSettings() {
+    return {
+      bvHighlightQuantity: state.highlightQuantity,
+      bvFontSize: state.fontSize,
+      bvHideExtraInfo: state.hideExtraInfo,
+      bvHideTableHeader: state.hideTableHeader,
+      bvShowOrderLabel: state.showOrderLabel,
+      bvLogoDataUrl: state.logoDataUrl,
+      bvLogoAspectRatio: state.logoAspectRatio,
+      bvLogosize: document.getElementById('logo-size-slider')?.value || 30,
+      bvLogox: document.getElementById('logo-x-slider')?.value || 50,
+      bvLogoy: document.getElementById('logo-y-slider')?.value || 50,
+      bvLogoopacity: document.getElementById('logo-opacity-slider')?.value || 20,
+      bvPrintMode: state.printMode,
+      bvMatchMode: state.matchMode,
+      bvDetailSortOrder: state.detailSortOrder,
+      bvShippingSortOrder: state.shippingSortOrder,
+      bvReverseShipping: state.reverseShipping
+    };
+  }
+  
+  function applyPresetSettings(settings) {
+    // 套用設定值
+    state.highlightQuantity = settings.bvHighlightQuantity ?? true;
+    state.fontSize = settings.bvFontSize ?? 11;
+    state.hideExtraInfo = settings.bvHideExtraInfo ?? true;
+    state.hideTableHeader = settings.bvHideTableHeader ?? false;
+    state.showOrderLabel = settings.bvShowOrderLabel ?? false;
+    state.logoDataUrl = settings.bvLogoDataUrl || null;
+    state.logoAspectRatio = settings.bvLogoAspectRatio || 1;
+    state.printMode = settings.bvPrintMode || CONFIG.PRINT_MODES.DETAIL_ONLY;
+    state.matchMode = settings.bvMatchMode || 'index';
+    state.detailSortOrder = settings.bvDetailSortOrder || CONFIG.SORT_ORDERS.ASC;
+    state.shippingSortOrder = settings.bvShippingSortOrder || CONFIG.SORT_ORDERS.ASC;
+    state.reverseShipping = settings.bvReverseShipping ?? false;
+    
+    // 更新底圖設定
+    state.logosize = settings.bvLogosize || 30;
+    state.logox = settings.bvLogox || 50;
+    state.logoy = settings.bvLogoy || 50;
+    state.logoopacity = settings.bvLogoopacity || 20;
+    
+    // 更新 UI
+    restoreSettings();
+    
+    // 更新樣式
+    if (state.isConverted) {
+      updateLabelStyles();
+    }
+  }
+  
+  function hideOriginalControls() {
+    const ignoreSection = document.querySelector('.ignore-print');
+    if (ignoreSection) {
+      ignoreSection.style.cssText = `
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+      `;
+    }
+  }
+  
   function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
-    notification.className = `bv-notification bv-notification-${type}`;
+    notification.className = `bv-notification ${type}`;
     notification.innerHTML = `
-      <span class="material-icons">
-        ${type === 'success' ? 'check_circle' : type === 'warning' ? 'warning' : 'error'}
-      </span>
+      <span class="material-icons">${type === 'success' ? 'check_circle' : type === 'warning' ? 'warning' : 'error'}</span>
       <span>${message}</span>
     `;
     
@@ -6978,28 +5120,140 @@
     }, 3000);
   }
   
-  // === 初始化 ===
-  function init() {
-    if (document.getElementById('bv-label-control-panel')) return;
-    
-    loadSettings();
-    insertStyles();
-    insertPanel();
-    setupEventListeners();
-    
-    if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
-      initShippingMode();
+  function triggerOriginalPageUpdate() {
+    // 觸發原始頁面的更新機制
+    if (typeof $ !== 'undefined') {
+      // 如果頁面有 jQuery，觸發相關事件
+      $('.ignore-print input[type="checkbox"]').trigger('change');
+      $('.ignore-print select').trigger('change');
     }
     
-    // 顯示啟動通知
-    const pageTypeName = state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING ? '物流單' : '出貨明細';
-    showNotification(`BV SHOP 出貨助手已啟動 - ${pageTypeName}模式`);
+    // 調整原始內容的顯示
+    document.querySelectorAll('.order-content').forEach(content => {
+      if (!content.classList.contains('bv-original')) {
+        content.style.display = 'none';
+      }
+    });
   }
   
-  // 等待 DOM 載入完成
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
+  function toggleQuantityHighlight() {
+    state.highlightQuantity = document.getElementById('bv-highlight-qty').checked;
+    
+    if (state.highlightQuantity) {
+      applyQuantityHighlight();
+    } else {
+      removeQuantityHighlight();
+    }
+    
+    saveSettings();
   }
+  
+  function applyQuantityHighlight() {
+    const selector = state.isConverted ? '.bv-label-page' : '.order-content';
+    
+    document.querySelectorAll(selector).forEach(container => {
+      container.querySelectorAll('.list-item').forEach(item => {
+        const qtyElement = item.querySelector('.list-item-quantity, td:nth-child(2)');
+        if (qtyElement) {
+          const qtyText = qtyElement.textContent.trim();
+          const qtyNumber = parseInt(qtyText);
+          
+          if (!isNaN(qtyNumber) && qtyNumber >= 2) {
+            // 如果還沒有星號，就加上
+            if (!qtyElement.querySelector('.bv-qty-star')) {
+              const star = document.createElement('span');
+              star.className = 'bv-qty-star';
+              star.textContent = '';
+              qtyElement.insertBefore(star, qtyElement.firstChild);
+            }
+          } else {
+            // 如果有星號但數量小於2，移除星號
+            const star = qtyElement.querySelector('.bv-qty-star');
+            if (star) {
+              star.remove();
+            }
+          }
+        }
+      });
+    });
+  }
+  
+  function removeQuantityHighlight() {
+    document.querySelectorAll('.bv-qty-star').forEach(star => star.remove());
+  }
+  
+  function preparePrintStyles() {
+    // 確保列印樣式已載入
+    const existingPrintStyle = document.getElementById('bv-print-styles');
+    if (existingPrintStyle) {
+      existingPrintStyle.remove();
+    }
+    
+    const printStyles = document.createElement('style');
+    printStyles.id = 'bv-print-styles';
+    printStyles.textContent = `
+      @media print {
+        body {
+          margin: 0 !important;
+          padding: 0 !important;
+          background: white !important;
+        }
+        
+        #bv-label-control-panel,
+        #bv-minimized-button,
+        .bv-notification,
+        .ignore-print {
+          display: none !important;
+        }
+        
+        .bv-page-container {
+          page-break-after: always !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        .bv-label-page {
+          width: 10cm !important;
+          height: 15cm !important;
+          box-shadow: none !important;
+          margin: 0 !important;
+          page-break-inside: avoid !important;
+          page-break-after: always !important;
+        }
+        
+        .bv-shipping-page img {
+          max-width: 100% !important;
+          height: auto !important;
+        }
+        
+        /* 確保圖片列印 */
+        .bv-product-img,
+        .orderProductImage {
+          display: block !important;
+          visibility: visible !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        /* 確保底圖列印 */
+        .bv-label-page::before {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+    `;
+    
+    document.head.appendChild(printStyles);
+  }
+  
+  // 初始化
+  initialize();
+  
+  // 清理函數
+  const cleanupFunctions = [];
+  
+  // 監聽頁面卸載
+  window.addEventListener('beforeunload', () => {
+    cleanupFunctions.forEach(cleanup => cleanup());
+  });
 })();
