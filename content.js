@@ -180,7 +180,6 @@
     matchingResults: [],
     matchMode: CONFIG.MATCH_MODES.INDEX,
     labelFormat: '10x15', // 預設 10×15
-    autoAdjustColumns: true, // 自動調整欄位寬度
     
     // 列印模式設定
     printMode: CONFIG.PRINT_MODES.DETAIL_ONLY,
@@ -2363,21 +2362,7 @@
                       <div class="bv-format-desc">正方形貼紙格式</div>
                     </div>
                   </label>
-                </div>
-                
-                <div class="bv-setting-item" style="margin-top: 16px;">
-                  <div class="bv-setting-info">
-                    <span class="material-icons">table_chart</span>
-                    <div class="bv-setting-text">
-                      <span class="bv-setting-label">自動調整欄位寬度</span>
-                      <span class="bv-setting-desc">根據內容自動分配表格欄寬</span>
-                    </div>
-                  </div>
-                  <label class="bv-glass-switch">
-                    <input type="checkbox" id="bv-auto-adjust-columns" ${state.autoAdjustColumns ? 'checked' : ''}>
-                    <span class="bv-switch-slider"></span>
-                  </label>
-                </div>
+                </div>        
               </div>
             </div>
                 
@@ -5472,7 +5457,6 @@ function updatePageStyles() {
       bvHideTableHeader: settings.hideTableHeader,
       bvLabelFontSize: settings.fontSize,
       labelFormat: state.labelFormat,
-      autoAdjustColumns: state.autoAdjustColumns,
       bvLogoDataUrl: settings.logoDataUrl,
       bvLogoAspectRatio: settings.logoAspectRatio,
       bvLogoSize: settings.logoSize,
@@ -5495,7 +5479,6 @@ function updatePageStyles() {
       hideTableHeader: state.hideTableHeader,
       fontSize: document.getElementById('bv-font-size')?.value || state.fontSize,
       labelFormat: state.labelFormat,
-      autoAdjustColumns: state.autoAdjustColumns,      
       logoDataUrl: state.logoDataUrl,
       logoAspectRatio: state.logoAspectRatio,
       logoSize: document.getElementById('logo-size-slider')?.value || '30',
@@ -5618,7 +5601,6 @@ function updatePageStyles() {
       'bvHideTableHeader',
       'bvLabelFontSize',
       'bvLabelFormat',
-      'bvAutoAdjustColumns',
       'bvPanelMinimized',
       'bvCollapsedSections',
       'bvLogoDataUrl',
@@ -5650,10 +5632,6 @@ function updatePageStyles() {
               document.body.classList.add(`format-${state.labelFormat}`);
               updatePageStyles();
            }
-      }
-        
-      if (result.bvAutoAdjustColumns !== undefined) {
-          state.autoAdjustColumns = result.bvAutoAdjustColumns;
       }
               
       if (result.bvHideExtraInfo !== undefined) {
