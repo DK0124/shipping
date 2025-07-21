@@ -4474,7 +4474,6 @@
       
       updateLogos();
       applySortOrder();
-      applyTableAutoAdjust(); // 套用表格自動調整
       
       // 顯示配對結果
       if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH && state.matchingResults) {
