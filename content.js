@@ -4384,11 +4384,9 @@
             if (!currentPage || (currentHeight + elementHeight > contentHeight && currentHeight > 0)) {
               currentPage = document.createElement('div');
               currentPage.className = 'bv-label-page';
-              currentPage.style.padding = `${paddingMm}mm`;
               currentPage.setAttribute('data-page-type', 'detail');
               currentPage.setAttribute('data-order-index', orderIndex);
               currentPage.setAttribute('data-order-no', orderInfo.orderNo || '');
-              
               currentPageContent = document.createElement('div');
               currentPageContent.className = 'bv-page-content';
               currentPage.appendChild(currentPageContent);
