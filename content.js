@@ -1,6 +1,9 @@
 // BV SHOP 出貨助手 (完整整合版 v6.0)
 (function() {
   'use strict';
+
+  // 清理函數陣列 - 只在這裡宣告一次
+  const cleanupFunctions = [];  
   
   // 修正 Material Icons 載入
   const iconLink = document.createElement('link');
@@ -3105,7 +3108,7 @@
     
     chrome.storage.onChanged.addListener(state.storageListener);
     
-    // 加入清理函數
+    // 加入清理函數 - 使用已經宣告的 cleanupFunctions
     cleanupFunctions.push(() => {
       if (state.storageListener) {
         chrome.storage.onChanged.removeListener(state.storageListener);
