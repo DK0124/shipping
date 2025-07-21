@@ -496,8 +496,6 @@
         }
       }
     }
-    `;
-}
     
     .bv-glass-panel {
       width: 100%;
