@@ -4444,7 +4444,7 @@ function getLabelModePanelContent(collapseIcon) {
             if (!currentPage || (currentHeight + elementHeight > contentHeight && currentHeight > 0)) {
               currentPage = document.createElement('div');
               currentPage.className = 'bv-label-page';
-              currentPage.style.padding = `${paddingMm}mm`;
+              currentPage.style.padding = `${format.padding}mm`;
               currentPage.setAttribute('data-page-type', 'detail');
               currentPage.setAttribute('data-order-index', orderIndex);
               currentPage.setAttribute('data-order-no', orderInfo.orderNo || '');
@@ -5287,7 +5287,7 @@ function getLabelModePanelContent(collapseIcon) {
       bvShippingSortOrder: settings.shippingSortOrder,
       bvReverseShipping: settings.reverseShipping,
       bvMatchMode: settings.matchMode,
-      bvIsExtensionEnabled: settings.isExtensionEnabled
+      bvIsExtensionEnabled: settings.isExtensionEnabled,
       bvLabelFormat: settings.labelFormat,
       bvAutoAdjustColumns: settings.autoAdjustColumns,
     });
@@ -5310,7 +5310,7 @@ function getLabelModePanelContent(collapseIcon) {
       shippingSortOrder: state.shippingSortOrder,
       reverseShipping: state.reverseShipping,
       matchMode: state.matchMode,
-      isExtensionEnabled: state.isExtensionEnabled
+      isExtensionEnabled: state.isExtensionEnabled,
       labelFormat: state.labelFormat,
       autoAdjustColumns: state.autoAdjustColumns,      
     };
