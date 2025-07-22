@@ -7927,11 +7927,7 @@ function getCSSContent() {
       console.log('BV Shop 出貨助手: 創建控制面板...');
       // 創建控制面板
       createControlPanel();
-      
-      console.log('BV Shop 出貨助手: 設置事件監聽器...');
-      // 設置事件監聽器
-      setupEventListeners();
-      
+           
       // 檢查面板最小化狀態
       chrome.storage.local.get(['bvPanelMinimized'], (result) => {
         if (result.bvPanelMinimized) {
