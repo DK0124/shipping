@@ -5527,13 +5527,16 @@
   
   // 初始化
   function initialize() {
-    document.body.setAttribute('data-label-size', state.selectedLabelSize);
-    detectCurrentPage();
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener('DOMContentLoaded', initialize);
-  } else {
-    initialize();
-  }
-})();
+    document.addEventListener('DOMContentLoaded', () => {
+      const sizeSelector = document.getElementById('bv-label-size-selector');
+    
+      if (sizeSelector) {
+        sizeSelector.addEventListener('change', (e) => {
+          state.selectedLabelSize = e.target.value;
+          document.body.setAttribute('data-label-size', state.selectedLabelSize);
+          console.log('已選擇紙張尺寸:', state.selectedLabelSize);
+        });
+      } else {
+        console.error("找不到元素：bv-label-size-selector");
+      }
+    });
