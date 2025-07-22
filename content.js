@@ -2214,18 +2214,36 @@
             </div>
             <div class="bv-title-group">
               <h3 class="bv-panel-title">BV SHOP 出貨助手</h3>
-              <span class="bv-panel-subtitle">10×15cm 標籤</span>
+              <span class="bv-panel-subtitle">標籤模式</span>
             </div>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="bv-glass-button" id="bv-revert-btn">
-              <span class="material-icons">undo</span>
-            </button>
-            <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
-              <span class="material-icons">remove</span>
-            </button>
-          </div>
+          <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
+            <span class="material-icons">remove</span>
+          </button>
         </div>
+  
+        <div class="bv-panel-content-wrapper">
+          <div class="bv-panel-body">
+  
+            <!-- 紙張尺寸選擇器 -->
+            <div class="bv-settings-card">
+              <h4 class="bv-card-title">紙張尺寸</h4>
+              <div class="bv-card-content">
+                <div class="bv-setting-item">
+                  <div class="bv-setting-info">
+                    <span class="material-icons">aspect_ratio</span>
+                    <div class="bv-setting-text">
+                      <span class="bv-setting-label">標籤尺寸</span>
+                      <span class="bv-setting-desc">選擇紙張大小</span>
+                    </div>
+                  </div>
+                  <select id="bv-label-size-selector" class="bv-glass-select">
+                    <option value="10x15">10×15cm（預設）</option>
+                    <option value="10x10">10×10cm</option>
+                  </select>
+                </div>
+              </div>
+            </div>
                 
         <div class="bv-panel-content-wrapper">
           <div class="bv-panel-body">
@@ -2277,20 +2295,6 @@
                   清除物流單資料
                 </button>
               </div>
-            </div>
-            
-            <div class="bv-setting-item">
-              <div class="bv-setting-info">
-                <span class="material-icons">aspect_ratio</span>
-                <div class="bv-setting-text">
-                  <span class="bv-setting-label">標籤尺寸</span>
-                  <span class="bv-setting-desc">選擇紙張大小</span>
-                </div>
-              </div>
-              <select id="bv-label-size-selector" class="bv-glass-select">
-                <option value="10x15">10×15cm（預設）</option>
-                <option value="10x10">10×10cm</option>
-              </select>
             </div>
 
             <div class="bv-settings-card" data-section="layout">
