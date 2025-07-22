@@ -2284,14 +2284,23 @@ function getCSSContent() {
     
     if (document.getElementById('bv-label-control-panel')) return;
     
+    console.log('BV Shop 出貨助手: 創建面板元素...');
+    
     const panel = document.createElement('div');
     panel.id = 'bv-label-control-panel';
+    panel.className = 'bv-label-control-panel';
     panel.innerHTML = getPanelContent();
     
+    // 注入面板樣式
     const style = document.createElement('style');
+    style.id = 'bv-panel-styles';
     style.textContent = getPanelStyles();
     document.head.appendChild(style);
+    
+    // 將面板加入頁面
     document.body.appendChild(panel);
+    
+    console.log('BV Shop 出貨助手: 面板已加入頁面');
     
     // 最小化按鈕
     const minimizedButton = document.createElement('button');
@@ -2301,8 +2310,9 @@ function getCSSContent() {
     minimizedButton.style.display = 'none';
     document.body.appendChild(minimizedButton);
     
+    console.log('BV Shop 出貨助手: 設置面板事件...');
+    
     setupEventListeners();
-    loadSettings();
     initDragFunction();
     initLazyLoad();
     
@@ -2310,6 +2320,113 @@ function getCSSContent() {
       initShippingMode();
     } else if (state.isConverted) {
       checkShippingDataStatus();
+    }
+    
+    console.log('BV Shop 出貨助手: 面板創建完成');
+  }
+
+  // ===== 更新面板內容 =====
+  function updatePanelContent() {
+    const panel = document.getElementById('bv-label-control-panel');
+    if (!panel) return;
+    
+    // 獲取新的面板內容
+    const newContent = getPanelContent();
+    
+    // 更新面板內容，但保留 glass-panel 容器
+    const glassPanel = panel.querySelector('.bv-glass-panel');
+    if (glassPanel) {
+      // 創建臨時容器來解析新內容
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = newContent;
+      
+      // 取得新的 glass-panel 內容
+      const newGlassPanel = tempDiv.querySelector('.bv-glass-panel');
+      if (newGlassPanel) {
+        // 替換整個 glass-panel 的內容
+        glassPanel.innerHTML = newGlassPanel.innerHTML;
+      }
+    } else {
+      // 如果沒有 glass-panel，直接更新整個面板
+      panel.innerHTML = newContent;
+    }
+    
+    // 重新綁定事件監聽器
+    setupEventListeners();
+    
+    // 如果是標籤模式，重新初始化相關功能
+    if (state.isConverted) {
+      setupLabelModeEventListeners();
+      hideOriginalControls();
+      initPresetSystem();
+      initLogoUpload();
+      observeOriginalControls();
+      updatePrintModeUI();
+      
+      // 更新所有滑桿的進度顯示
+      document.querySelectorAll('input[type="range"]').forEach(updateRangeProgress);
+    }
+    
+    // 重新設置可折疊卡片
+    setupCollapsibleCards();
+    
+    // 檢查物流單資料狀態
+    if (state.isConverted || state.wizardMode) {
+      checkShippingDataStatus();
+    }
+  }
+
+  // ===== 拖曳功能 =====
+  function initDragFunction() {
+    const panel = document.getElementById('bv-label-control-panel');
+    const header = panel?.querySelector('.bv-panel-header');
+    
+    if (!panel || !header) return;
+    
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+    
+    header.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+    
+    function dragStart(e) {
+      // 忽略按鈕點擊
+      if (e.target.closest('button')) return;
+      
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
+      
+      if (e.target === header || header.contains(e.target)) {
+        isDragging = true;
+        panel.style.transition = 'none';
+      }
+    }
+    
+    function drag(e) {
+      if (isDragging) {
+        e.preventDefault();
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+        
+        xOffset = currentX;
+        yOffset = currentY;
+        
+        panel.style.transform = `translate(${currentX}px, ${currentY}px)`;
+      }
+    }
+    
+    function dragEnd(e) {
+      initialX = currentX;
+      initialY = currentY;
+      
+      isDragging = false;
+      panel.style.transition = '';
     }
   }
   
