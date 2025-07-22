@@ -3238,6 +3238,7 @@
             otherCard.classList.add('collapsed');
             const otherSectionId = otherCard.getAttribute('data-section');
             state.collapsedSections[otherSectionId] = true;
+          }
         });
         
         // 切換當前卡片
