@@ -3182,8 +3182,6 @@
       });
     }
     
-    hideOriginalControls();
-    
     document.querySelectorAll('input[type="range"]').forEach(updateRangeProgress);
     
     initPresetSystem();
