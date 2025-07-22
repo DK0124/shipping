@@ -3312,7 +3312,7 @@
     showNotification('已成功轉換為10×15cm標籤格式');
   }
 
-  // 7.2 處理分頁
+  // 7.2 處理分頁（修復版）
   function handlePagination() {
     // 清除現有快取
     state.previewCache.clear();
@@ -3375,12 +3375,20 @@
         if (state.printMode !== CONFIG.PRINT_MODES.SHIPPING_ONLY) {
           const orderContentClone = orderContent.cloneNode(true);
           
-          // 先處理商品圖片（在精簡模式之前）
-          processProductImages(orderContentClone);
-          
-          // 再處理精簡模式
+          // 重要：先處理精簡模式（移除不需要的資訊）
           if (state.hideExtraInfo) {
             processExtraInfoHiding(orderContentClone);
+          }
+          
+          // 然後處理商品圖片
+          const showProductImage = document.querySelector('.ignore-print #showProductImage');
+          if (showProductImage && showProductImage.checked) {
+            processProductImages(orderContentClone);
+          }
+          
+          // 處理數量標示
+          if (state.highlightQuantity) {
+            applyQuantityHighlightToElement(orderContentClone);
           }
           
           const elements = Array.from(orderContentClone.children);
@@ -3506,6 +3514,32 @@
     if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH && state.matchingResults) {
       showMatchingResults();
     }
+  }
+
+  // 新增：對單個元素套用數量標示
+  function applyQuantityHighlightToElement(element) {
+    const qtyElements = element.querySelectorAll('.list-item-qty');
+    
+    qtyElements.forEach(qtyEl => {
+      const text = qtyEl.textContent.trim();
+      const qtyMatch = text.match(/\d+/);
+      
+      if (qtyMatch) {
+        const qty = parseInt(qtyMatch[0]);
+        
+        if (qty >= 2) {
+          qtyEl.classList.add('bv-qty-highlight');
+          
+          // 檢查是否已有指示器
+          if (!qtyEl.querySelector('.bv-qty-indicator')) {
+            const indicator = document.createElement('span');
+            indicator.className = 'bv-qty-indicator';
+            indicator.textContent = '▲';
+            qtyEl.insertBefore(indicator, qtyEl.firstChild);
+          }
+        }
+      }
+    });
   }
 
   // 7.3 創建純物流單頁面
@@ -4899,40 +4933,227 @@
     }
   }
 
-  function hideOriginalControls() {
-    const showProductImage = document.querySelector('.ignore-print #showProductImage');
-    if (showProductImage) {
-      const parentDiv = showProductImage.closest('div');
-      if (parentDiv) {
-        parentDiv.style.display = 'none';
-      }
-    }
-  }
-
   function processExtraInfoHiding(orderContent) {
-    const itemsToHide = [
-      'buyer-info',           // 買家資訊
-      'order-memo',          // 訂單備註
-      'order-cost',          // 成本資訊
-      'custom-col-',         // 自訂欄位
-      'order-note'           // 訂單註記
+    if (!state.hideExtraInfo) return;
+    
+    // 在精簡模式下，只保留特定欄位
+    const fieldsToKeep = ['訂單編號', '物流編號', '送貨方式', '收件人'];
+    
+    // 處理標題列上方的資訊區塊
+    const infoSections = orderContent.querySelectorAll('.order-info, .info-section, .header-info, [class*="info"]');
+    
+    infoSections.forEach(section => {
+      // 檢查每個資訊項目
+      const infoItems = section.querySelectorAll('div, span, p, td, th');
+      
+      infoItems.forEach(item => {
+        const text = item.textContent.trim();
+        let shouldHide = true;
+        
+        // 檢查是否包含要保留的欄位
+        for (const field of fieldsToKeep) {
+          if (text.includes(field) || item.querySelector(`*:contains("${field}")`)) {
+            shouldHide = false;
+            break;
+          }
+        }
+        
+        // 特別處理：確保保留欄位的值
+        if (!shouldHide) {
+          // 如果是標籤，確保其對應的值也顯示
+          const nextSibling = item.nextElementSibling;
+          if (nextSibling) {
+            nextSibling.style.display = '';
+          }
+          // 如果在表格中，確保整行顯示
+          const row = item.closest('tr');
+          if (row) {
+            row.style.display = '';
+          }
+        } else if (!item.querySelector(fieldsToKeep.map(f => `*:contains("${f}")`).join(', '))) {
+          // 只隱藏不包含保留欄位的項目
+          item.style.display = 'none';
+        }
+      });
+    });
+    
+    // 隱藏整個區塊（表格標題列下方的所有內容）
+    const sectionsToHide = [
+      '.buyer-info',           // 買家資訊
+      '.order-memo',          // 訂單備註
+      '.order-cost',          // 成本資訊
+      '.custom-col',          // 自訂欄位
+      '.order-note',          // 訂單註記
+      '.payment-info',        // 付款資訊
+      '.shipping-memo',       // 物流備註
+      '.internal-note',       // 內部註記
+      '[class*="custom-"]',   // 所有自訂欄位
+      '[class*="memo"]',      // 所有備註相關
+      '[class*="remark"]',    // 所有備註相關
+      '[class*="note"]'       // 所有註記相關
     ];
     
-    itemsToHide.forEach(className => {
-      orderContent.querySelectorAll(`[class*="${className}"]`).forEach(element => {
+    sectionsToHide.forEach(selector => {
+      orderContent.querySelectorAll(selector).forEach(element => {
         element.style.display = 'none';
       });
     });
     
-    // 隱藏含有特定文字的元素
-    const textsToHide = ['備註', '買家資訊', '成本', '自訂欄位'];
-    orderContent.querySelectorAll('*').forEach(element => {
-      const text = element.textContent.trim();
-      if (textsToHide.some(hideText => text.includes(hideText)) && 
-          element.children.length === 0) {
-        element.style.display = 'none';
+    // 更精確的處理：找到訂單資訊表格
+    const orderInfoTable = orderContent.querySelector('.order-header, .order-info-table, table:first-of-type');
+    if (orderInfoTable) {
+      const rows = orderInfoTable.querySelectorAll('tr');
+      
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td, th');
+        let hasRequiredField = false;
+        
+        // 檢查這一行是否包含需要保留的欄位
+        cells.forEach(cell => {
+          const cellText = cell.textContent.trim();
+          if (fieldsToKeep.some(field => cellText.includes(field))) {
+            hasRequiredField = true;
+          }
+        });
+        
+        // 如果這行不包含需要的欄位，隱藏它
+        if (!hasRequiredField) {
+          // 但要檢查是否是包含值的行（通常欄位名和值在不同的 td 中）
+          const prevRow = row.previousElementSibling;
+          const nextRow = row.nextElementSibling;
+          
+          let isValueRow = false;
+          if (prevRow) {
+            const prevCells = prevRow.querySelectorAll('td, th');
+            prevCells.forEach(cell => {
+              if (fieldsToKeep.some(field => cell.textContent.includes(field))) {
+                isValueRow = true;
+              }
+            });
+          }
+          
+          if (!isValueRow) {
+            row.style.display = 'none';
+          }
+        }
+      });
+    }
+    
+    // 處理訂單明細表格上方的所有其他資訊
+    const orderContent子元素 = orderContent.children;
+    let reachedItemList = false;
+    
+    for (let i = 0; i < orderContent子元素.length; i++) {
+      const element = orderContent子元素[i];
+      
+      // 如果到達商品明細表格，停止處理
+      if (element.classList.contains('list-title') || 
+          element.querySelector('.list-title') ||
+          element.tagName === 'TABLE' && element.querySelector('.list-item')) {
+        reachedItemList = true;
+        break;
       }
-    });
+      
+      // 在商品明細表格之前的元素，檢查是否需要隱藏
+      if (!reachedItemList) {
+        let shouldShow = false;
+        const elementText = element.textContent || '';
+        
+        // 檢查是否包含需要保留的資訊
+        for (const field of fieldsToKeep) {
+          if (elementText.includes(field)) {
+            shouldShow = true;
+            break;
+          }
+        }
+        
+        if (!shouldShow) {
+          element.style.display = 'none';
+        }
+      }
+    }
+  }
+
+  // 更新設定卡片中的說明文字
+  function getLabelModePanelContent(collapseIcon) {
+    return `
+      <div class="bv-glass-panel">
+        <!-- ... 前面的內容保持不變 ... -->
+        
+        <div class="bv-panel-body">
+          <!-- ... 其他卡片保持不變 ... -->
+          
+          <!-- 出貨明細設定卡片 -->
+          <div class="bv-settings-card" data-section="layout">
+            <h4 class="bv-card-title">
+              <span class="material-icons">tune</span>
+              出貨明細設定
+              ${collapseIcon}
+            </h4>
+            
+            <div class="bv-card-content">
+              <div class="bv-slider-group">
+                <div class="bv-slider-item">
+                  <div class="bv-slider-header">
+                    <span>文字大小</span>
+                    <span class="bv-value-label" id="bv-font-size-value">11.0</span>
+                  </div>
+                  <input type="range" id="bv-font-size" min="11" max="13" step="0.1" value="11" class="bv-glass-slider">
+                </div>
+              </div>
+              
+              <div class="bv-settings-list" style="margin-top: 20px;">
+                <div class="bv-setting-item">
+                  <div class="bv-setting-info">
+                    <span class="bv-counter-icon"></span>
+                    <div class="bv-setting-text">
+                      <span class="bv-setting-label">數量標示</span>
+                      <span class="bv-setting-desc">標示數量 ≥ 2（▲）</span>
+                    </div>
+                  </div>
+                  <label class="bv-glass-switch">
+                    <input type="checkbox" id="bv-highlight-qty">
+                    <span class="bv-switch-slider"></span>
+                  </label>
+                </div>
+                
+                <div class="bv-setting-item">
+                  <div class="bv-setting-info">
+                    <span class="material-icons">compress</span>
+                    <div class="bv-setting-text">
+                      <span class="bv-setting-label">精簡模式</span>
+                      <span class="bv-setting-desc">只顯示訂單、物流、送貨方式、收件人</span>
+                    </div>
+                  </div>
+                  <label class="bv-glass-switch">
+                    <input type="checkbox" id="bv-hide-extra-info" checked>
+                    <span class="bv-switch-slider"></span>
+                  </label>
+                </div>
+                
+                <div class="bv-setting-item">
+                  <div class="bv-setting-info">
+                    <span class="material-icons">view_headline</span>
+                    <div class="bv-setting-text">
+                      <span class="bv-setting-label">隱藏標題</span>
+                      <span class="bv-setting-desc">隱藏表格標題列</span>
+                    </div>
+                  </div>
+                  <label class="bv-glass-switch">
+                    <input type="checkbox" id="bv-hide-table-header">
+                    <span class="bv-switch-slider"></span>
+                  </label>
+                </div>
+              </div>
+              
+              <!-- ... 底圖設定保持不變 ... -->
+            </div>
+          </div>
+          
+          <!-- ... 其他卡片保持不變 ... -->
+        </div>
+      </div>
+    `;
   }
 
   function preparePrintStyles() {
@@ -5014,10 +5235,12 @@
   }
 
   function observeOriginalControls() {
+    // 監聽所有 BV SHOP 原有控制項的變化
     const originalFontSize = document.querySelector('.ignore-print #fontSize');
     const originalShowImage = document.querySelector('.ignore-print #showProductImage');
     
     if (originalFontSize) {
+      // 同步字體大小變化
       const observer = new MutationObserver(() => {
         const size = originalFontSize.value.replace('px', '');
         const slider = document.getElementById('bv-font-size');
@@ -5034,8 +5257,32 @@
         attributes: true,
         attributeFilter: ['value']
       });
+      
+      // 雙向同步：當我們的滑桿改變時，也更新原始控制項
+      const fontSizeSlider = document.getElementById('bv-font-size');
+      if (fontSizeSlider) {
+        fontSizeSlider.addEventListener('input', function() {
+          const closestSize = Math.round(parseFloat(this.value));
+          originalFontSize.value = closestSize + 'px';
+          if (typeof $ !== 'undefined') {
+            $(originalFontSize).trigger('change');
+          }
+        });
+      }
     }
     
+    // 監聽所有原始功能的變化並自動更新預覽
+    const allControls = document.querySelectorAll('.ignore-print input[type="checkbox"], .ignore-print select, .ignore-print input[type="radio"]');
+    allControls.forEach(control => {
+      control.addEventListener('change', () => {
+        // 延遲更新以確保原始功能先執行
+        setTimeout(() => {
+          updatePreview();
+        }, 100);
+      });
+    });
+    
+    // 特別處理商品圖片顯示選項
     if (originalShowImage) {
       const observer = new MutationObserver(() => {
         updatePreview();
