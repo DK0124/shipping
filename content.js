@@ -7910,25 +7910,25 @@ function getCSSContent() {
       pathname: window.location.pathname
     });
     
-    // 設定頁面類型
-    state.currentPageType = isShippingPage ? CONFIG.PAGE_TYPES.SHIPPING : CONFIG.PAGE_TYPES.ORDER_LIST;
-    
     console.log('BV Shop 出貨助手: 載入設定...');
     
     // 載入設定
     loadSettings(() => {
-      console.log('BV Shop 出貨助手: 設定載入完成，注入樣式...');
+      console.log('BV Shop 出貨助手: 設定載入完成');
       
+      // 設定頁面類型 - 移到這裡！
+      state.currentPageType = isShippingPage ? CONFIG.PAGE_TYPES.SHIPPING : CONFIG.PAGE_TYPES.ORDER_LIST;
+      console.log('BV Shop 出貨助手: 設定頁面類型:', state.currentPageType);
+      
+      console.log('BV Shop 出貨助手: 注入樣式...');
       // 注入樣式
       injectStyles();
       
       console.log('BV Shop 出貨助手: 創建控制面板...');
-      
       // 創建控制面板
       createControlPanel();
       
       console.log('BV Shop 出貨助手: 設置事件監聽器...');
-      
       // 設置事件監聽器
       setupEventListeners();
       
