@@ -2394,7 +2394,7 @@ function getCSSContent() {
     // 如果是標籤模式，重新初始化相關功能
     if (state.isConverted) {
       setupLabelModeEventListeners();
-      hideOriginalControls();
+      beautifyOriginalControls();
       initPresetSystem();
       initLogoUpload();
       observeOriginalControls();
@@ -6034,7 +6034,7 @@ function getCSSContent() {
       });
     }
     
-    hideOriginalControls();
+    beautifyOriginalControls();
     
     document.querySelectorAll('input[type="range"]').forEach(updateRangeProgress);
     
@@ -6639,11 +6639,53 @@ function getCSSContent() {
     element.querySelectorAll('[onerror]').forEach(el => el.removeAttribute('onerror'));
   }
   
-  // ===== 隱藏原始控制項 =====
-  function hideOriginalControls() {
+  // ===== 美化原始控制項 =====
+  function beautifyOriginalControls() {
     const originalControls = document.querySelector('.ignore-print');
     if (originalControls) {
-      originalControls.style.display = 'none';
+      // 添加美化樣式
+      originalControls.style.cssText = `
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px auto;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+      `;
+      
+      // 美化內部元素
+      const labels = originalControls.querySelectorAll('label');
+      labels.forEach(label => {
+        label.style.cssText = `
+          display: inline-flex;
+          align-items: center;
+          margin-right: 20px;
+          margin-bottom: 10px;
+          font-size: 14px;
+          color: #333;
+        `;
+      });
+      
+      const selects = originalControls.querySelectorAll('select');
+      selects.forEach(select => {
+        select.style.cssText = `
+          padding: 6px 12px;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+          background: white;
+          margin-left: 8px;
+        `;
+      });
+      
+      const checkboxes = originalControls.querySelectorAll('input[type="checkbox"]');
+      checkboxes.forEach(checkbox => {
+        checkbox.style.cssText = `
+          margin-right: 6px;
+          width: 16px;
+          height: 16px;
+        `;
+      });
     }
   }
   
