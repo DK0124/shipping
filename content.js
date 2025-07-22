@@ -5062,7 +5062,6 @@ function getCSSContent() {
             </div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
-            <!-- 精靈模式開關 -->
             <div class="bv-wizard-toggle">
               <span class="material-icons" style="font-size: 18px; color: rgba(0,0,0,0.5);">assistant</span>
               <label class="bv-glass-switch bv-small">
@@ -5162,10 +5161,12 @@ function getCSSContent() {
                   <!-- 批次列表會動態插入這裡 -->
                 </div>
                 
-                <button class="bv-glass-button" id="bv-clear-shipping" style="margin-top: 12px; width: 100%;">
-                  <span class="material-icons">clear</span>
-                  清除物流單資料
-                </button>
+                ${state.shippingDataBatches.length > 0 ? `
+                  <button class="bv-glass-button" id="bv-clear-shipping" style="margin-top: 12px; width: 100%;">
+                    <span class="material-icons">clear</span>
+                    清除物流單資料
+                  </button>
+                ` : ''}
               </div>
             </div>
             
@@ -5182,9 +5183,9 @@ function getCSSContent() {
                   <div class="bv-slider-item">
                     <div class="bv-slider-header">
                       <span>文字大小</span>
-                      <span class="bv-value-label" id="bv-font-size-value">11.0</span>
+                      <span class="bv-value-label" id="bv-font-size-value">${parseFloat(state.fontSize).toFixed(1)}</span>
                     </div>
-                    <input type="range" id="bv-font-size" min="11" max="13" step="0.1" value="11" class="bv-glass-slider">
+                    <input type="range" id="bv-font-size" min="11" max="13" step="0.1" value="${state.fontSize}" class="bv-glass-slider">
                   </div>
                 </div>
                 
@@ -5198,7 +5199,7 @@ function getCSSContent() {
                       </div>
                     </div>
                     <label class="bv-glass-switch">
-                      <input type="checkbox" id="bv-highlight-qty">
+                      <input type="checkbox" id="bv-highlight-qty" ${state.highlightQuantity ? 'checked' : ''}>
                       <span class="bv-switch-slider"></span>
                     </label>
                   </div>
@@ -5212,7 +5213,7 @@ function getCSSContent() {
                       </div>
                     </div>
                     <label class="bv-glass-switch">
-                      <input type="checkbox" id="bv-hide-extra-info" checked>
+                      <input type="checkbox" id="bv-hide-extra-info" ${state.hideExtraInfo ? 'checked' : ''}>
                       <span class="bv-switch-slider"></span>
                     </label>
                   </div>
@@ -5226,7 +5227,7 @@ function getCSSContent() {
                       </div>
                     </div>
                     <label class="bv-glass-switch">
-                      <input type="checkbox" id="bv-hide-table-header">
+                      <input type="checkbox" id="bv-hide-table-header" ${state.hideTableHeader ? 'checked' : ''}>
                       <span class="bv-switch-slider"></span>
                     </label>
                   </div>
@@ -5250,33 +5251,33 @@ function getCSSContent() {
                       <div class="bv-slider-item">
                         <div class="bv-slider-header">
                           <span>底圖大小</span>
-                          <span class="bv-value-label" id="logo-size">30%</span>
+                          <span class="bv-value-label" id="logo-size">${state.logoSettings.size}%</span>
                         </div>
-                        <input type="range" id="logo-size-slider" min="10" max="100" value="30" class="bv-glass-slider">
+                        <input type="range" id="logo-size-slider" min="10" max="100" value="${state.logoSettings.size}" class="bv-glass-slider">
                       </div>
                       
                       <div class="bv-slider-item">
                         <div class="bv-slider-header">
                           <span>水平位置</span>
-                          <span class="bv-value-label" id="logo-x">50%</span>
+                          <span class="bv-value-label" id="logo-x">${state.logoSettings.positionX}%</span>
                         </div>
-                        <input type="range" id="logo-x-slider" min="0" max="100" value="50" class="bv-glass-slider">
+                        <input type="range" id="logo-x-slider" min="0" max="100" value="${state.logoSettings.positionX}" class="bv-glass-slider">
                       </div>
                       
                       <div class="bv-slider-item">
                         <div class="bv-slider-header">
                           <span>垂直位置</span>
-                          <span class="bv-value-label" id="logo-y">50%</span>
+                          <span class="bv-value-label" id="logo-y">${state.logoSettings.positionY}%</span>
                         </div>
-                        <input type="range" id="logo-y-slider" min="0" max="100" value="50" class="bv-glass-slider">
+                        <input type="range" id="logo-y-slider" min="0" max="100" value="${state.logoSettings.positionY}" class="bv-glass-slider">
                       </div>
                       
                       <div class="bv-slider-item">
                         <div class="bv-slider-header">
                           <span>淡化程度</span>
-                          <span class="bv-value-label" id="logo-opacity">20%</span>
+                          <span class="bv-value-label" id="logo-opacity">${state.logoSettings.opacity}%</span>
                         </div>
-                        <input type="range" id="logo-opacity-slider" min="0" max="100" value="20" class="bv-glass-slider">
+                        <input type="range" id="logo-opacity-slider" min="0" max="100" value="${state.logoSettings.opacity}" class="bv-glass-slider">
                       </div>
                     </div>
                     
@@ -5324,7 +5325,7 @@ function getCSSContent() {
                   </label>
                 </div>
                 
-                <div class="bv-match-mode-selector" id="bv-match-mode-selector" style="display:none;">
+                <div class="bv-match-mode-selector" id="bv-match-mode-selector" style="display:${state.printMode === 'manual_match' ? 'block' : 'none'};">
                   <div class="bv-match-mode-title">配對方式</div>
                   <div class="bv-match-mode-options">
                     <label class="bv-match-mode-option">
@@ -5338,25 +5339,25 @@ function getCSSContent() {
                   </div>
                 </div>
                 
-                <div class="bv-sort-options" id="bv-sort-options" style="display:none;">
-                  <div class="bv-sort-group" id="bv-detail-sort-group">
+                <div class="bv-sort-options" id="bv-sort-options" style="display:${state.printMode !== 'detail_only' && state.printMode !== 'shipping_only' ? 'none' : 'block'};">
+                  <div class="bv-sort-group" id="bv-detail-sort-group" style="display:${state.printMode === 'shipping_only' ? 'none' : 'block'};">
                     <div class="bv-sort-label">出貨明細排序</div>
                     <div class="bv-sort-buttons">
-                      <button class="bv-sort-button active" data-type="detail" data-order="asc">新到舊</button>
-                      <button class="bv-sort-button" data-type="detail" data-order="desc">舊到新</button>
+                      <button class="bv-sort-button ${state.detailSortOrder === 'asc' ? 'active' : ''}" data-type="detail" data-order="asc">新到舊</button>
+                      <button class="bv-sort-button ${state.detailSortOrder === 'desc' ? 'active' : ''}" data-type="detail" data-order="desc">舊到新</button>
                     </div>
                   </div>
                   
-                  <div class="bv-sort-group" id="bv-shipping-sort" style="display:none;">
+                  <div class="bv-sort-group" id="bv-shipping-sort" style="display:${state.printMode === 'shipping_only' ? 'block' : 'none'};">
                     <div class="bv-sort-label">物流單排序</div>
                     <div class="bv-sort-buttons">
-                      <button class="bv-sort-button active" data-type="shipping" data-order="asc">新到舊</button>
-                      <button class="bv-sort-button" data-type="shipping" data-order="desc">舊到新</button>
+                      <button class="bv-sort-button ${state.shippingSortOrder === 'asc' ? 'active' : ''}" data-type="shipping" data-order="asc">新到舊</button>
+                      <button class="bv-sort-button ${state.shippingSortOrder === 'desc' ? 'active' : ''}" data-type="shipping" data-order="desc">舊到新</button>
                     </div>
                   </div>
                 </div>
                 
-                <div class="bv-reverse-shipping-option" id="bv-reverse-shipping-option" style="display:none;">
+                <div class="bv-reverse-shipping-option" id="bv-reverse-shipping-option" style="display:${state.printMode === 'manual_match' ? 'block' : 'none'};">
                   <div class="bv-setting-item" style="padding: 0;">
                     <div class="bv-setting-info">
                       <span class="material-icons">swap_vert</span>
@@ -5365,22 +5366,22 @@ function getCSSContent() {
                       </div>
                     </div>
                     <label class="bv-glass-switch">
-                      <input type="checkbox" id="bv-reverse-shipping">
+                      <input type="checkbox" id="bv-reverse-shipping" ${state.reverseShipping ? 'checked' : ''}>
                       <span class="bv-switch-slider"></span>
                     </label>
                   </div>
                   <div class="bv-reverse-shipping-note">用於物流單順序與明細相反時</div>
                 </div>
                 
-                <div class="bv-setting-item" id="bv-order-label-setting" style="margin-top: 12px; display: none;">
+                <div class="bv-setting-item" id="bv-order-label-setting" style="margin-top: 12px; display: ${state.printMode !== 'detail_only' ? 'flex' : 'none'};">
                   <div class="bv-setting-info">
                     <span class="material-icons">label</span>
                     <div class="bv-setting-text">
                       <span class="bv-setting-label">物流單上顯示訂單編號</span>
                     </div>
                   </div>
-                  <label class="bv-glass-switch disabled" id="bv-order-label-switch">
-                    <input type="checkbox" id="bv-show-order-label" disabled>
+                  <label class="bv-glass-switch ${state.printMode === 'manual_match' ? '' : 'disabled'}" id="bv-order-label-switch">
+                    <input type="checkbox" id="bv-show-order-label" ${state.printMode !== 'manual_match' ? 'disabled' : ''}>
                     <span class="bv-switch-slider"></span>
                   </label>
                 </div>
@@ -5422,13 +5423,6 @@ function getCSSContent() {
                 </button>
               </div>
             </div>
-          </div>
-          
-          <div class="bv-panel-footer">
-            <button class="bv-glass-action-button" id="bv-apply-print">
-              <span class="material-icons">print</span>
-              <span>套用並列印</span>
-            </button>
           </div>
           
           <div class="bv-panel-footer">
