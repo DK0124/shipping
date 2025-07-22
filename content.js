@@ -216,6 +216,15 @@
     currentPageType: null,
     currentProvider: null,
     
+    // 底圖設定 - 加入這個！
+    logoSettings: {
+      imageData: null,
+      size: 30,
+      positionX: 50,
+      positionY: 50,
+      opacity: 20
+    },
+    
     // 資料儲存
     shippingData: [],
     detailData: [],
