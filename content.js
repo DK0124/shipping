@@ -2501,6 +2501,9 @@ function getCSSContent() {
       z-index: 10000;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans TC', sans-serif;
       transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 48px);
     }
 
     /* === Wizard 步驟指示器樣式 === */
