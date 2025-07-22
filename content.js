@@ -2279,28 +2279,51 @@ function getCSSContent() {
   
   // ===== UI 建立功能 =====
   function createControlPanel() {
+    console.log('createControlPanel: 開始執行');
+    
     // 只在支援的頁面創建面板
-    if (!state.currentPageType) return;
+    if (!state.currentPageType) {
+      console.log('createControlPanel: 無 currentPageType，退出');
+      return;
+    }
     
-    if (document.getElementById('bv-label-control-panel')) return;
+    if (document.getElementById('bv-label-control-panel')) {
+      console.log('createControlPanel: 面板已存在，退出');
+      return;
+    }
     
-    console.log('BV Shop 出貨助手: 創建面板元素...');
+    console.log('createControlPanel: 獲取面板內容...');
+    const panelContent = getPanelContent();
+    console.log('createControlPanel: 面板內容長度:', panelContent ? panelContent.length : 0);
     
     const panel = document.createElement('div');
     panel.id = 'bv-label-control-panel';
     panel.className = 'bv-label-control-panel';
-    panel.innerHTML = getPanelContent();
+    panel.innerHTML = panelContent;
     
+    console.log('createControlPanel: 注入樣式...');
     // 注入面板樣式
     const style = document.createElement('style');
     style.id = 'bv-panel-styles';
     style.textContent = getPanelStyles();
     document.head.appendChild(style);
     
+    console.log('createControlPanel: 將面板加入 body...');
     // 將面板加入頁面
     document.body.appendChild(panel);
     
-    console.log('BV Shop 出貨助手: 面板已加入頁面');
+    // 檢查面板是否真的被加入
+    const addedPanel = document.getElementById('bv-label-control-panel');
+    console.log('createControlPanel: 面板是否存在於 DOM:', !!addedPanel);
+    if (addedPanel) {
+      console.log('createControlPanel: 面板樣式:', {
+        display: addedPanel.style.display,
+        visibility: addedPanel.style.visibility,
+        position: window.getComputedStyle(addedPanel).position,
+        width: window.getComputedStyle(addedPanel).width,
+        height: window.getComputedStyle(addedPanel).height
+      });
+    }
     
     // 最小化按鈕
     const minimizedButton = document.createElement('button');
@@ -2310,21 +2333,25 @@ function getCSSContent() {
     minimizedButton.style.display = 'none';
     document.body.appendChild(minimizedButton);
     
-    console.log('BV Shop 出貨助手: 設置面板事件...');
-    
+    console.log('createControlPanel: 設置事件監聽器...');
     setupEventListeners();
+    
+    console.log('createControlPanel: 初始化拖曳功能...');
     initDragFunction();
+    
+    console.log('createControlPanel: 初始化 LazyLoad...');
     initLazyLoad();
     
     if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
+      console.log('createControlPanel: 初始化物流單模式...');
       initShippingMode();
     } else if (state.isConverted) {
+      console.log('createControlPanel: 檢查物流單資料狀態...');
       checkShippingDataStatus();
     }
     
-    console.log('BV Shop 出貨助手: 面板創建完成');
+    console.log('createControlPanel: 完成');
   }
-
   // ===== 更新面板內容 =====
   function updatePanelContent() {
     const panel = document.getElementById('bv-label-control-panel');
