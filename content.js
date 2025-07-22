@@ -4932,146 +4932,118 @@
   }
 
   function processExtraInfoHiding(orderContent) {
-    if (!state.hideExtraInfo) return;
+    if (!state.hideExtraInfo || !orderContent) return;
     
     // 在精簡模式下，只保留特定欄位
     const fieldsToKeep = ['訂單編號', '物流編號', '送貨方式', '收件人'];
     
-    // 處理標題列上方的資訊區塊
-    const infoSections = orderContent.querySelectorAll('.order-info, .info-section, .header-info, [class*="info"]');
+    // 找到商品明細表格之前的所有內容
+    const children = Array.from(orderContent.children);
+    let itemListIndex = -1;
     
-    infoSections.forEach(section => {
-      // 檢查每個資訊項目
-      const infoItems = section.querySelectorAll('div, span, p, td, th');
+    // 找到商品列表的起始位置
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      if (!child) continue;
       
-      infoItems.forEach(item => {
-        const text = item.textContent.trim();
-        let shouldHide = true;
-        
-        // 檢查是否包含要保留的欄位
-        for (const field of fieldsToKeep) {
-          if (text.includes(field) || item.querySelector(`*:contains("${field}")`)) {
-            shouldHide = false;
-            break;
-          }
-        }
-        
-        // 特別處理：確保保留欄位的值
-        if (!shouldHide) {
-          // 如果是標籤，確保其對應的值也顯示
-          const nextSibling = item.nextElementSibling;
-          if (nextSibling) {
-            nextSibling.style.display = '';
-          }
-          // 如果在表格中，確保整行顯示
-          const row = item.closest('tr');
-          if (row) {
-            row.style.display = '';
-          }
-        } else if (!item.querySelector(fieldsToKeep.map(f => `*:contains("${f}")`).join(', '))) {
-          // 只隱藏不包含保留欄位的項目
-          item.style.display = 'none';
-        }
-      });
-    });
-    
-    // 隱藏整個區塊（表格標題列下方的所有內容）
-    const sectionsToHide = [
-      '.buyer-info',           // 買家資訊
-      '.order-memo',          // 訂單備註
-      '.order-cost',          // 成本資訊
-      '.custom-col',          // 自訂欄位
-      '.order-note',          // 訂單註記
-      '.payment-info',        // 付款資訊
-      '.shipping-memo',       // 物流備註
-      '.internal-note',       // 內部註記
-      '[class*="custom-"]',   // 所有自訂欄位
-      '[class*="memo"]',      // 所有備註相關
-      '[class*="remark"]',    // 所有備註相關
-      '[class*="note"]'       // 所有註記相關
-    ];
-    
-    sectionsToHide.forEach(selector => {
-      orderContent.querySelectorAll(selector).forEach(element => {
-        element.style.display = 'none';
-      });
-    });
-    
-    // 更精確的處理：找到訂單資訊表格
-    const orderInfoTable = orderContent.querySelector('.order-header, .order-info-table, table:first-of-type');
-    if (orderInfoTable) {
-      const rows = orderInfoTable.querySelectorAll('tr');
+      const hasItemList = child.classList && (
+        child.classList.contains('list-title') ||
+        child.classList.contains('list-item') ||
+        child.classList.contains('order-items') ||
+        child.classList.contains('product-list')
+      );
       
-      rows.forEach(row => {
-        const cells = row.querySelectorAll('td, th');
-        let hasRequiredField = false;
-        
-        // 檢查這一行是否包含需要保留的欄位
-        cells.forEach(cell => {
-          const cellText = cell.textContent.trim();
-          if (fieldsToKeep.some(field => cellText.includes(field))) {
-            hasRequiredField = true;
-          }
-        });
-        
-        // 如果這行不包含需要的欄位，隱藏它
-        if (!hasRequiredField) {
-          // 但要檢查是否是包含值的行（通常欄位名和值在不同的 td 中）
-          const prevRow = row.previousElementSibling;
-          const nextRow = row.nextElementSibling;
-          
-          let isValueRow = false;
-          if (prevRow) {
-            const prevCells = prevRow.querySelectorAll('td, th');
-            prevCells.forEach(cell => {
-              if (fieldsToKeep.some(field => cell.textContent.includes(field))) {
-                isValueRow = true;
-              }
-            });
-          }
-          
-          if (!isValueRow) {
-            row.style.display = 'none';
-          }
-        }
-      });
-    }
-    
-    // 處理訂單明細表格上方的所有其他資訊
-    const orderContent子元素 = orderContent.children;
-    let reachedItemList = false;
-    
-    for (let i = 0; i < orderContent子元素.length; i++) {
-      const element = orderContent子元素[i];
-      
-      // 如果到達商品明細表格，停止處理
-      if (element.classList.contains('list-title') || 
-          element.querySelector('.list-title') ||
-          element.tagName === 'TABLE' && element.querySelector('.list-item')) {
-        reachedItemList = true;
+      if (hasItemList || (child.querySelector && child.querySelector('.list-title, .list-item'))) {
+        itemListIndex = i;
         break;
       }
+    }
+    
+    // 處理商品列表之前的元素
+    const elementsBeforeList = itemListIndex >= 0 ? children.slice(0, itemListIndex) : children;
+    
+    elementsBeforeList.forEach(element => {
+      if (!element) return;
       
-      // 在商品明細表格之前的元素，檢查是否需要隱藏
-      if (!reachedItemList) {
-        let shouldShow = false;
-        const elementText = element.textContent || '';
-        
-        // 檢查是否包含需要保留的資訊
-        for (const field of fieldsToKeep) {
-          if (elementText.includes(field)) {
-            shouldShow = true;
-            break;
-          }
-        }
-        
-        if (!shouldShow) {
-          element.style.display = 'none';
+      const elementText = element.textContent || '';
+      let shouldKeep = false;
+      
+      // 檢查是否包含需要保留的欄位
+      for (const field of fieldsToKeep) {
+        if (elementText.includes(field)) {
+          shouldKeep = true;
+          break;
         }
       }
-    }
+      
+      if (!shouldKeep) {
+        safeHideElement(element);
+      } else {
+        // 如果元素需要保留，進一步處理其子元素
+        processChildElements(element, fieldsToKeep);
+      }
+    });
+    
+    // 隱藏特定的區塊
+    const selectorsToHide = [
+      '.buyer-info',
+      '.order-memo', 
+      '.order-cost',
+      '.order-note',
+      '.payment-info',
+      '.shipping-memo',
+      '.internal-note'
+    ];
+    
+    selectorsToHide.forEach(selector => {
+      const elements = orderContent.querySelectorAll(selector);
+      elements.forEach(element => safeHideElement(element));
+    });
   }
-
+  
+  // 處理子元素
+  function processChildElements(parentElement, fieldsToKeep) {
+    if (!parentElement || !parentElement.children) return;
+    
+    const children = Array.from(parentElement.children);
+    
+    children.forEach(child => {
+      if (!child) return;
+      
+      const childText = child.textContent || '';
+      let shouldKeep = false;
+      
+      // 檢查子元素是否包含需要保留的資訊
+      for (const field of fieldsToKeep) {
+        if (childText.includes(field)) {
+          shouldKeep = true;
+          break;
+        }
+      }
+      
+      if (!shouldKeep) {
+        // 檢查是否為包含值的元素（例如：欄位標籤的下一個兄弟元素）
+        const prevSibling = child.previousElementSibling;
+        if (prevSibling) {
+          const prevText = prevSibling.textContent || '';
+          for (const field of fieldsToKeep) {
+            if (prevText.includes(field)) {
+              shouldKeep = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      if (!shouldKeep) {
+        safeHideElement(child);
+      } else if (child.children && child.children.length > 0) {
+        // 遞迴處理子元素
+        processChildElements(child, fieldsToKeep);
+      }
+    });
+  }
+    
   // 更新設定卡片中的說明文字
   function getLabelModePanelContent(collapseIcon) {
     return `
