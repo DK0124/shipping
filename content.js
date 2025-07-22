@@ -2475,534 +2475,422 @@ function getCSSContent() {
     }
   }
   
+  /* === 主面板樣式 === */
+  #bv-label-control-panel {
+    position: fixed;
+    right: 24px;
+    top: 24px;
+    bottom: 24px;
+    width: 360px;
+    z-index: 10000;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans TC', sans-serif;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 48px);
+  }
+  
+  /* === Glass Panel 樣式 === */
+  .bv-glass-panel {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow: 
+      0 10px 40px rgba(0, 0, 0, 0.05),
+      0 0 0 0.5px rgba(255, 255, 255, 0.6) inset,
+      0 0 60px rgba(255, 255, 255, 0.4);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  /* === 面板標頭樣式 === */
+  .bv-panel-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    cursor: move;
+    user-select: none;
+    min-height: 80px;
+  }
+  
+  /* === 內容區域樣式 === */
+  .bv-panel-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+  
+  .bv-panel-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* === 精靈步驟樣式 === */
+  .bv-wizard-steps-compact {
+    display: flex;
+    align-items: center;
+    padding: 12px 24px;
+    background: rgba(248, 250, 252, 0.5);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    overflow-x: auto;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  
+  /* === 精靈模式開關（在標題列） === */
+  .bv-wizard-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    margin-right: 8px;
+  }
+  這個修正版本應該能解決面板內容擠在一起的問題。主要的改動包括：
+  
+  修正了 HTML 結構，確保有正確的閉合標籤
+  確保 bv-panel-content-wrapper 正確包裹內容
+  添加了適當的 flex 屬性來確保內容正確分佈
+  確保標題區域有最小高度
+  精靈步驟區域不會被壓縮
+  You said: 給我整份 // ===== 樣式管理 ===== function
+  給我整份
+   // ===== 樣式管理 =====
+    function getPanelStyles() 
+  Copilot said: 這是完整的 `getPanelStyles()` 函數： ```javascript // ===== 樣式管理 ===== function getPanelStyles()
+  這是完整的 getPanelStyles() 函數：
+  
+  JavaScript
   // ===== 樣式管理 =====
   function getPanelStyles() {
     return `
-    /* === 基本樣式重置 === */
-    * {
-      outline: none !important;
-    }
-    
-    *:focus,
-    *:focus-visible,
-    *:focus-within,
-    *:active {
-      outline: none !important;
-      box-shadow: none !important;
-    }
-    
-    /* === 主面板樣式 === */
-    #bv-label-control-panel {
-      position: fixed;
-      right: 24px;
-      top: 24px;
-      bottom: 24px;
-      width: 360px;
-      z-index: 10000;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans TC', sans-serif;
-      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      display: flex;
-      flex-direction: column;
-      max-height: calc(100vh - 48px);
-    }
-
-    /* === Wizard 步驟指示器樣式 === */
-    .bv-wizard-steps {
-      padding: 20px 24px;
-      background: rgba(248, 250, 252, 0.95);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      display: flex;
-      justify-content: space-between;
-      position: relative;
-    }
-    
-    .bv-wizard-step {
-      flex: 1;
-      text-align: center;
-      cursor: pointer;
-      position: relative;
-      z-index: 2;
-    }
-    
-    .bv-wizard-step:not(:last-child)::after {
-      content: '';
-      position: absolute;
-      top: 20px;
-      right: -50%;
-      width: 100%;
-      height: 2px;
-      background: rgba(0, 0, 0, 0.1);
-      z-index: -1;
-    }
-    
-    .bv-wizard-step.completed:not(:last-child)::after {
-      background: #10b981;
-    }
-    
-    .bv-wizard-step-number {
-      width: 40px;
-      height: 40px;
-      background: rgba(0, 0, 0, 0.05);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 8px;
-      font-weight: 600;
-      color: rgba(0, 0, 0, 0.3);
-      transition: all 0.3s ease;
-    }
-    
-    .bv-wizard-step.active .bv-wizard-step-number {
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      color: white;
-      box-shadow: 0 3px 12px rgba(81, 138, 255, 0.3);
-    }
-    
-    .bv-wizard-step.completed .bv-wizard-step-number {
-      background: #10b981;
-      color: white;
-    }
-    
-    .bv-wizard-step.visited:not(.active):not(.completed) .bv-wizard-step-number {
-      background: rgba(81, 138, 255, 0.1);
-      color: #518aff;
-    }
-    
-    .bv-wizard-step-number .material-icons {
-      font-size: 20px;
-    }
-    
-    .bv-wizard-step-title {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.4);
-      font-weight: 500;
-    }
-    
-    .bv-wizard-step.active .bv-wizard-step-title,
-    .bv-wizard-step.completed .bv-wizard-step-title {
-      color: #000;
-    }
-    
-    /* === Wizard 內容區域 === */
-    .bv-wizard-content {
-      padding: 24px;
-      min-height: 300px;
-    }
-    
-    .bv-wizard-header {
-      margin-bottom: 24px;
-      text-align: center;
-    }
-    
-    .bv-wizard-header h3 {
-      margin: 0 0 8px 0;
-      font-size: 18px;
-      font-weight: 600;
-      color: #000;
-    }
-    
-    .bv-wizard-header p {
-      margin: 0;
-      font-size: 14px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    /* === Wizard 導航按鈕 === */
-    .bv-wizard-navigation {
-      display: flex;
-      gap: 12px;
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    
-    .bv-wizard-nav-btn {
-      flex: 1;
-      padding: 12px 20px;
-      background: rgba(0, 0, 0, 0.03);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      color: rgba(0, 0, 0, 0.7);
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    
-    .bv-wizard-nav-btn:hover {
-      background: rgba(0, 0, 0, 0.05);
-      transform: translateY(-1px);
-    }
-    
-    .bv-wizard-nav-btn.primary {
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      color: white;
-      border: none;
-      box-shadow: 0 3px 12px rgba(81, 138, 255, 0.25);
-    }
-    
-    .bv-wizard-nav-btn.primary:hover {
-      box-shadow: 0 6px 20px rgba(81, 138, 255, 0.35);
-    }
-    
-    .bv-wizard-nav-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none !important;
-    }
-    
-    /* === 模式切換開關 === */
-    .bv-mode-switch {
-      position: absolute;
-      bottom: 20px;
-      left: 24px;
-      right: 24px;
-      padding: 12px;
-      background: rgba(248, 250, 252, 0.8);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-mode-switch-label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    /* === 格式選擇器樣式 === */
-    .bv-format-selector {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .bv-format-option {
-      display: flex;
-      align-items: center;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.6);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-format-option:hover {
-      background: rgba(255, 255, 255, 0.8);
-      border-color: rgba(81, 138, 255, 0.2);
-    }
-    
-    .bv-format-option.selected {
-      background: rgba(81, 138, 255, 0.08);
-      border-color: #518aff;
-    }
-    
-    .bv-format-option input[type="radio"] {
-      margin-right: 12px;
-    }
-    
-    .bv-format-info {
-      flex: 1;
-    }
-    
-    .bv-format-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #000;
-      margin-bottom: 2px;
-    }
-    
-    .bv-format-desc {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    /* === Glass Panel 樣式 === */
-    .bv-glass-panel {
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(24px) saturate(140%);
-      -webkit-backdrop-filter: blur(24px) saturate(140%);
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.75);
-      box-shadow: 
-        0 10px 40px rgba(0, 0, 0, 0.05),
-        0 0 0 0.5px rgba(255, 255, 255, 0.6) inset,
-        0 0 60px rgba(255, 255, 255, 0.4);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-height: 600px; /* 加入最小高度 */
-    }
-    
-    #bv-label-control-panel.minimized {
-      display: none !important;
-    }
-    
-    /* === 最小化按鈕樣式 === */
-    .bv-minimized-button {
-      position: fixed;
-      bottom: 32px;
-      right: 32px;
-      width: 56px;
-      height: 56px;
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      color: white;
-      border: none;
-      border-radius: 28px;
-      box-shadow: 
-        0 4px 24px rgba(81, 138, 255, 0.3),
-        0 0 0 0.5px rgba(255, 255, 255, 0.2),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
-      cursor: pointer;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    .bv-minimized-button:hover {
-      transform: scale(1.05) translateY(-2px);
-      box-shadow: 
-        0 8px 32px rgba(81, 138, 255, 0.4),
-        0 0 0 0.5px rgba(255, 255, 255, 0.3),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
-    }
-    
-    .bv-minimized-button:active {
-      transform: scale(0.98);
-    }
-    
-    .bv-minimized-button .material-icons {
-      font-size: 28px;
-    }
-    
-    #bv-label-control-panel.minimized ~ .bv-minimized-button {
-      display: flex;
-    }
-    
-    /* === 面板標頭樣式 === */
-    .bv-panel-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(20px);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-shrink: 0;
-      cursor: move;
-      user-select: none;
-    }
-    
-    .bv-header-content {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex: 1;
-    }
-    
-    .bv-icon-wrapper {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      box-shadow: 
-        0 2px 8px rgba(81, 138, 255, 0.2),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-    }
-    
-    .bv-icon-wrapper.bv-label-mode {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      box-shadow: 
-        0 2px 8px rgba(16, 185, 129, 0.2),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-    }
-    
-    .bv-icon-wrapper.bv-shipping-mode {
-      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-      box-shadow: 
-        0 2px 8px rgba(255, 152, 0, 0.2),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-    }
-    
-    .bv-icon-wrapper .material-icons {
-      font-size: 22px;
-    }
-    
-    .bv-title-group {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    
-    .bv-panel-title {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 600;
-      color: #000;
-      letter-spacing: -0.02em;
-    }
-    
-    .bv-panel-subtitle {
-      font-size: 13px;
-      color: rgba(0, 0, 0, 0.5);
-      font-weight: 400;
-    }
-    
-    /* === Glass 按鈕樣式 === */
-    .bv-glass-button {
-      width: 32px;
-      height: 32px;
-      background: rgba(0, 0, 0, 0.03);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: rgba(0, 0, 0, 0.7);
-    }
-    
-    .bv-glass-button:hover {
-      background: rgba(0, 0, 0, 0.05);
-      transform: scale(1.04);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-    
-    .bv-glass-button:active {
-      transform: scale(0.96);
-    }
-    
-    .bv-glass-button .material-icons {
-      font-size: 20px;
-    }
-    
-    .bv-glass-button.bv-primary {
-      background: rgba(81, 138, 255, 0.08);
-      color: #518aff;
-      border-color: rgba(81, 138, 255, 0.15);
-    }
-    
-    .bv-glass-button.bv-primary:hover {
-      background: rgba(81, 138, 255, 0.12);
-    }
-    
-    /* === 內容區域樣式 === */
-    .bv-panel-content-wrapper {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      overflow: hidden;
-    }
-    
-    .bv-panel-body {
-      padding: 24px;
-      overflow-y: auto;
-      flex: 1;
-      -webkit-overflow-scrolling: touch;
-    }
-    
-    /* === 主要按鈕樣式 === */
-    .bv-primary-section {
-      margin-bottom: 28px;
-    }
-    
-    .bv-primary-button,
-    .bv-secondary-button {
-      width: 100%;
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      box-shadow: 
-        0 3px 12px rgba(81, 138, 255, 0.25),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px 20px;
-      color: white;
-    }
-    
-    .bv-secondary-button {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      box-shadow: 
-        0 3px 12px rgba(16, 185, 129, 0.25),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-    }
-    
-    .bv-primary-button:hover {
-      transform: translateY(-1px);
-      box-shadow: 
-        0 6px 20px rgba(81, 138, 255, 0.35),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
-    }
-    
-    .bv-secondary-button:hover {
-      transform: translateY(-1px);
-      box-shadow: 
-        0 6px 20px rgba(16, 185, 129, 0.35),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
-    }
-    
-    .bv-primary-button:active,
-    .bv-secondary-button:active {
-      transform: translateY(0);
-    }
-    
-    .bv-button-icon {
-      width: 44px;
-      height: 44px;
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(20px);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    
-    .bv-button-icon .material-icons {
-      font-size: 26px;
-    }
-    
-    .bv-button-content {
-      flex: 1;
-      text-align: left;
-    }
-    
-    .bv-button-title {
-      display: block;
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 2px;
-      letter-spacing: -0.01em;
-    }
-    
-    .bv-button-subtitle {
-      display: block;
-      font-size: 13px;
-      opacity: 0.8;
-    }
+      /* === 基本樣式重置 === */
+      * {
+        outline: none !important;
+      }
+      
+      *:focus,
+      *:focus-visible,
+      *:focus-within,
+      *:active {
+        outline: none !important;
+        box-shadow: none !important;
+      }
+      
+      /* === 主面板樣式 === */
+      #bv-label-control-panel {
+        position: fixed;
+        right: 24px;
+        top: 24px;
+        bottom: 24px;
+        width: 360px;
+        z-index: 10000;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans TC', sans-serif;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 48px);
+      }
+  
+      /* === Glass Panel 樣式 === */
+      .bv-glass-panel {
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(24px) saturate(140%);
+        -webkit-backdrop-filter: blur(24px) saturate(140%);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.75);
+        box-shadow: 
+          0 10px 40px rgba(0, 0, 0, 0.05),
+          0 0 0 0.5px rgba(255, 255, 255, 0.6) inset,
+          0 0 60px rgba(255, 255, 255, 0.4);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      
+      #bv-label-control-panel.minimized {
+        display: none !important;
+      }
+      
+      /* === 最小化按鈕樣式 === */
+      .bv-minimized-button {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+        color: white;
+        border: none;
+        border-radius: 28px;
+        box-shadow: 
+          0 4px 24px rgba(81, 138, 255, 0.3),
+          0 0 0 0.5px rgba(255, 255, 255, 0.2),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      
+      .bv-minimized-button:hover {
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: 
+          0 8px 32px rgba(81, 138, 255, 0.4),
+          0 0 0 0.5px rgba(255, 255, 255, 0.3),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
+      }
+      
+      .bv-minimized-button:active {
+        transform: scale(0.98);
+      }
+      
+      .bv-minimized-button .material-icons {
+        font-size: 28px;
+      }
+      
+      #bv-label-control-panel.minimized ~ .bv-minimized-button {
+        display: flex;
+      }
+      
+      /* === 面板標頭樣式 === */
+      .bv-panel-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        cursor: move;
+        user-select: none;
+        min-height: 80px;
+      }
+      
+      .bv-header-content {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex: 1;
+      }
+      
+      .bv-icon-wrapper {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        box-shadow: 
+          0 2px 8px rgba(81, 138, 255, 0.2),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      }
+      
+      .bv-icon-wrapper.bv-label-mode {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 
+          0 2px 8px rgba(16, 185, 129, 0.2),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      }
+      
+      .bv-icon-wrapper.bv-shipping-mode {
+        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        box-shadow: 
+          0 2px 8px rgba(255, 152, 0, 0.2),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      }
+      
+      .bv-icon-wrapper.bv-wizard-mode {
+        background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+        box-shadow: 
+          0 2px 8px rgba(156, 39, 176, 0.2),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      }
+      
+      .bv-icon-wrapper .material-icons {
+        font-size: 22px;
+      }
+      
+      .bv-title-group {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      
+      .bv-panel-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #000;
+        letter-spacing: -0.02em;
+      }
+      
+      .bv-panel-subtitle {
+        font-size: 13px;
+        color: rgba(0, 0, 0, 0.5);
+        font-weight: 400;
+      }
+      
+      /* === Glass 按鈕樣式 === */
+      .bv-glass-button {
+        width: 32px;
+        height: 32px;
+        background: rgba(0, 0, 0, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: rgba(0, 0, 0, 0.7);
+      }
+      
+      .bv-glass-button:hover {
+        background: rgba(0, 0, 0, 0.05);
+        transform: scale(1.04);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      
+      .bv-glass-button:active {
+        transform: scale(0.96);
+      }
+      
+      .bv-glass-button .material-icons {
+        font-size: 20px;
+      }
+      
+      .bv-glass-button.bv-primary {
+        background: rgba(81, 138, 255, 0.08);
+        color: #518aff;
+        border-color: rgba(81, 138, 255, 0.15);
+      }
+      
+      .bv-glass-button.bv-primary:hover {
+        background: rgba(81, 138, 255, 0.12);
+      }
+      
+      /* === 內容區域樣式 === */
+      .bv-panel-content-wrapper {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+      }
+      
+      .bv-panel-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      /* === 主要按鈕樣式 === */
+      .bv-primary-section {
+        margin-bottom: 28px;
+      }
+      
+      .bv-primary-button,
+      .bv-secondary-button {
+        width: 100%;
+        background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        box-shadow: 
+          0 3px 12px rgba(81, 138, 255, 0.25),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        color: white;
+      }
+      
+      .bv-secondary-button {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 
+          0 3px 12px rgba(16, 185, 129, 0.25),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      }
+      
+      .bv-primary-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 
+          0 6px 20px rgba(81, 138, 255, 0.35),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
+      }
+      
+      .bv-secondary-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 
+          0 6px 20px rgba(16, 185, 129, 0.35),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
+      }
+      
+      .bv-primary-button:active,
+      .bv-secondary-button:active {
+        transform: translateY(0);
+      }
+      
+      .bv-button-icon {
+        width: 44px;
+        height: 44px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(20px);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      
+      .bv-button-icon .material-icons {
+        font-size: 26px;
+      }
+      
+      .bv-button-content {
+        flex: 1;
+        text-align: left;
+      }
+      
+      .bv-button-title {
+        display: block;
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 2px;
+        letter-spacing: -0.01em;
+      }
+      
+      .bv-button-subtitle {
+        display: block;
+        font-size: 13px;
+        opacity: 0.8;
+      }
     
     /* === 設定卡片樣式 === */
     .bv-settings-card {
@@ -4753,7 +4641,7 @@ function getCSSContent() {
             <div class="bv-wizard-toggle">
               <span class="material-icons" style="font-size: 18px; color: rgba(0,0,0,0.5);">assistant</span>
               <label class="bv-glass-switch bv-small">
-                <input type="checkbox" id="bv-wizard-mode">
+                <input type="checkbox" id="bv-wizard-mode" checked>
                 <span class="bv-switch-slider"></span>
               </label>
             </div>
@@ -4764,6 +4652,7 @@ function getCSSContent() {
               <span class="material-icons">remove</span>
             </button>
           </div>
+        </div>
         
         <!-- 精靈步驟改為橫向緊湊版 -->
         <div class="bv-wizard-steps-compact">
