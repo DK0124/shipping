@@ -3586,9 +3586,7 @@ function getCSSContent() {
           transform: translate(-50%, -20px);
         }
       }
-    `;
-  }
-    
+ 
     /* === 數量標示樣式 === */
     .bv-qty-star {
       font-weight: 700;
