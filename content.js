@@ -1658,275 +1658,356 @@
     // UI 測試與展示
     // ========================================
 
-    // 添加測試步驟內容
-    BVWizard.UI.TestSteps = {
-        // Step 1: 格式選擇
-        renderFormatStep() {
-            const container = BVWizard.Utils.DOM.createElement('div');
-            
-            const title = BVWizard.Utils.DOM.createElement('h2', {
-                textContent: '請選擇標籤尺寸',
-                style: {
-                    margin: '0 0 8px 0',
-                    fontSize: '20px',
-                    fontWeight: '600'
-                }
-            });
-            
-            const subtitle = BVWizard.Utils.DOM.createElement('p', {
-                textContent: '選擇適合您印表機的標籤格式',
-                style: {
-                    margin: '0 0 32px 0',
-                    color: 'rgba(0, 0, 0, 0.5)',
-                    fontSize: '14px'
-                }
-            });
-            
-            const cards = BVWizard.Utils.DOM.createElement('div', {
-                className: 'bv-format-cards'
-            });
-            
-            // 10×15 卡片
-            const card1 = BVWizard.Utils.DOM.createElement('div', {
-                className: 'bv-format-card selected',
-                innerHTML: `
-                    <div class="bv-format-card-icon">📋</div>
-                    <div class="bv-format-card-title">10×15cm</div>
-                    <div class="bv-format-card-desc">標準貼紙格式</div>
-                `
-            });
-            
-            // 10×10 卡片
-            const card2 = BVWizard.Utils.DOM.createElement('div', {
-                className: 'bv-format-card',
-                innerHTML: `
-                    <div class="bv-format-card-icon">📋</div>
-                    <div class="bv-format-card-title">10×10cm</div>
-                    <div class="bv-format-card-desc">正方形貼紙格式</div>
-                `
-            });
-            
-            // 點擊事件
-            [card1, card2].forEach(card => {
-                card.addEventListener('click', function() {
-                    document.querySelectorAll('.bv-format-card').forEach(c => c.classList.remove('selected'));
-                    this.classList.add('selected');
-                });
-            });
-            
-            cards.appendChild(card1);
-            cards.appendChild(card2);
-            
-            container.appendChild(title);
-            container.appendChild(subtitle);
-            container.appendChild(cards);
-            
-            return container;
-        },
+// 更新 TestSteps 部分，使用 Material Icons
+BVWizard.UI.TestSteps = {
+    // Step 1: 格式選擇
+    renderFormatStep() {
+        const container = BVWizard.Utils.DOM.createElement('div');
         
-        // Step 2: 模式選擇
-        renderModeStep() {
-            const container = BVWizard.Utils.DOM.createElement('div');
-            
-            const title = BVWizard.Utils.DOM.createElement('h2', {
-                textContent: '選擇列印模式',
-                style: {
-                    margin: '0 0 8px 0',
-                    fontSize: '20px',
-                    fontWeight: '600'
-                }
-            });
-            
-            const subtitle = BVWizard.Utils.DOM.createElement('p', {
-                textContent: '選擇您要的列印方式',
-                style: {
-                    margin: '0 0 32px 0',
-                    color: 'rgba(0, 0, 0, 0.5)',
-                    fontSize: '14px'
-                }
-            });
-            
-            const options = BVWizard.Utils.DOM.createElement('div', {
-                className: 'bv-mode-options'
-            });
-            
-            // 選項 A
-            const optionA = BVWizard.Utils.DOM.createElement('div', {
-                className: 'bv-mode-option',
-                innerHTML: `
-                    <div class="bv-mode-option-icon">📄</div>
-                    <div class="bv-mode-option-content">
-                        <div class="bv-mode-option-title">A. 僅列印出貨明細</div>
-                        <div class="bv-mode-option-desc">快速列印訂單資料</div>
-                    </div>
-                `
-            });
-            
-            // 選項 B
-            const optionB = BVWizard.Utils.DOM.createElement('div', {
-                className: 'bv-mode-option',
-                innerHTML: `
-                    <div class="bv-mode-option-icon">📄📦</div>
-                    <div class="bv-mode-option-content">
-                        <div class="bv-mode-option-title">B. 明細 + 物流單</div>
-                        <div class="bv-mode-option-desc">整合列印訂單與物流單</div>
-                    </div>
-                `
-            });
-            
-            // 點擊事件
-            [optionA, optionB].forEach(option => {
-                option.addEventListener('click', function() {
-                    document.querySelectorAll('.bv-mode-option').forEach(o => o.classList.remove('selected'));
-                    this.classList.add('selected');
-                });
-            });
-            
-            options.appendChild(optionA);
-            options.appendChild(optionB);
-            
-            container.appendChild(title);
-            container.appendChild(subtitle);
-            container.appendChild(options);
-            
-            return container;
-        },
+        const title = BVWizard.Utils.DOM.createElement('h2', {
+            textContent: '請選擇標籤尺寸',
+            style: {
+                margin: '0 0 8px 0',
+                fontSize: '20px',
+                fontWeight: '600'
+            }
+        });
         
-        // Step 3: 明細設定
-        renderDetailSettingsStep() {
-            const container = BVWizard.Utils.DOM.createElement('div');
-            
-            const title = BVWizard.Utils.DOM.createElement('h2', {
-                textContent: '明細設定',
-                style: {
-                    margin: '0 0 24px 0',
-                    fontSize: '20px',
-                    fontWeight: '600'
-                }
-            });
-            
-            // 文字設定區塊
-            const textSection = BVWizard.Utils.DOM.createElement('div', {
-                className: 'bv-settings-section',
-                innerHTML: `
-                    <h3 class="bv-settings-title">
-                        <span class="material-icons" style="font-size: 20px;">text_fields</span>
-                        文字設定
-                    </h3>
-                `
-            });
-            
-            const fontSizeItem = BVWizard.Utils.DOM.createElement('div', {
-                className: 'bv-setting-item'
-            });
-            
-            const fontSizeLabel = BVWizard.Utils.DOM.createElement('div', {
-                innerHTML: `
-                    <div class="bv-setting-label">字體大小</div>
-                    <div class="bv-setting-desc">調整標籤文字大小</div>
-                `
-            });
-            
-            const fontSizeSlider = BVWizard.UI.Components.createSlider({
-                min: 11,
-                max: 13,
-                value: 11.5,
-                step: 0.1
-            });
-            
-            fontSizeItem.appendChild(fontSizeLabel);
-            fontSizeItem.appendChild(fontSizeSlider);
-            textSection.appendChild(fontSizeItem);
-            
-            // 顯示選項區塊
-            const displaySection = BVWizard.Utils.DOM.createElement('div', {
-                className: 'bv-settings-section',
-                innerHTML: `
-                    <h3 class="bv-settings-title">
-                        <span class="material-icons" style="font-size: 20px;">visibility</span>
-                        顯示選項
-                    </h3>
-                `
-            });
-            
-            // 設定項目
-            const settings = [
-                { label: '數量標示', desc: '≥2 顯示▲', checked: true },
-                { label: '精簡模式', desc: '僅顯示必要資訊', checked: true },
-                { label: '隱藏表格標題', desc: '隱藏商品列表標題', checked: false },
-                { label: '顯示商品圖片', desc: '在標籤上顯示商品圖', checked: true }
-            ];
-            
-            settings.forEach(setting => {
-                const item = BVWizard.Utils.DOM.createElement('div', {
-                    className: 'bv-setting-item'
-                });
+        const subtitle = BVWizard.Utils.DOM.createElement('p', {
+            textContent: '選擇適合您印表機的標籤格式',
+            style: {
+                margin: '0 0 32px 0',
+                color: 'rgba(0, 0, 0, 0.5)',
+                fontSize: '14px'
+            }
+        });
+        
+        const cards = BVWizard.Utils.DOM.createElement('div', {
+            className: 'bv-format-cards'
+        });
+        
+        // 10×15 卡片
+        const card1 = BVWizard.Utils.DOM.createElement('div', {
+            className: 'bv-format-card selected',
+            'data-format': '10x15',
+            innerHTML: `
+                <div class="bv-format-card-icon">
+                    <span class="material-icons" style="font-size: 48px; color: #518aff;">description</span>
+                </div>
+                <div class="bv-format-card-title">10×15cm</div>
+                <div class="bv-format-card-desc">標準貼紙格式</div>
+            `
+        });
+        
+        // 10×10 卡片
+        const card2 = BVWizard.Utils.DOM.createElement('div', {
+            className: 'bv-format-card',
+            'data-format': '10x10',
+            innerHTML: `
+                <div class="bv-format-card-icon">
+                    <span class="material-icons" style="font-size: 48px; color: #518aff;">crop_square</span>
+                </div>
+                <div class="bv-format-card-title">10×10cm</div>
+                <div class="bv-format-card-desc">正方形貼紙格式</div>
+            `
+        });
+        
+        // 點擊事件 - 更新狀態
+        [card1, card2].forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.bv-format-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
                 
-                const label = BVWizard.Utils.DOM.createElement('div', {
-                    innerHTML: `
-                        <div class="bv-setting-label">${setting.label}</div>
-                        <div class="bv-setting-desc">${setting.desc}</div>
-                    `
-                });
+                // 更新狀態
+                const format = this.dataset.format;
+                BVWizard.State.set('selectedFormat', format);
                 
-                const toggle = BVWizard.UI.Components.createSwitch(setting.checked);
-                
-                item.appendChild(label);
-                item.appendChild(toggle);
-                displaySection.appendChild(item);
+                // 啟用下一步按鈕
+                const nextBtn = document.getElementById('bv-btn-next');
+                if (nextBtn) nextBtn.disabled = false;
             });
-            
-            container.appendChild(title);
-            container.appendChild(textSection);
-            container.appendChild(displaySection);
-            
-            return container;
-        }
-    };
+        });
+        
+        cards.appendChild(card1);
+        cards.appendChild(card2);
+        
+        container.appendChild(title);
+        container.appendChild(subtitle);
+        container.appendChild(cards);
+        
+        // 初始化狀態
+        BVWizard.State.set('selectedFormat', '10x15');
+        
+        return container;
+    },
+    
+    // Step 2: 模式選擇
+    renderModeStep() {
+        const container = BVWizard.Utils.DOM.createElement('div');
+        
+        const title = BVWizard.Utils.DOM.createElement('h2', {
+            textContent: '選擇列印模式',
+            style: {
+                margin: '0 0 8px 0',
+                fontSize: '20px',
+                fontWeight: '600'
+            }
+        });
+        
+        const subtitle = BVWizard.Utils.DOM.createElement('p', {
+            textContent: '選擇您要的列印方式',
+            style: {
+                margin: '0 0 32px 0',
+                color: 'rgba(0, 0, 0, 0.5)',
+                fontSize: '14px'
+            }
+        });
+        
+        const options = BVWizard.Utils.DOM.createElement('div', {
+            className: 'bv-mode-options'
+        });
+        
+        // 選項 A
+        const optionA = BVWizard.Utils.DOM.createElement('div', {
+            className: 'bv-mode-option',
+            'data-mode': 'A',
+            innerHTML: `
+                <div class="bv-mode-option-icon">
+                    <span class="material-icons" style="font-size: 32px; color: #518aff;">description</span>
+                </div>
+                <div class="bv-mode-option-content">
+                    <div class="bv-mode-option-title">A. 僅列印出貨明細</div>
+                    <div class="bv-mode-option-desc">快速列印訂單資料</div>
+                </div>
+            `
+        });
+        
+        // 選項 B
+        const optionB = BVWizard.Utils.DOM.createElement('div', {
+            className: 'bv-mode-option',
+            'data-mode': 'B',
+            innerHTML: `
+                <div class="bv-mode-option-icon">
+                    <span class="material-icons" style="font-size: 32px; color: #518aff;">picture_in_picture</span>
+                </div>
+                <div class="bv-mode-option-content">
+                    <div class="bv-mode-option-title">B. 明細 + 物流單</div>
+                    <div class="bv-mode-option-desc">整合列印訂單與物流單</div>
+                </div>
+            `
+        });
+        
+        // 點擊事件 - 更新狀態
+        [optionA, optionB].forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.bv-mode-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // 更新狀態
+                const mode = this.dataset.mode;
+                BVWizard.State.set('selectedMode', mode);
+                
+                // 啟用下一步按鈕
+                const nextBtn = document.getElementById('bv-btn-next');
+                if (nextBtn) nextBtn.disabled = false;
+            });
+        });
+        
+        options.appendChild(optionA);
+        options.appendChild(optionB);
+        
+        container.appendChild(title);
+        container.appendChild(subtitle);
+        container.appendChild(options);
+        
+        // 初始時禁用下一步
+        setTimeout(() => {
+            const nextBtn = document.getElementById('bv-btn-next');
+            if (nextBtn) nextBtn.disabled = true;
+        }, 0);
+        
+        return container;
+    }
+};
 
-    // 測試函數：顯示 Wizard
+// 修復事件處理 - 替換原本的 bindBaseEvents
+BVWizard.UI.bindBaseEvents = function() {
+    // 取消按鈕
+    const cancelBtn = document.getElementById('bv-btn-cancel');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            if (confirm('確定要取消嗎？')) {
+                BVWizard.UI.hide();
+                BVWizard.State.reset(true);
+            }
+        });
+    }
+    
+    // 上一步按鈕
+    const prevBtn = document.getElementById('bv-btn-prev');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            const currentStep = BVWizard.State.get('currentStep');
+            const steps = ['format', 'mode', 'detail_settings'];
+            const currentIndex = steps.indexOf(currentStep);
+            
+            if (currentIndex > 0) {
+                const prevStep = steps[currentIndex - 1];
+                BVWizard.UI.goToStep(prevStep);
+            }
+        });
+    }
+    
+    // 下一步按鈕
+    const nextBtn = document.getElementById('bv-btn-next');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            const currentStep = BVWizard.State.get('currentStep');
+            const steps = ['format', 'mode', 'detail_settings'];
+            const currentIndex = steps.indexOf(currentStep);
+            
+            // 驗證當前步驟
+            if (!BVWizard.Utils.Validation.validateStep(currentStep)) {
+                BVWizard.UI.Components.showNotification('請完成當前步驟', 'warning');
+                return;
+            }
+            
+            // 添加到已完成步驟
+            const completedSteps = BVWizard.State.get('completedSteps') || [];
+            if (!completedSteps.includes(currentStep)) {
+                completedSteps.push(currentStep);
+                BVWizard.State.set('completedSteps', completedSteps);
+            }
+            
+            if (currentIndex < steps.length - 1) {
+                const nextStep = steps[currentIndex + 1];
+                BVWizard.UI.goToStep(nextStep);
+            } else {
+                // 最後一步 - 執行列印
+                BVWizard.UI.Components.showNotification('準備列印...', 'success');
+            }
+        });
+    }
+    
+    // ESC 鍵關閉
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && BVWizard.State.get('isWizardOpen')) {
+            const cancelBtn = document.getElementById('bv-btn-cancel');
+            if (cancelBtn) cancelBtn.click();
+        }
+    });
+};
+
+// 新增 goToStep 方法
+BVWizard.UI.goToStep = function(stepName) {
+    let content;
+    
+    switch(stepName) {
+        case 'format':
+            content = this.TestSteps.renderFormatStep();
+            this.updateButtons({
+                showPrev: false,
+                nextText: '下一步',
+                nextDisabled: false
+            });
+            break;
+            
+        case 'mode':
+            content = this.TestSteps.renderModeStep();
+            this.updateButtons({
+                showPrev: true,
+                nextText: '下一步',
+                nextDisabled: true
+            });
+            break;
+            
+        case 'detail_settings':
+            content = this.TestSteps.renderDetailSettingsStep();
+            this.updateButtons({
+                showPrev: true,
+                nextText: '開始轉換',
+                nextDisabled: false
+            });
+            break;
+    }
+    
+    // 更新狀態
+    BVWizard.State.set('currentStep', stepName);
+    
+    // 更新內容
+    this.updateContent(content);
+    
+    // 更新步驟指示器
+    const completedSteps = BVWizard.State.get('completedSteps') || [];
+    this.updateStepIndicator(stepName, completedSteps);
+};
+
+    // 更新 showDemo 方法
     BVWizard.UI.showDemo = function(stepName = 'format') {
         // 初始化 UI（如果還沒初始化）
         if (!document.getElementById('bv-wizard-container')) {
             this.init();
         }
         
-        // 根據步驟名稱渲染內容
-        let content;
-        switch(stepName) {
-            case 'format':
-                content = this.TestSteps.renderFormatStep();
-                BVWizard.State.set('currentStep', 'format');
-                this.updateButtons({
-                    showPrev: false,
-                    nextText: '下一步'
-                });
-                break;
-                
-            case 'mode':
-                content = this.TestSteps.renderModeStep();
-                BVWizard.State.set('currentStep', 'mode');
-                this.updateButtons({
-                    showPrev: true,
-                    nextText: '下一步'
-                });
-                break;
-                
-            case 'settings':
-                content = this.TestSteps.renderDetailSettingsStep();
-                BVWizard.State.set('currentStep', 'detail_settings');
-                this.updateButtons({
-                    showPrev: true,
-                    nextText: '下一步'
-                });
-                break;
-        }
+        // 重置狀態
+        BVWizard.State.reset(true);
         
-        // 更新內容和顯示
-        this.updateContent(content);
-        this.updateStepIndicator(BVWizard.State.get('currentStep'), []);
+        // 進入指定步驟
+        this.goToStep(stepName);
+        
+        // 顯示
         this.show();
     };
+    
+    // 更新 Wizard 步驟配置的圖標
+    BVWizard.Config.WIZARD_STEPS = {
+        FORMAT: {
+            id: 'format',
+            order: 1,
+            title: '選擇標籤格式',
+            icon: 'label',
+            required: true
+        },
+        MODE: {
+            id: 'mode',
+            order: 2,
+            title: '列印模式',
+            icon: 'print',
+            required: true
+        },
+        DETAIL_SETTINGS: {
+            id: 'detail_settings',
+            order: 3,
+            title: '明細設定',
+            icon: 'settings',
+            required: true
+        },
+        SHIPPING_SOURCE: {
+            id: 'shipping_source',
+            order: 4,
+            title: '物流單準備',
+            icon: 'local_shipping',
+            required: false,
+            condition: (state) => state.selectedMode === 'B'
+        },
+        MATCHING: {
+            id: 'matching',
+            order: 5,
+            title: '配對設定',
+            icon: 'link',
+            required: false,
+            condition: (state) => state.selectedMode === 'B' && state.shippingData.length > 0
+        },
+        PREVIEW: {
+            id: 'preview',
+            order: 6,
+            title: '預覽與列印',
+            icon: 'preview',
+            required: true
+        }
+    };
+    
+    console.log('✅ UI 更新完成 - 現在可以正常切換步驟了');
 
     // 創建啟動按鈕（用於測試）
     BVWizard.UI.createLaunchButton = function() {
