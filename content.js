@@ -3661,6 +3661,153 @@ function getCSSContent() {
       .bv-converted .order-content.bv-original {
         display: none !important;
       }
+
+      /* === 精靈模式開關（在標題列） === */
+      .bv-wizard-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 8px;
+        border-right: 1px solid rgba(0, 0, 0, 0.08);
+      }
+      
+      /* === 小型開關樣式 === */
+      .bv-glass-switch.bv-small {
+        width: 36px;
+        height: 20px;
+      }
+      
+      .bv-glass-switch.bv-small .bv-switch-slider {
+        border-radius: 20px;
+      }
+      
+      .bv-glass-switch.bv-small .bv-switch-slider:before {
+        width: 16px;
+        height: 16px;
+        left: 2px;
+        bottom: 2px;
+      }
+      
+      .bv-glass-switch.bv-small input:checked + .bv-switch-slider:before {
+        transform: translateX(16px);
+      }
+      
+      /* === 緊湊型精靈步驟 === */
+      .bv-wizard-steps-compact {
+        display: flex;
+        align-items: center;
+        padding: 12px 24px;
+        background: rgba(248, 250, 252, 0.5);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        overflow-x: auto;
+        gap: 4px;
+      }
+      
+      .bv-wizard-steps-compact::-webkit-scrollbar {
+        height: 4px;
+      }
+      
+      .bv-wizard-steps-compact::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      
+      .bv-wizard-steps-compact::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 2px;
+      }
+      
+      .bv-wizard-step-compact {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 16px;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.5);
+        cursor: default;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
+      
+      .bv-wizard-step-compact.visited {
+        cursor: pointer;
+      }
+      
+      .bv-wizard-step-compact.visited:hover {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(81, 138, 255, 0.2);
+      }
+      
+      .bv-wizard-step-compact.active {
+        background: linear-gradient(135deg, rgba(81, 138, 255, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+        border-color: #518aff;
+        color: #518aff;
+      }
+      
+      .bv-wizard-step-compact.completed {
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.3);
+      }
+      
+      .bv-wizard-step-indicator {
+        width: 20px;
+        height: 20px;
+        background: rgba(0, 0, 0, 0.08);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+      
+      .bv-wizard-step-compact.active .bv-wizard-step-indicator {
+        background: #518aff;
+        color: white;
+      }
+      
+      .bv-wizard-step-compact.completed .bv-wizard-step-indicator {
+        background: #10b981;
+        color: white;
+      }
+      
+      .bv-wizard-step-indicator .material-icons {
+        font-size: 14px;
+      }
+      
+      .bv-wizard-step-name {
+        font-weight: 500;
+      }
+      
+      .bv-wizard-step-connector {
+        width: 20px;
+        height: 1px;
+        background: rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+      }
+      
+      /* === 移除原本的底部模式切換 === */
+      .bv-mode-switch {
+        display: none !important;
+      }
+      
+      /* === 調整面板內容區域 === */
+      .bv-wizard-mode .bv-panel-content-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      
+      .bv-wizard-mode .bv-panel-body {
+        flex: 1;
+        overflow-y: auto;
+      }
+      
     }
     
     /* === 列印時的頁面設定 === */
@@ -4589,11 +4736,11 @@ function getCSSContent() {
             </div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
-            <!-- 精靈模式開關移到這裡 -->
+            <!-- 精靈模式開關 -->
             <div class="bv-wizard-toggle">
               <span class="material-icons" style="font-size: 18px; color: rgba(0,0,0,0.5);">assistant</span>
               <label class="bv-glass-switch bv-small">
-                <input type="checkbox" id="bv-wizard-mode" checked>
+                <input type="checkbox" id="bv-wizard-mode">
                 <span class="bv-switch-slider"></span>
               </label>
             </div>
@@ -4604,7 +4751,6 @@ function getCSSContent() {
               <span class="material-icons">remove</span>
             </button>
           </div>
-        </div>
         
         <!-- 精靈步驟改為橫向緊湊版 -->
         <div class="bv-wizard-steps-compact">
