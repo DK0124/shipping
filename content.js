@@ -2226,22 +2226,7 @@
             </button>
           </div>
         </div>
-        
-        <!-- 新增的紙張尺寸選擇器 -->
-        <div class="bv-setting-item">
-          <div class="bv-setting-info">
-            <span class="material-icons">aspect_ratio</span>
-            <div class="bv-setting-text">
-              <span class="bv-setting-label">標籤尺寸</span>
-              <span class="bv-setting-desc">選擇紙張大小</span>
-            </div>
-          </div>
-          <select id="bv-label-size-selector" class="bv-glass-select">
-            <option value="10x15">10×15cm（預設）</option>
-            <option value="10x10">10×10cm</option>
-          </select>
-        </div>
-
+                
         <div class="bv-panel-content-wrapper">
           <div class="bv-panel-body">
             <div class="bv-settings-card" data-section="integration">
@@ -2294,6 +2279,20 @@
               </div>
             </div>
             
+            <div class="bv-setting-item">
+              <div class="bv-setting-info">
+                <span class="material-icons">aspect_ratio</span>
+                <div class="bv-setting-text">
+                  <span class="bv-setting-label">標籤尺寸</span>
+                  <span class="bv-setting-desc">選擇紙張大小</span>
+                </div>
+              </div>
+              <select id="bv-label-size-selector" class="bv-glass-select">
+                <option value="10x15">10×15cm（預設）</option>
+                <option value="10x10">10×10cm</option>
+              </select>
+            </div>
+
             <div class="bv-settings-card" data-section="layout">
               <h4 class="bv-card-title">
                 <span class="material-icons">tune</span>
