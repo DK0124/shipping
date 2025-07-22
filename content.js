@@ -508,18 +508,24 @@ function getCSSContent() {
     }
     
     .bv-panel-header {
-      padding: 20px;
-      background: linear-gradient(135deg, rgba(81, 138, 255, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
+      cursor: move;
+      user-select: none;
+      min-height: 80px; /* 加入最小高度 */
     }
     
     .bv-header-content {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
+      flex: 1;
     }
     
     .bv-icon-wrapper {
@@ -611,19 +617,21 @@ function getCSSContent() {
       color: #518aff;
     }
     
-    /* === 面板內容區域 === */
+    /* === 內容區域樣式 === */
     .bv-panel-content-wrapper {
-      flex: 1;
       display: flex;
       flex-direction: column;
-      min-height: 0;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0; /* 確保有最小高度限制 */
     }
     
     .bv-panel-body {
-      flex: 1;
+      padding: 24px;
       overflow-y: auto;
-      padding: 20px;
-      min-height: 0;
+      flex: 1;
+      -webkit-overflow-scrolling: touch;
+      min-height: 400px; /* 加入最小高度 */
     }
     
     .bv-panel-body::-webkit-scrollbar {
@@ -2731,6 +2739,7 @@ function getCSSContent() {
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-height: 600px; /* 加入最小高度 */
     }
     
     #bv-label-control-panel.minimized {
@@ -3669,6 +3678,7 @@ function getCSSContent() {
         gap: 6px;
         padding: 0 8px;
         border-right: 1px solid rgba(0, 0, 0, 0.08);
+        margin-right: 8px; /* 加入右邊距 */
       }
       
       /* === 小型開關樣式 === */
