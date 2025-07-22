@@ -4135,66 +4135,27 @@
   }
   
   function convertToLabelFormat() {
-    const size = LABEL_SIZES[state.selectedLabelSize];
-
+    const selectedSize = LABEL_SIZES[state.selectedLabelSize];
+    const paddingMm = 5; 
+    const paddingPx = paddingMm * 3.78;
+  
+    const pageWidth = selectedSize.widthPx;
+    const pageHeight = selectedSize.heightPx;
+    const contentHeight = pageHeight - (paddingPx * 2);
+  
     document.querySelectorAll('.bv-label-page').forEach(page => {
-      page.style.width = `${size.widthPx}px`;
-      page.style.height = `${size.heightPx}px`;
+      page.style.width = `${pageWidth}px`;
+      page.style.height = `${pageHeight}px`;
+      page.style.padding = `${paddingPx}px`;
     });
-
+  
     document.body.classList.add('bv-converted');
+    document.body.setAttribute('data-label-size', state.selectedLabelSize);
     state.isConverted = true;
-
+  
     showNotification(`已轉換為 ${state.selectedLabelSize} 標籤格式`, 'success');
   }
     
-    // 儲存原始 body 樣式
-    state.originalBodyStyle = {
-      width: document.body.style.width,
-      maxWidth: document.body.style.maxWidth,
-      minWidth: document.body.style.minWidth,
-      margin: document.body.style.margin,
-      padding: document.body.style.padding
-    };
-    
-    // 設定 body 樣式
-    document.body.style.width = 'auto';
-    document.body.style.maxWidth = 'none';
-    document.body.style.minWidth = 'auto';
-    document.body.style.margin = '0';
-    document.body.style.padding = '0';
-    
-    document.body.classList.add('bv-converted');
-    
-    // 觸發原始頁面更新
-    triggerOriginalPageUpdate();
-    
-    // 更新標籤樣式
-    updateLabelStyles();
-    
-    // 處理分頁
-    setTimeout(() => {
-      handlePagination();
-      
-      // 確保數量標示在轉換後正確顯示
-      setTimeout(() => {
-        if (state.highlightQuantity) {
-          applyQuantityHighlight();
-        }
-      }, 200);
-    }, 100);
-    
-    state.isConverted = true;
-    
-    // 更新控制面板內容
-    updatePanelContent();
-    
-    // 確保監聽原始控制項
-    observeOriginalControls();
-    
-    showNotification('已成功轉換為10×15cm標籤格式');
-  }
-  
   function handlePagination() {
     // 清除現有快取
     state.previewCache.clear();
