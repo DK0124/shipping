@@ -2111,3 +2111,474 @@ BVWizard.UI.goToStep = function(stepName) {
     }
     
 })();
+
+// ========================================
+// 7. 業務邏輯 (Logic)
+// ========================================
+BVWizard.Logic = {
+    // ========== 格式轉換邏輯 ==========
+    Format: {
+        // 將出貨明細轉換為標籤格式
+        convertToLabel(orderData, settings) {
+            const format = BVWizard.State.get('selectedFormat');
+            const labelConfig = BVWizard.Config.LABEL_FORMATS[format];
+            
+            if (!labelConfig) {
+                throw new Error('未選擇有效的標籤格式');
+            }
+            
+            // 建立標籤容器
+            const labelContainer = document.createElement('div');
+            labelContainer.className = 'label-container';
+            labelContainer.style.cssText = `
+                width: ${labelConfig.widthPx}px;
+                height: ${labelConfig.heightPx}px;
+                padding: ${labelConfig.padding * 3.77}px;
+                box-sizing: border-box;
+                position: relative;
+                overflow: hidden;
+                font-size: ${settings.fontSize || 11}px;
+            `;
+            
+            // 根據設定生成內容
+            const content = this.generateLabelContent(orderData, settings);
+            labelContainer.appendChild(content);
+            
+            return labelContainer;
+        },
+        
+        // 生成標籤內容
+        generateLabelContent(orderData, settings) {
+            const container = document.createElement('div');
+            container.className = 'label-content';
+            
+            // 添加訂單資訊
+            if (settings.showOrderInfo !== false) {
+                const orderInfo = this.createOrderInfoSection(orderData, settings);
+                container.appendChild(orderInfo);
+            }
+            
+            // 添加收件人資訊
+            if (settings.showRecipientInfo !== false) {
+                const recipientInfo = this.createRecipientSection(orderData, settings);
+                container.appendChild(recipientInfo);
+            }
+            
+            // 添加商品列表
+            if (settings.showProductList !== false) {
+                const productList = this.createProductListSection(orderData, settings);
+                container.appendChild(productList);
+            }
+            
+            return container;
+        },
+        
+        // 創建訂單資訊區塊
+        createOrderInfoSection(orderData, settings) {
+            const section = document.createElement('div');
+            section.className = 'order-info-section';
+            section.style.cssText = `
+                margin-bottom: 10px;
+                padding-bottom: 8px;
+                border-bottom: 1px solid #ddd;
+            `;
+            
+            const items = [];
+            
+            // 訂單編號
+            if (settings.showOrderNo) {
+                items.push(`訂單編號: ${orderData.orderNo || 'N/A'}`);
+            }
+            
+            // 物流編號
+            if (settings.showLogisticsNo && orderData.logisticsNo) {
+                items.push(`物流編號: ${orderData.logisticsNo}`);
+            }
+            
+            // 送貨方式
+            if (settings.showDeliveryMethod && orderData.deliveryMethod) {
+                items.push(`送貨方式: ${orderData.deliveryMethod}`);
+            }
+            
+            section.innerHTML = items.join(' | ');
+            return section;
+        },
+        
+        // 創建收件人區塊
+        createRecipientSection(orderData, settings) {
+            const section = document.createElement('div');
+            section.className = 'recipient-section';
+            section.style.cssText = `
+                margin-bottom: 10px;
+                font-weight: bold;
+            `;
+            
+            const items = [];
+            
+            // 收件人姓名
+            if (settings.showRecipient && orderData.recipient) {
+                items.push(`收件人: ${orderData.recipient}`);
+            }
+            
+            // 精簡模式不顯示詳細資訊
+            if (!settings.compactMode) {
+                // 電話
+                if (settings.showRecipientPhone && orderData.recipientPhone) {
+                    items.push(`電話: ${orderData.recipientPhone}`);
+                }
+                
+                // 地址
+                if (settings.showRecipientAddress && orderData.recipientAddress) {
+                    items.push(`<div style="margin-top: 4px;">地址: ${orderData.recipientAddress}</div>`);
+                }
+            }
+            
+            section.innerHTML = items.join('<br>');
+            return section;
+        },
+        
+        // 創建商品列表區塊
+        createProductListSection(orderData, settings) {
+            const section = document.createElement('div');
+            section.className = 'product-list-section';
+            
+            // 建立表格
+            const table = document.createElement('table');
+            table.style.cssText = `
+                width: 100%;
+                border-collapse: collapse;
+                font-size: ${settings.fontSize || 11}px;
+            `;
+            
+            // 表頭（根據設定決定是否顯示）
+            if (!settings.hideTableHeader) {
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        ${settings.showProductImage ? '<th style="width: 60px;">圖片</th>' : ''}
+                        <th style="text-align: left;">商品名稱</th>
+                        <th style="width: 60px; text-align: center;">數量</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+            }
+            
+            // 表身
+            const tbody = document.createElement('tbody');
+            
+            orderData.products.forEach(product => {
+                const row = document.createElement('tr');
+                row.style.cssText = 'border-bottom: 1px solid #eee;';
+                
+                let rowContent = '';
+                
+                // 商品圖片
+                if (settings.showProductImage) {
+                    rowContent += `
+                        <td style="padding: 4px;">
+                            <img src="${product.image || '/placeholder.png'}" 
+                                 style="width: 50px; height: 50px; object-fit: cover;">
+                        </td>
+                    `;
+                }
+                
+                // 商品名稱
+                rowContent += `<td style="padding: 4px;">${product.name}</td>`;
+                
+                // 數量（包含標記）
+                const quantityMark = settings.showQuantityMark && product.quantity >= 2 ? '▲' : '';
+                rowContent += `
+                    <td style="text-align: center; padding: 4px;">
+                        ${product.quantity} ${quantityMark}
+                    </td>
+                `;
+                
+                row.innerHTML = rowContent;
+                tbody.appendChild(row);
+            });
+            
+            table.appendChild(tbody);
+            section.appendChild(table);
+            
+            return section;
+        }
+    },
+    
+    // ========== 物流處理邏輯 ==========
+    Shipping: {
+        // 解析物流單資料
+        parseShippingData(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = (e) => {
+                    try {
+                        const data = e.target.result;
+                        let shippingData = [];
+                        
+                        if (file.type === 'application/pdf') {
+                            // PDF 處理
+                            shippingData = this.parsePDF(data);
+                        } else if (file.type.includes('image')) {
+                            // 圖片處理
+                            shippingData = [{
+                                type: 'image',
+                                data: data,
+                                filename: file.name
+                            }];
+                        } else {
+                            throw new Error('不支援的檔案格式');
+                        }
+                        
+                        resolve(shippingData);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                if (file.type === 'application/pdf') {
+                    reader.readAsArrayBuffer(file);
+                } else {
+                    reader.readAsDataURL(file);
+                }
+            });
+        },
+        
+        // 解析 PDF（需要 PDF.js 庫）
+        parsePDF(data) {
+            // TODO: 實作 PDF 解析邏輯
+            console.warn('PDF 解析功能尚未實作');
+            return [];
+        },
+        
+        // 批次處理物流單
+        processBatch(files) {
+            const promises = Array.from(files).map(file => this.parseShippingData(file));
+            return Promise.all(promises);
+        }
+    },
+    
+    // ========== 配對邏輯 ==========
+    Matching: {
+        // 執行配對
+        performMatching(orders, shippingData, settings) {
+            const method = settings.method || 'index';
+            
+            switch (method) {
+                case 'index':
+                    return this.matchByIndex(orders, shippingData, settings);
+                    
+                case 'logistics':
+                    return this.matchByLogisticsNo(orders, shippingData, settings);
+                    
+                case 'order':
+                    return this.matchByOrderNo(orders, shippingData, settings);
+                    
+                default:
+                    throw new Error('未知的配對方法');
+            }
+        },
+        
+        // 依索引配對
+        matchByIndex(orders, shippingData, settings) {
+            const sortedOrders = this.sortOrders(orders, settings.detailSort);
+            const processedShipping = settings.reverseShipping ? 
+                [...shippingData].reverse() : shippingData;
+            
+            return sortedOrders.map((order, index) => ({
+                order: order,
+                shipping: processedShipping[index] || null,
+                matched: index < processedShipping.length
+            }));
+        },
+        
+        // 依物流編號配對
+        matchByLogisticsNo(orders, shippingData, settings) {
+            // TODO: 實作物流編號配對邏輯
+            console.warn('物流編號配對功能尚未實作');
+            return this.matchByIndex(orders, shippingData, settings);
+        },
+        
+        // 依訂單編號配對
+        matchByOrderNo(orders, shippingData, settings) {
+            // TODO: 實作訂單編號配對邏輯
+            console.warn('訂單編號配對功能尚未實作');
+            return this.matchByIndex(orders, shippingData, settings);
+        },
+        
+        // 排序訂單
+        sortOrders(orders, sortType) {
+            const sorted = [...orders];
+            
+            if (sortType === 'asc') {
+                sorted.sort((a, b) => (a.orderNo || '').localeCompare(b.orderNo || ''));
+            } else if (sortType === 'desc') {
+                sorted.sort((a, b) => (b.orderNo || '').localeCompare(a.orderNo || ''));
+            }
+            
+            return sorted;
+        }
+    },
+    
+    // ========== 列印處理邏輯 ==========
+    Print: {
+        // 準備列印
+        preparePrint(matchedData, settings) {
+            const printContainer = document.createElement('div');
+            printContainer.className = 'print-container';
+            printContainer.style.cssText = `
+                position: relative;
+                width: 100%;
+            `;
+            
+            matchedData.forEach((item, index) => {
+                if (!item.matched && settings.skipUnmatched) {
+                    return;
+                }
+                
+                const page = this.createPrintPage(item, settings);
+                printContainer.appendChild(page);
+                
+                // 分頁符號
+                if (index < matchedData.length - 1) {
+                    const pageBreak = document.createElement('div');
+                    pageBreak.style.cssText = 'page-break-after: always;';
+                    printContainer.appendChild(pageBreak);
+                }
+            });
+            
+            return printContainer;
+        },
+        
+        // 創建列印頁面
+        createPrintPage(matchedItem, settings) {
+            const page = document.createElement('div');
+            page.className = 'print-page';
+            
+            const format = BVWizard.State.get('selectedFormat');
+            const labelConfig = BVWizard.Config.LABEL_FORMATS[format];
+            
+            page.style.cssText = `
+                width: ${labelConfig.widthPx}px;
+                height: ${labelConfig.heightPx}px;
+                position: relative;
+                margin: 0 auto;
+            `;
+            
+            // 添加標籤
+            const label = BVWizard.Logic.Format.convertToLabel(
+                matchedItem.order, 
+                settings
+            );
+            
+            // 如果有物流單，添加到背面或旁邊
+            if (matchedItem.shipping && settings.includeShipping) {
+                // TODO: 處理物流單佈局
+            }
+            
+            page.appendChild(label);
+            return page;
+        },
+        
+        // 執行列印
+        executePrint(printContainer) {
+            // 隱藏原始內容
+            const originalContent = document.body.innerHTML;
+            
+            // 替換為列印內容
+            document.body.innerHTML = '';
+            document.body.appendChild(printContainer);
+            
+            // 執行列印
+            window.print();
+            
+            // 恢復原始內容
+            document.body.innerHTML = originalContent;
+            
+            // 重新初始化
+            BVWizard.UI.init();
+        }
+    },
+    
+    // ========== 資料處理 ==========
+    Data: {
+        // 從頁面擷取訂單資料
+        extractOrderData() {
+            const orders = [];
+            
+            // 查找訂單元素
+            const orderElements = document.querySelectorAll('.order-content, .order-item');
+            
+            orderElements.forEach(element => {
+                const order = {
+                    orderNo: this.extractText(element, '.order-no, .order-number'),
+                    logisticsNo: this.extractText(element, '.logistics-no, .shipping-no'),
+                    deliveryMethod: this.extractText(element, '.delivery-method, .shipping-method'),
+                    recipient: this.extractText(element, '.recipient, .receiver'),
+                    recipientPhone: this.extractText(element, '.recipient-phone, .receiver-phone'),
+                    recipientAddress: this.extractText(element, '.recipient-address, .receiver-address'),
+                    products: this.extractProducts(element)
+                };
+                
+                orders.push(order);
+            });
+            
+            return orders;
+        },
+        
+        // 擷取文字內容
+        extractText(container, selectors) {
+            const element = container.querySelector(selectors);
+            return element ? element.textContent.trim() : '';
+        },
+        
+        // 擷取商品列表
+        extractProducts(container) {
+            const products = [];
+            const productElements = container.querySelectorAll('.product-item, .item-row, tr');
+            
+            productElements.forEach(element => {
+                // 跳過表頭
+                if (element.querySelector('th')) return;
+                
+                const product = {
+                    name: this.extractText(element, '.product-name, .item-name, td:nth-child(2)'),
+                    quantity: parseInt(this.extractText(element, '.quantity, td:nth-child(3)')) || 1,
+                    image: this.extractImage(element)
+                };
+                
+                if (product.name) {
+                    products.push(product);
+                }
+            });
+            
+            return products;
+        },
+        
+        // 擷取圖片
+        extractImage(element) {
+            const img = element.querySelector('img');
+            return img ? img.src : null;
+        }
+    }
+};
+
+// 測試用資料
+BVWizard.Logic.getMockOrderData = function() {
+    return {
+        orderNo: 'BV202501210001',
+        logisticsNo: 'SF1234567890',
+        deliveryMethod: '順豐速運',
+        recipient: '王小明',
+        recipientPhone: '0912-345-678',
+        recipientAddress: '台北市信義區市府路1號',
+        products: [
+            { name: '商品A - 藍色/XL', quantity: 2, image: 'https://via.placeholder.com/50' },
+            { name: '商品B - 紅色/M', quantity: 1, image: 'https://via.placeholder.com/50' },
+            { name: '商品C - 黑色/L', quantity: 3, image: 'https://via.placeholder.com/50' }
+        ]
+    };
+};
+
+console.log('✅ 業務邏輯載入完成');
+console.log('💡 測試：BVWizard.Logic.getMockOrderData() 可取得測試資料');
