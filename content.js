@@ -3040,7 +3040,7 @@ function getCSSContent() {
         height: 6px;
         border-radius: 3px;
         background: #518aff;
-        width: var(--value, 0%);
+        width: var(--progress, 0%);
         pointer-events: none;
       }
       
@@ -3290,6 +3290,8 @@ function getCSSContent() {
         overflow-x: auto;
         gap: 4px;
         flex-shrink: 0;
+        white-space: nowrap;
+        max-width: 100%;
       }
       
       .bv-wizard-steps-compact::-webkit-scrollbar {
@@ -3319,6 +3321,7 @@ function getCSSContent() {
         white-space: nowrap;
         transition: all 0.2s ease;
         flex-shrink: 0;
+        min-width: fit-content;
       }
       
       .bv-wizard-step-compact.visited {
@@ -3473,28 +3476,6 @@ function getCSSContent() {
         margin-right: 8px;
       }
       
-      /* === 模式切換開關 === */
-      .bv-mode-switch {
-        position: absolute;
-        bottom: 20px;
-        left: 24px;
-        right: 24px;
-        padding: 12px;
-        background: rgba(248, 250, 252, 0.8);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 12px;
-        color: rgba(0, 0, 0, 0.5);
-      }
-      
-      .bv-mode-switch-label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      
       /* === 格式選擇器樣式 === */
       .bv-format-selector {
         display: flex;
@@ -3605,6 +3586,8 @@ function getCSSContent() {
           transform: translate(-50%, -20px);
         }
       }
+    `;
+  }
     
     /* === 數量標示樣式 === */
     .bv-qty-star {
