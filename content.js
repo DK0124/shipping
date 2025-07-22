@@ -5772,6 +5772,31 @@
     });
   }
 
+  // ===== 檢查是否為物流單頁面 =====
+  function checkIfShippingPage() {
+    // 檢查各物流商的特徵
+    for (const [provider, config] of Object.entries(CONFIG.PROVIDERS)) {
+      if (provider === 'DELIVERY') {
+        // 宅配需要特別處理子類型
+        for (const [subType, patterns] of Object.entries(config.urlPatterns)) {
+          if (patterns.some(pattern => window.location.href.includes(pattern))) {
+            state.currentProvider = provider;
+            state.deliverySubType = subType;
+            return true;
+          }
+        }
+      } else {
+        // 其他物流商
+        if (config.urlPatterns && config.urlPatterns.some(pattern => window.location.href.includes(pattern))) {
+          state.currentProvider = provider;
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
   // ===== 初始化函數 =====
   function init() {
     // 檢查是否為訂單列表頁面
