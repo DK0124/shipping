@@ -6198,6 +6198,252 @@
   // 第十部分：初始化
   // ========================================================================================
   
+  // 初始化擴充功能
+  function initializeExtension() {
+    // 檢查頁面類型
+    checkPageType();
+    
+    // 如果不是支援的頁面，就不執行
+    if (!state.currentPageType) {
+      console.log('BV SHOP 出貨助手：非支援頁面');
+      return;
+    }
+    
+    console.log('BV SHOP 出貨助手：初始化中...', {
+      pageType: state.currentPageType,
+      provider: state.currentProvider,
+      url: window.location.href
+    });
+    
+    // 載入 UI 模式設定
+    chrome.storage.local.get('bvUiMode', (result) => {
+      state.uiMode = result.bvUiMode || CONFIG.UI_MODES.NORMAL;
+      
+      // 建立控制面板
+      createControlPanel();
+      
+      // 監聽 storage 變化（用於多分頁同步）
+      state.storageListener = function(changes, namespace) {
+        if (namespace === 'local') {
+          // 同步物流單資料變化
+          if (changes.shippingDataBatches || changes.shippingData || changes.pdfShippingData) {
+            if (state.isConverted) {
+              checkShippingDataStatus();
+              
+              // 如果列印模式需要物流單，則更新預覽
+              if (state.printMode !== CONFIG.PRINT_MODES.DETAIL_ONLY) {
+                handlePagination();
+              }
+            }
+          }
+          
+          // 同步 UI 模式變化
+          if (changes.bvUiMode) {
+            state.uiMode = changes.bvUiMode.newValue;
+            const panel = document.getElementById('bv-label-control-panel');
+            if (panel) {
+              if (state.uiMode === CONFIG.UI_MODES.GENIE) {
+                panel.classList.add('genie-mode');
+              } else {
+                panel.classList.remove('genie-mode');
+              }
+              panel.innerHTML = getPanelContent();
+              setupEventListeners();
+              loadSettings();
+            }
+          }
+        }
+      };
+      
+      chrome.storage.onChanged.addListener(state.storageListener);
+    });
+    
+    // 監聽頁面變化（用於 SPA 應用）
+    observePageChanges();
+    
+    // 注入通知樣式
+    injectNotificationStyles();
+    
+    console.log('BV SHOP 出貨助手：初始化完成');
+  }
+  
+  // 監聽頁面變化
+  function observePageChanges() {
+    // 監聽 URL 變化（用於 SPA）
+    let lastUrl = location.href;
+    new MutationObserver(() => {
+      const url = location.href;
+      if (url !== lastUrl) {
+        lastUrl = url;
+        
+        // 清理舊的面板
+        const oldPanel = document.getElementById('bv-label-control-panel');
+        const oldMinButton = document.getElementById('bv-minimized-button');
+        if (oldPanel) oldPanel.remove();
+        if (oldMinButton) oldMinButton.remove();
+        
+        // 清理 observer
+        if (state.lazyLoadObserver) {
+          state.lazyLoadObserver.disconnect();
+          state.lazyLoadObserver = null;
+        }
+        
+        if (state.autoCheckInterval) {
+          clearInterval(state.autoCheckInterval);
+          state.autoCheckInterval = null;
+        }
+        
+        // 重新初始化
+        setTimeout(() => {
+          state.isConverted = false;
+          state.currentPageType = null;
+          state.currentProvider = null;
+          initializeExtension();
+        }, 500);
+      }
+    }).observe(document, { subtree: true, childList: true });
+    
+    // 監聽動態內容載入
+    if (state.currentPageType === CONFIG.PAGE_TYPES.ORDER_LIST) {
+      observeOrderListChanges();
+    }
+  }
+  
+  // 監聽訂單列表變化
+  function observeOrderListChanges() {
+    const targetNode = document.querySelector('.order-container, .content-wrapper, body');
+    if (!targetNode) return;
+    
+    const observer = new MutationObserver((mutations) => {
+      // 檢查是否有新的訂單內容載入
+      const hasNewOrders = mutations.some(mutation => {
+        return Array.from(mutation.addedNodes).some(node => {
+          if (node.nodeType === 1) {
+            return node.classList?.contains('order-content') || 
+                   node.querySelector?.('.order-content');
+          }
+          return false;
+        });
+      });
+      
+      if (hasNewOrders && state.isConverted) {
+        // 延遲處理，確保 DOM 完全載入
+        setTimeout(() => {
+          handlePagination();
+          
+          if (state.highlightQuantity) {
+            applyQuantityHighlight();
+          }
+        }, 300);
+      }
+    });
+    
+    observer.observe(targetNode, {
+      childList: true,
+      subtree: true
+    });
+  }
+  
+  // 注入通知樣式
+  function injectNotificationStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+      .bv-notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 16px 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        z-index: 10001;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.3s ease;
+        max-width: 400px;
+      }
+      
+      .bv-notification.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      
+      .bv-notification .material-icons {
+        font-size: 24px;
+      }
+      
+      .bv-notification.success {
+        border-left: 4px solid #4caf50;
+      }
+      
+      .bv-notification.success .material-icons {
+        color: #4caf50;
+      }
+      
+      .bv-notification.warning {
+        border-left: 4px solid #ff9800;
+      }
+      
+      .bv-notification.warning .material-icons {
+        color: #ff9800;
+      }
+      
+      .bv-notification.error {
+        border-left: 4px solid #f44336;
+      }
+      
+      .bv-notification.error .material-icons {
+        color: #f44336;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  // 清理函數（當擴充功能停用時）
+  function cleanup() {
+    // 移除 storage 監聽器
+    if (state.storageListener) {
+      chrome.storage.onChanged.removeListener(state.storageListener);
+    }
+    
+    // 清除 interval
+    if (state.autoCheckInterval) {
+      clearInterval(state.autoCheckInterval);
+    }
+    
+    // 斷開 observer
+    if (state.lazyLoadObserver) {
+      state.lazyLoadObserver.disconnect();
+    }
+    
+    // 移除 DOM 元素
+    const panel = document.getElementById('bv-label-control-panel');
+    const minButton = document.getElementById('bv-minimized-button');
+    const notifications = document.querySelectorAll('.bv-notification');
+    
+    if (panel) panel.remove();
+    if (minButton) minButton.remove();
+    notifications.forEach(n => n.remove());
+    
+    // 恢復原始狀態
+    if (state.isConverted) {
+      revertToOriginal();
+    }
+    
+    console.log('BV SHOP 出貨助手：已清理');
+  }
+  
+  // 監聽擴充功能訊息
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'cleanup') {
+      cleanup();
+      sendResponse({ status: 'cleaned' });
+    }
+  });
+  
   // 開始初始化
   initializeExtension();
 })();
