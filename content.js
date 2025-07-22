@@ -4588,7 +4588,15 @@ function getCSSContent() {
               <span class="bv-panel-subtitle">${CONFIG.LABEL_FORMATS[state.labelFormat].name} 標籤</span>
             </div>
           </div>
-          <div style="display: flex; gap: 8px;">
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <!-- 精靈模式開關移到這裡 -->
+            <div class="bv-wizard-toggle">
+              <span class="material-icons" style="font-size: 18px; color: rgba(0,0,0,0.5);">assistant</span>
+              <label class="bv-glass-switch bv-small">
+                <input type="checkbox" id="bv-wizard-mode" checked>
+                <span class="bv-switch-slider"></span>
+              </label>
+            </div>
             <button class="bv-glass-button" id="bv-revert-btn">
               <span class="material-icons">undo</span>
             </button>
@@ -4598,15 +4606,16 @@ function getCSSContent() {
           </div>
         </div>
         
-        <div class="bv-wizard-steps">
+        <!-- 精靈步驟改為橫向緊湊版 -->
+        <div class="bv-wizard-steps-compact">
           ${Object.values(CONFIG.WIZARD_STEPS).map((step, index) => `
-            <div class="bv-wizard-step ${state.currentWizardStep === step.id ? 'active' : ''} ${state.completedSteps.has(step.id) ? 'completed' : ''} ${state.visitedSteps.has(step.id) ? 'visited' : ''}" data-step="${step.id}">
-              <div class="bv-wizard-step-number">
+            <div class="bv-wizard-step-compact ${state.currentWizardStep === step.id ? 'active' : ''} ${state.completedSteps.has(step.id) ? 'completed' : ''} ${state.visitedSteps.has(step.id) ? 'visited' : ''}" data-step="${step.id}">
+              <div class="bv-wizard-step-indicator">
                 ${state.completedSteps.has(step.id) ? '<span class="material-icons">check</span>' : index + 1}
               </div>
-              <div class="bv-wizard-step-title">${step.title}</div>
+              <span class="bv-wizard-step-name">${step.title}</span>
             </div>
-          `).join('')}
+          `).join('<div class="bv-wizard-step-connector"></div>')}
         </div>
         
         <div class="bv-panel-content-wrapper">
@@ -4614,17 +4623,6 @@ function getCSSContent() {
             <div class="bv-wizard-content">
               ${getWizardStepContent(state.currentWizardStep)}
             </div>
-          </div>
-          
-          <div class="bv-mode-switch">
-            <label class="bv-mode-switch-label">
-              <span class="material-icons">assistant</span>
-              精靈模式
-            </label>
-            <label class="bv-glass-switch">
-              <input type="checkbox" id="bv-wizard-mode" checked>
-              <span class="bv-switch-slider"></span>
-            </label>
           </div>
         </div>
       </div>
