@@ -6937,17 +6937,44 @@ function getCSSContent() {
     
     chrome.storage.local.set({ bvSettings: settings });
   }
-  
+
   // ===== 載入設定 =====
   function loadSettings(callback) {
-    chrome.storage.local.get(['bvSettings', 'bvWizardMode'], (result) => {
+    chrome.storage.local.get(['bvSettings', 'bvWizardMode', 'bvPanelMinimized'], (result) => {
       if (result.bvSettings) {
-        Object.assign(state, result.bvSettings);
+        // 載入各項設定
+        if (result.bvSettings.labelFormat) state.labelFormat = result.bvSettings.labelFormat;
+        if (result.bvSettings.fontSize) state.fontSize = result.bvSettings.fontSize;
+        if (typeof result.bvSettings.highlightQuantity !== 'undefined') {
+          state.highlightQuantity = result.bvSettings.highlightQuantity;
+        }
+        if (typeof result.bvSettings.hideExtraInfo !== 'undefined') {
+          state.hideExtraInfo = result.bvSettings.hideExtraInfo;
+        }
+        if (typeof result.bvSettings.hideTableHeader !== 'undefined') {
+          state.hideTableHeader = result.bvSettings.hideTableHeader;
+        }
+        if (result.bvSettings.printMode) state.printMode = result.bvSettings.printMode;
+        if (result.bvSettings.detailSortOrder) state.detailSortOrder = result.bvSettings.detailSortOrder;
+        if (result.bvSettings.shippingSortOrder) state.shippingSortOrder = result.bvSettings.shippingSortOrder;
+        if (typeof result.bvSettings.reverseShipping !== 'undefined') {
+          state.reverseShipping = result.bvSettings.reverseShipping;
+        }
+        if (result.bvSettings.matchMode) state.matchMode = result.bvSettings.matchMode;
       }
+      
       if (typeof result.bvWizardMode !== 'undefined') {
         state.wizardMode = result.bvWizardMode;
       }
-      callback();
+      
+      if (typeof result.bvPanelMinimized !== 'undefined') {
+        state.isPanelMinimized = result.bvPanelMinimized;
+      }
+      
+      // 執行回調
+      if (callback) {
+        callback();
+      }
     });
   }
   
