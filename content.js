@@ -7011,9 +7011,29 @@ function getCSSContent() {
     const reader = new FileReader();
     
     reader.onload = (e) => {
+      // 確保 logoSettings 存在
+      if (!state.logoSettings) {
+        state.logoSettings = {
+          imageData: null,
+          size: 30,
+          positionX: 50,
+          positionY: 50,
+          opacity: 20
+        };
+      }
+      
       state.logoSettings.imageData = e.target.result;
+      
+      // 立即更新顯示
       updateLogoDisplay();
+      
+      // 立即儲存
       saveLogoSettings();
+      
+      // 立即更新預覽
+      setTimeout(() => {
+        updatePreview();
+      }, 100);
     };
     
     reader.readAsDataURL(file);
