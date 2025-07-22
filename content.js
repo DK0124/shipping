@@ -1173,13 +1173,7 @@
       transition: all 0.2s ease;
       border: none;
     }
-    
-    .bv-preset-controls {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    
+       
     .bv-glass-select {
       flex: 1;
       height: 36px;
@@ -1214,13 +1208,6 @@
       display: flex;
       gap: 4px;
       flex-shrink: 0;
-    }
-    
-    .bv-preset-save-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-      align-items: center;
     }
     
     .bv-glass-input {
