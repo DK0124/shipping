@@ -5772,6 +5772,21 @@
     });
   }
 
+  // ===== 注入樣式 =====
+  function injectStyles() {
+    const style = document.createElement('style');
+    style.id = 'bv-label-styles';
+    style.textContent = getStyleContent();
+    document.head.appendChild(style);
+    
+    // 注入 Material Icons
+    const materialIcons = document.createElement('link');
+    materialIcons.rel = 'stylesheet';
+    materialIcons.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
+    document.head.appendChild(materialIcons);
+  }
+
+  
   // ===== 檢查是否為物流單頁面 =====
   function checkIfShippingPage() {
     // 檢查各物流商的特徵
