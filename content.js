@@ -1,6 +1,12 @@
 // BV SHOP 出貨助手 (完整整合版 v6.0)
 (function() {
   'use strict';
+
+  // 紙張尺寸設定
+  const LABEL_SIZES = {
+    '10x15': { width: 100, height: 150, widthPx: 377, heightPx: 566 },
+    '10x10': { width: 100, height: 100, widthPx: 377, heightPx: 377 },
+  };
   
   // 修正 Material Icons 載入
   const iconLink = document.createElement('link');
@@ -136,6 +142,7 @@
   };
   
   let state = {
+    selectedLabelSize: '10x15', // 預設紙張尺寸
     isConverted: false,
     highlightQuantity: false,
     hideExtraInfo: true,  // 預設開啟精簡模式
@@ -339,6 +346,22 @@
   
   function getPanelStyles() {
     return `
+      @media print {
+        @page {
+          size: 100mm 150mm;
+        }
+
+        body.bv-converted[data-label-size="10x10"] .bv-label-page {
+          width: 100mm !important;
+          height: 100mm !important;
+        }
+
+        body.bv-converted[data-label-size="10x15"] .bv-label-page {
+          width: 100mm !important;
+          height: 150mm !important;
+        }
+      }
+      
     * {
       outline: none !important;
     }
@@ -2204,6 +2227,21 @@
           </div>
         </div>
         
+        <!-- 新增的紙張尺寸選擇器 -->
+        <div class="bv-setting-item">
+          <div class="bv-setting-info">
+            <span class="material-icons">aspect_ratio</span>
+            <div class="bv-setting-text">
+              <span class="bv-setting-label">標籤尺寸</span>
+              <span class="bv-setting-desc">選擇紙張大小</span>
+            </div>
+          </div>
+          <select id="bv-label-size-selector" class="bv-glass-select">
+            <option value="10x15">10×15cm（預設）</option>
+            <option value="10x10">10×10cm</option>
+          </select>
+        </div>
+
         <div class="bv-panel-content-wrapper">
           <div class="bv-panel-body">
             <div class="bv-settings-card" data-section="integration">
@@ -2616,6 +2654,12 @@
   }
   
   function setupEventListeners() {
+    document.getElementById('bv-label-size-selector').addEventListener('change', (e) => {
+      state.selectedLabelSize = e.target.value;
+      document.body.setAttribute('data-label-size', state.selectedLabelSize);
+      console.log('已選擇紙張尺寸:', state.selectedLabelSize);
+    });
+
     const convertBtn = document.getElementById('bv-convert-btn');
     const revertBtn = document.getElementById('bv-revert-btn');
     const minimizeBtn = document.getElementById('bv-minimize-btn');
@@ -4091,16 +4135,18 @@
   }
   
   function convertToLabelFormat() {
-    if (state.isConverted) return;
-    
-    // 移除包含 baseImage 的訂單內容（通常是空白頁）
-    document.querySelectorAll('.order-content:has(.baseImage)').forEach(e => e.remove());
-    
-    const contents = document.querySelectorAll('.order-content');
-    if (!contents.length) {
-      showNotification('沒有找到可轉換的訂單內容', 'warning');
-      return;
-    }
+    const size = LABEL_SIZES[state.selectedLabelSize];
+
+    document.querySelectorAll('.bv-label-page').forEach(page => {
+      page.style.width = `${size.widthPx}px`;
+      page.style.height = `${size.heightPx}px`;
+    });
+
+    document.body.classList.add('bv-converted');
+    state.isConverted = true;
+
+    showNotification(`已轉換為 ${state.selectedLabelSize} 標籤格式`, 'success');
+  }
     
     // 儲存原始 body 樣式
     state.originalBodyStyle = {
@@ -5516,20 +5562,15 @@
   }
   
   // 初始化
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', detectCurrentPage);
-  } else {
+  function initialize() {
+    document.body.setAttribute('data-label-size', state.selectedLabelSize);
+    initResources();
     detectCurrentPage();
   }
-  
-  // 檢查是否啟用
-  chrome.storage.local.get(['bvIsExtensionEnabled'], (result) => {
-    if (result.bvIsExtensionEnabled === false) {
-      state.isExtensionEnabled = false;
-      const panel = document.getElementById('bv-label-control-panel');
-      if (panel) panel.remove();
-      const minButton = document.getElementById('bv-minimized-button');
-      if (minButton) minButton.remove();
-    }
-  });
+
+  if (document.readyState === "loading") {
+    document.addEventListener('DOMContentLoaded', initialize);
+  } else {
+    initialize();
+  }
 })();
