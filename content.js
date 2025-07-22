@@ -383,6 +383,1892 @@
     console.log('✗ 未偵測到支援的頁面類型');
   }
 
+// ===== CSS 內容 =====
+function getCSSContent() {
+  return `
+    /* === 通知樣式 === */
+    .bv-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10000;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+    }
+    
+    .bv-notification.show {
+      transform: translateX(0);
+    }
+    
+    .bv-notification.success {
+      border-left: 4px solid #10b981;
+    }
+    
+    .bv-notification.warning {
+      border-left: 4px solid #f59e0b;
+    }
+    
+    .bv-notification.error {
+      border-left: 4px solid #ef4444;
+    }
+    
+    .bv-notification .material-icons {
+      font-size: 24px;
+    }
+    
+    .bv-notification.success .material-icons {
+      color: #10b981;
+    }
+    
+    .bv-notification.warning .material-icons {
+      color: #f59e0b;
+    }
+    
+    .bv-notification.error .material-icons {
+      color: #ef4444;
+    }
+    
+    /* === 最小化按鈕樣式 === */
+    .bv-minimized-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #518aff 0%, #6366f1 100%);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(81, 138, 255, 0.3);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 9999;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .bv-minimized-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(81, 138, 255, 0.4);
+    }
+    
+    .bv-minimized-button .material-icons {
+      font-size: 20px;
+    }
+    
+    /* === 主控制面板樣式 === */
+    .bv-label-control-panel {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 380px;
+      max-height: calc(100vh - 40px);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .bv-label-control-panel.minimized {
+      transform: translateX(450px);
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    /* === 玻璃擬態面板 === */
+    .bv-glass-panel {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .bv-panel-header {
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(81, 138, 255, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .bv-header-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .bv-icon-wrapper {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #518aff 0%, #6366f1 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(81, 138, 255, 0.3);
+    }
+    
+    .bv-icon-wrapper.bv-label-mode {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    
+    .bv-icon-wrapper.bv-shipping-mode {
+      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+      box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+    }
+    
+    .bv-icon-wrapper .material-icons {
+      color: white;
+      font-size: 24px;
+    }
+    
+    .bv-title-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .bv-panel-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #000;
+    }
+    
+    .bv-panel-subtitle {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+      margin-top: 2px;
+    }
+    
+    /* === 玻璃擬態按鈕 === */
+    .bv-glass-button {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 10px;
+      padding: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+    }
+    
+    .bv-glass-button:hover {
+      background: rgba(255, 255, 255, 0.8);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .bv-glass-button:active {
+      transform: translateY(0);
+    }
+    
+    .bv-glass-button .material-icons {
+      font-size: 20px;
+      color: rgba(0, 0, 0, 0.7);
+    }
+    
+    .bv-glass-button.bv-primary {
+      background: rgba(81, 138, 255, 0.1);
+      border-color: rgba(81, 138, 255, 0.2);
+    }
+    
+    .bv-glass-button.bv-primary:hover {
+      background: rgba(81, 138, 255, 0.15);
+    }
+    
+    .bv-glass-button.bv-primary .material-icons {
+      color: #518aff;
+    }
+    
+    /* === 面板內容區域 === */
+    .bv-panel-content-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    
+    .bv-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      min-height: 0;
+    }
+    
+    .bv-panel-body::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .bv-panel-body::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 3px;
+    }
+    
+    .bv-panel-body::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 3px;
+    }
+    
+    .bv-panel-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    
+    /* === 主要操作區域 === */
+    .bv-primary-section {
+      margin-bottom: 24px;
+    }
+    
+    .bv-primary-button {
+      width: 100%;
+      background: linear-gradient(135deg, #518aff 0%, #6366f1 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(81, 138, 255, 0.3);
+    }
+    
+    .bv-primary-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(81, 138, 255, 0.4);
+    }
+    
+    .bv-primary-button:active {
+      transform: translateY(0);
+    }
+    
+    .bv-button-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .bv-button-icon .material-icons {
+      font-size: 28px;
+      color: white;
+    }
+    
+    .bv-button-content {
+      flex: 1;
+      text-align: left;
+    }
+    
+    .bv-button-title {
+      display: block;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .bv-button-subtitle {
+      display: block;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    
+    /* === 設定卡片 === */
+    .bv-settings-card {
+      background: rgba(248, 250, 252, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .bv-settings-card.collapsed {
+      padding-bottom: 0;
+    }
+    
+    .bv-settings-card.collapsed .bv-card-content {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin-top: 0;
+    }
+    
+    .bv-settings-card.collapsed .bv-collapse-icon .material-icons {
+      transform: rotate(-90deg);
+    }
+    
+    .bv-card-title {
+      margin: 0 0 16px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+    }
+    
+    .bv-card-content {
+      transition: all 0.3s ease;
+      max-height: 1000px;
+      opacity: 1;
+    }
+    
+    .bv-collapse-icon {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+    }
+    
+    .bv-collapse-icon .material-icons {
+      font-size: 20px;
+      color: rgba(0, 0, 0, 0.4);
+      transition: transform 0.3s ease;
+    }
+    
+    .bv-card-title .material-icons:not(.bv-collapse-icon .material-icons) {
+      font-size: 20px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    /* === 設定項目 === */
+    .bv-setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    
+    .bv-setting-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    
+    .bv-setting-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+    
+    .bv-setting-info .material-icons {
+      font-size: 20px;
+      color: rgba(0, 0, 0, 0.4);
+    }
+    
+    .bv-setting-text {
+      flex: 1;
+    }
+    
+    .bv-setting-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #000;
+      margin-bottom: 2px;
+    }
+    
+    .bv-setting-desc {
+      display: block;
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    /* === 玻璃擬態開關 === */
+    .bv-glass-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 26px;
+    }
+    
+    .bv-glass-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .bv-switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      border-radius: 13px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    
+    .bv-switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      transition: all 0.3s ease;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .bv-glass-switch input:checked + .bv-switch-slider {
+      background: linear-gradient(135deg, #518aff 0%, #6366f1 100%);
+      border-color: transparent;
+    }
+    
+    .bv-glass-switch input:checked + .bv-switch-slider:before {
+      transform: translateX(18px);
+    }
+    
+    .bv-glass-switch.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    
+    /* === 滑桿樣式 === */
+    .bv-slider-group {
+      margin-bottom: 20px;
+    }
+    
+    .bv-slider-item {
+      margin-bottom: 16px;
+    }
+    
+    .bv-slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    
+    .bv-value-label {
+      color: #518aff;
+      font-weight: 600;
+      min-width: 45px;
+      text-align: right;
+    }
+    
+    .bv-glass-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(to right, #518aff 0%, #518aff var(--progress, 0%), rgba(0, 0, 0, 0.1) var(--progress, 0%), rgba(0, 0, 0, 0.1) 100%);
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    
+    .bv-glass-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      border: 2px solid #518aff;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-glass-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(81, 138, 255, 0.3);
+    }
+    
+    /* === 面板底部 === */
+    .bv-panel-footer {
+      padding: 16px 20px;
+      background: rgba(248, 250, 252, 0.8);
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    
+    .bv-glass-action-button {
+      width: 100%;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+    }
+    
+    .bv-glass-action-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
+    }
+    
+    .bv-glass-action-button:active {
+      transform: translateY(0);
+    }
+    
+    .bv-glass-action-button .material-icons {
+      font-size: 20px;
+    }
+    
+    /* === 精靈模式切換 === */
+    .bv-mode-switch {
+      padding: 16px 20px;
+      background: rgba(240, 242, 245, 0.5);
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    
+    .bv-mode-switch-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.7);
+      font-weight: 500;
+    }
+    
+    .bv-mode-switch-label .material-icons {
+      font-size: 20px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    /* === 精靈模式步驟 === */
+    .bv-wizard-steps {
+      display: flex;
+      padding: 0 20px 20px;
+      gap: 8px;
+      overflow-x: auto;
+    }
+    
+    .bv-wizard-steps::-webkit-scrollbar {
+      height: 4px;
+    }
+    
+    .bv-wizard-steps::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.02);
+    }
+    
+    .bv-wizard-steps::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 2px;
+    }
+    
+    .bv-wizard-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 20px;
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.5);
+      white-space: nowrap;
+      cursor: default;
+      transition: all 0.3s ease;
+    }
+    
+    .bv-wizard-step.visited {
+      cursor: pointer;
+    }
+    
+    .bv-wizard-step.visited:hover {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: rgba(81, 138, 255, 0.2);
+    }
+    
+    .bv-wizard-step.active {
+      background: linear-gradient(135deg, rgba(81, 138, 255, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+      border-color: #518aff;
+      color: #518aff;
+    }
+    
+    .bv-wizard-step.completed {
+      color: #10b981;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    
+    .bv-wizard-step-number {
+      width: 24px;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.08);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .bv-wizard-step.active .bv-wizard-step-number {
+      background: #518aff;
+      color: white;
+    }
+    
+    .bv-wizard-step.completed .bv-wizard-step-number {
+      background: #10b981;
+      color: white;
+    }
+    
+    .bv-wizard-step.completed .bv-wizard-step-number .material-icons {
+      font-size: 16px;
+    }
+    
+    .bv-wizard-step-title {
+      font-weight: 500;
+    }
+    
+    /* === 精靈內容區域 === */
+    .bv-wizard-content {
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .bv-wizard-header {
+      margin-bottom: 24px;
+    }
+    
+    .bv-wizard-header h3 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #000;
+    }
+    
+    .bv-wizard-header p {
+      margin: 0;
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.5);
+      line-height: 1.5;
+    }
+    
+    /* === 精靈導航按鈕 === */
+    .bv-wizard-navigation {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 32px;
+      gap: 12px;
+    }
+    
+    .bv-wizard-nav-btn {
+      flex: 1;
+      padding: 12px 20px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-wizard-nav-btn:hover {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(0, 0, 0, 0.12);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .bv-wizard-nav-btn.primary {
+      background: linear-gradient(135deg, #518aff 0%, #6366f1 100%);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 12px rgba(81, 138, 255, 0.3);
+    }
+    
+    .bv-wizard-nav-btn.primary:hover {
+      box-shadow: 0 6px 20px rgba(81, 138, 255, 0.4);
+    }
+    
+    .bv-wizard-nav-btn .material-icons {
+      font-size: 18px;
+    }
+    
+    /* === 格式選擇器 === */
+    .bv-format-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .bv-format-option {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 2px solid rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-format-option:hover {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: rgba(81, 138, 255, 0.2);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .bv-format-option.selected {
+      background: rgba(81, 138, 255, 0.08);
+      border-color: #518aff;
+    }
+    
+    .bv-format-option input[type="radio"] {
+      margin-right: 16px;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+    
+    .bv-format-info {
+      flex: 1;
+    }
+    
+    .bv-format-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 4px;
+    }
+    
+    .bv-format-desc {
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    /* === 設定列表 === */
+    .bv-settings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    /* === 輸入框樣式 === */
+    .bv-glass-input {
+      width: 100%;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      font-size: 14px;
+      color: #000;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    
+    .bv-glass-input:focus {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: #518aff;
+      box-shadow: 0 0 0 3px rgba(81, 138, 255, 0.1);
+    }
+    
+    .bv-glass-input::placeholder {
+      color: rgba(0, 0, 0, 0.4);
+    }
+    
+    /* === 底圖上傳區域 === */
+    .bv-logo-upload-area {
+      border: 2px dashed rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      background: rgba(248, 250, 252, 0.5);
+    }
+    
+    .bv-logo-upload-area:hover {
+      border-color: #518aff;
+      background: rgba(81, 138, 255, 0.05);
+    }
+    
+    .bv-logo-upload-area.dragover {
+      border-color: #518aff;
+      background: rgba(81, 138, 255, 0.1);
+    }
+    
+    .bv-logo-preview {
+      max-width: 100%;
+      max-height: 120px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .bv-upload-hint {
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.5);
+      margin-top: 8px;
+    }
+    
+    /* === 底圖控制項 === */
+    .bv-logo-controls {
+      display: none;
+      margin-top: 16px;
+    }
+    
+    .bv-remove-logo-btn {
+      width: 100%;
+      padding: 10px;
+      background: rgba(244, 67, 54, 0.08);
+      border: 1px solid rgba(244, 67, 54, 0.2);
+      border-radius: 8px;
+      color: #f44336;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      margin-top: 16px;
+    }
+    
+    .bv-remove-logo-btn:hover {
+      background: rgba(244, 67, 54, 0.12);
+      transform: translateY(-1px);
+    }
+    
+    .bv-remove-logo-btn .material-icons {
+      font-size: 18px;
+    }
+    
+    /* === 標籤頁面樣式 === */
+    body.bv-converted {
+      background: #f5f5f5 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: auto !important;
+      max-width: none !important;
+      min-width: auto !important;
+    }
+    
+    body.bv-converted > *:not(.bv-page-container):not(#bv-label-control-panel):not(.bv-minimized-button):not(.bv-notification) {
+      display: none !important;
+    }
+    
+    .bv-page-container {
+      margin: 20px auto;
+      display: flex;
+      justify-content: center;
+    }
+    
+    .bv-label-page {
+      background: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* 10×15 格式 */
+    .bv-label-page.format-10x15,
+    body.format-10x15 .bv-label-page {
+      width: 100mm;
+      height: 150mm;
+      padding: 5mm;
+      box-sizing: border-box;
+    }
+    
+    /* 10×10 格式 */
+    .bv-label-page.format-10x10,
+    body.format-10x10 .bv-label-page {
+      width: 100mm;
+      height: 100mm;
+      padding: 5mm;
+      box-sizing: border-box;
+    }
+    
+    .bv-page-content {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    /* === 底圖背景 === */
+    .bv-logo-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-repeat: no-repeat;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .bv-page-content > *:not(.bv-logo-background) {
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* === 標籤內容樣式調整 === */
+    .bv-label-page .cutomer-order {
+      padding: 0 !important;
+      margin: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    
+    .bv-label-page .order-info-card,
+    .bv-label-page .order-payment-details {
+      margin-bottom: 12px !important;
+    }
+    
+    .bv-label-page .card-header {
+      padding: 8px 12px !important;
+      font-size: 13px !important;
+    }
+    
+    .bv-label-page .card-body {
+      padding: 12px !important;
+    }
+    
+    .bv-label-page .field-label {
+      font-size: 11px !important;
+      color: rgba(0, 0, 0, 0.6) !important;
+    }
+    
+    .bv-label-page .field-value {
+      font-size: 12px !important;
+      font-weight: 500 !important;
+    }
+    
+    .bv-label-page .order-product-list {
+      font-size: 11px !important;
+    }
+    
+    .bv-label-page .order-product-list th,
+    .bv-label-page .order-product-list td {
+      padding: 6px 8px !important;
+    }
+    
+    .bv-label-page .list-item-name {
+      max-width: none !important;
+    }
+    
+    .bv-label-page .list-item-name a {
+      color: #333 !important;
+      text-decoration: none !important;
+    }
+    
+    /* === 數量標示樣式 === */
+    .bv-qty-marker {
+      color: #ff5722;
+      font-weight: bold;
+      margin-left: 4px;
+    }
+    
+    /* === 精簡模式樣式 === */
+    body.bv-converted .order-content.bv-original {
+      display: none !important;
+    }
+    
+    /* === 列印時的頁面設定 === */
+    @media print {
+      /* 10×15 格式 */
+      body.bv-converted.format-10x15 .bv-label-page {
+        width: 100mm !important;
+        height: 150mm !important;
+        page-break-after: always !important;
+        page-break-inside: avoid !important;
+      }
+      
+      /* 10×10 格式 */
+      body.bv-converted.format-10x10 .bv-label-page {
+        width: 100mm !important;
+        height: 100mm !important;
+        page-break-after: always !important;
+        page-break-inside: avoid !important;
+      }
+      
+      .bv-shipping-page.format-10x10 {
+        padding: 3mm !important;
+      }
+    }
+    
+    @page {
+      size: 100mm 150mm;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    @media print {
+      #bv-label-control-panel,
+      .bv-minimized-button {
+        display: none !important;
+      }
+      
+      body:not(.bv-converted) {
+        visibility: visible !important;
+      }
+      
+      body:not(.bv-converted) .order-content {
+        display: block !important;
+        visibility: visible !important;
+      }
+      
+      * {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+      
+      body.bv-converted {
+        width: auto !important;
+        max-width: none !important;
+        min-width: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+      }
+      
+      body.bv-converted .bv-original {
+        display: none !important;
+      }
+      
+      body.bv-converted .bv-page-container {
+        page-break-inside: avoid !important;
+        page-break-after: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      body.bv-converted .bv-label-page {
+        width: 100mm !important;
+        height: 150mm !important;
+        margin: 0 !important;
+        padding: 5mm !important;
+        box-sizing: border-box !important;
+        page-break-after: always !important;
+        page-break-inside: avoid !important;
+        box-shadow: none !important;
+        border: none !important;
+        position: relative !important;
+        display: block !important;
+        background: white !important;
+      }
+      
+      body.bv-converted .bv-label-page.bv-shipping-page {
+        padding: 0 !important;
+      }
+      
+      body.bv-converted .bv-label-page:last-child {
+        page-break-after: auto !important;
+      }
+      
+      body.bv-converted .bv-page-content {
+        position: relative !important;
+        page-break-inside: avoid !important;
+        width: 90mm !important;
+        height: 140mm !important;
+      }
+      
+      body.bv-converted .bv-shipping-page .bv-page-content {
+        width: 100mm !important;
+        height: 150mm !important;
+      }
+      
+      body.bv-converted > *:not(.bv-page-container) {
+        display: none !important;
+      }
+    }
+    
+    /* === 物流單狀態樣式 === */
+    .bv-shipping-status {
+      background: rgba(248, 250, 252, 0.8);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .bv-status-count {
+      font-size: 48px;
+      font-weight: 700;
+      color: #ff9800;
+      margin: 8px 0;
+    }
+    
+    .bv-status-text {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .bv-integration-status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: rgba(248, 250, 252, 0.8);
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .bv-integration-status .material-icons {
+      font-size: 32px;
+    }
+    
+    .bv-integration-status.success {
+      background: rgba(16, 185, 129, 0.08);
+    }
+    
+    .bv-integration-status.success .material-icons {
+      color: #10b981;
+    }
+    
+    .bv-integration-status.warning {
+      background: rgba(255, 152, 0, 0.08);
+    }
+    
+    .bv-integration-status.warning .material-icons {
+      color: #ff9800;
+    }
+    
+    .bv-status-info h4 {
+      margin: 0 0 4px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #000;
+    }
+    
+    .bv-status-info p {
+      margin: 0;
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    /* === PDF 上傳區域樣式 === */
+    .bv-pdf-upload-area {
+      border: 2px dashed #f44336;
+      border-color: rgba(244, 67, 54, 0.3);
+      background: rgba(255, 245, 245, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100px;
+      padding: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .bv-pdf-upload-area:hover {
+      border-color: #f44336;
+      background: rgba(255, 235, 235, 0.5);
+    }
+    
+    .bv-pdf-upload-area.has-file {
+      border-style: solid;
+      border-color: #4caf50;
+      background: rgba(241, 248, 233, 0.5);
+      min-height: auto;
+      padding: 12px 16px;
+    }
+    
+    #bv-pdf-upload-prompt {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    #bv-pdf-upload-prompt .material-icons {
+      font-size: 36px;
+      color: #f44336;
+    }
+    
+    #bv-pdf-upload-prompt .bv-upload-hint {
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.6);
+      font-weight: 500;
+    }
+    
+    .bv-pdf-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #2e7d32;
+      width: 100%;
+    }
+    
+    .bv-pdf-info .material-icons {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    
+    .bv-pdf-pages-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .bv-pdf-pages-info h4 {
+      margin: 0;
+      font-size: 13px;
+      color: #2e7d32;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .bv-pdf-pages-info p {
+      margin: 2px 0 0 0;
+      font-size: 11px;
+      color: #558b2f;
+    }
+    
+    #bv-clear-shipping {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.8);
+      color: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    
+    #bv-clear-shipping .material-icons {
+      font-size: 18px;
+    }
+    
+    #bv-clear-shipping:hover {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(0, 0, 0, 0.12);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+    
+    /* === 轉換進度樣式 === */
+    .bv-conversion-progress {
+      margin-top: 16px;
+      padding: 16px;
+      background: rgba(232, 245, 233, 0.5);
+      border-radius: 8px;
+      display: none;
+    }
+    
+    .bv-conversion-progress.active {
+      display: block;
+    }
+    
+    .bv-conversion-progress h5 {
+      margin: 0 0 8px 0;
+      color: #2e7d32;
+      font-size: 14px;
+    }
+    
+    .bv-conversion-progress-bar {
+      height: 6px;
+      background: #c8e6c9;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    
+    .bv-conversion-progress-fill {
+      height: 100%;
+      background: #4caf50;
+      width: 0;
+      transition: width 0.3s ease;
+    }
+    
+    .bv-conversion-status {
+      font-size: 12px;
+      color: #558b2f;
+      text-align: center;
+    }
+    
+    /* === 物流單頁面樣式 === */
+    .bv-shipping-page {
+      background: #f5f5f5 !important;
+    }
+    
+    .bv-shipping-content {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      background: white;
+      margin: 0;
+      box-sizing: border-box;
+    }
+    
+    .bv-shipping-wrapper-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .bv-order-label {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 6px 12px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 1000;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      white-space: nowrap;
+    }
+    
+    /* === 列印模式選擇器樣式 === */
+    .bv-print-mode-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .bv-mode-option {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-mode-option:hover {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: rgba(81, 138, 255, 0.2);
+    }
+    
+    .bv-mode-option.selected {
+      background: rgba(81, 138, 255, 0.08);
+      border-color: #518aff;
+    }
+    
+    .bv-mode-option input[type="radio"] {
+      margin-right: 12px;
+    }
+    
+    .bv-mode-info {
+      flex: 1;
+    }
+    
+    .bv-mode-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 2px;
+    }
+    
+    .bv-mode-desc {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    /* === 排序選項樣式 === */
+    .bv-sort-options {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    
+    .bv-sort-group {
+      flex: 1;
+    }
+    
+    .bv-sort-label {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.5);
+      margin-bottom: 4px;
+    }
+    
+    .bv-sort-buttons {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .bv-sort-button {
+      flex: 1;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-sort-button:hover {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(0, 0, 0, 0.12);
+    }
+    
+    .bv-sort-button.active {
+      background: rgba(81, 138, 255, 0.08);
+      border-color: #518aff;
+      color: #518aff;
+    }
+    
+    /* === 超商物流單特殊處理 === */
+    .bv-store-shipping-content {
+      transform: scale(0.9);
+      transform-origin: center center;
+    }
+    
+    .bv-store-shipping-content .div_frame,
+    .bv-store-shipping-content .print-area,
+    .bv-store-shipping-content .print_area,
+    .bv-store-shipping-content .printarea {
+      width: 100% !important;
+      height: auto !important;
+      max-width: none !important;
+      margin: 0 auto !important;
+    }
+    
+    /* === 保護 QR Code === */
+    .bv-store-shipping-content img[src*="qr"],
+    .bv-store-shipping-content img[src*="QR"],
+    .bv-store-shipping-content img[src*="barcode"],
+    .bv-store-shipping-content .qrcode,
+    .bv-store-shipping-content .QRCode {
+      image-rendering: pixelated !important;
+      image-rendering: -moz-crisp-edges !important;
+      image-rendering: crisp-edges !important;
+      width: auto !important;
+      height: auto !important;
+      max-width: 100% !important;
+    }
+    
+    /* === 商品圖片欄位 === */
+    .bv-product-image-col {
+      width: 8mm !important;
+      padding: 2px !important;
+      vertical-align: top !important;
+    }
+    
+    .bv-product-image-col img,
+    .bv-product-img {
+      display: block !important;
+      visibility: visible !important;
+      width: 7mm !important;
+      height: 7mm !important;
+      object-fit: cover !important;
+      border-radius: 2px !important;
+      max-width: 7mm !important;
+      min-width: 7mm !important;
+      max-height: 7mm !important;
+      min-height: 7mm !important;
+    }
+    
+    /* === 確保 10×15 模式下圖片可見 === */
+    .bv-label-page .bv-product-image-col img,
+    .bv-label-page .bv-product-img {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    /* === 確保原始 orderProductImage 在原位置隱藏 === */
+    .bv-converted .list-item-name .orderProductImage,
+    .bv-label-page .list-item-name .orderProductImage,
+    .bv-converted .list-item-name img:not(.bv-product-img),
+    .bv-label-page .list-item-name img:not(.bv-product-img) {
+      display: none !important;
+    }
+    
+    @media print {
+      .bv-product-image-col img,
+      .bv-product-img {
+        display: block !important;
+        visibility: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        opacity: 1 !important;
+      }
+      
+      .bv-label-page.bv-shipping-page {
+        padding: 3mm !important;
+      }
+    }
+    
+    /* === 預設管理優化 === */
+    .bv-preset-controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+    }
+    
+    .bv-preset-buttons {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    
+    .bv-preset-save-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-top: 12px;
+      align-items: center;
+      width: 100%;
+    }
+    
+    /* === 簡化的設定檔管理 === */
+    .bv-preset-simple-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .bv-preset-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-preset-item:hover {
+      background: rgba(255, 255, 255, 0.8);
+      border-color: rgba(81, 138, 255, 0.2);
+    }
+    
+    .bv-preset-item.active {
+      background: rgba(81, 138, 255, 0.08);
+      border-color: #518aff;
+    }
+    
+    .bv-preset-name {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    
+    .bv-preset-actions {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .bv-preset-action-btn {
+      width: 28px;
+      height: 28px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-preset-action-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .bv-preset-action-btn .material-icons {
+      font-size: 18px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .bv-preset-action-btn.delete:hover .material-icons {
+      color: #f44336;
+    }
+    
+    .bv-new-preset-input {
+      width: 100%;
+      margin-top: 12px;
+    }
+    
+    /* === 物流單批次管理 === */
+    .bv-batch-list {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .bv-batch-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: rgba(248, 250, 252, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    
+    .bv-batch-item-info {
+      flex: 1;
+    }
+    
+    .bv-batch-item-name {
+      font-weight: 500;
+      color: #000;
+    }
+    
+    .bv-batch-item-count {
+      color: rgba(0, 0, 0, 0.5);
+      font-size: 11px;
+    }
+    
+    .bv-batch-actions {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .bv-batch-order {
+      display: flex;
+      gap: 2px;
+    }
+    
+    .bv-batch-order-btn {
+      width: 24px;
+      height: 24px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-batch-order-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .bv-batch-order-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    .bv-batch-order-btn .material-icons {
+      font-size: 16px;
+      color: rgba(0, 0, 0, 0.7);
+    }
+    
+    /* === 物流單反序開關 === */
+    .bv-reverse-shipping-option {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(255, 245, 235, 0.5);
+      border: 1px solid rgba(255, 152, 0, 0.2);
+      border-radius: 8px;
+    }
+    
+    .bv-reverse-shipping-note {
+      font-size: 11px;
+      color: rgba(0, 0, 0, 0.5);
+      margin-top: 4px;
+    }
+    
+    /* === 配對結果顯示 === */
+    .bv-matching-results {
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(240, 248, 255, 0.5);
+      border: 1px solid rgba(81, 138, 255, 0.2);
+      border-radius: 8px;
+    }
+    
+    .bv-matching-results-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #518aff;
+      margin-bottom: 8px;
+    }
+    
+    .bv-matching-result-item {
+      font-size: 11px;
+      color: rgba(0, 0, 0, 0.7);
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .bv-matching-result-item:last-child {
+      border-bottom: none;
+    }
+    
+    .bv-matching-result-item.unmatched {
+      color: #f44336;
+    }
+    
+    /* === 配對模式選擇 === */
+    .bv-match-mode-selector {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(248, 250, 252, 0.5);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+    }
+    
+    .bv-match-mode-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #000;
+      margin-bottom: 8px;
+    }
+    
+    .bv-match-mode-options {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .bv-match-mode-option {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.7);
+    }
+    
+    .bv-match-mode-option input[type="radio"] {
+      margin-right: 8px;
+    }
+    
+    .bv-reload-shipping-btn {
+      margin-top: 12px;
+      padding: 8px 16px;
+      background: rgba(81, 138, 255, 0.08);
+      color: #518aff;
+      border: 1px solid rgba(81, 138, 255, 0.2);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-reload-shipping-btn:hover {
+      background: rgba(81, 138, 255, 0.12);
+      transform: translateY(-1px);
+    }
+    
+    .bv-reload-shipping-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .bv-reload-shipping-btn .material-icons {
+      font-size: 18px;
+    }
+    
+    /* === 確保商品圖片顯示 === */
+    .bv-product-img {
+      display: block !important;
+      visibility: visible !important;
+      width: 7mm !important;
+      height: 7mm !important;
+      object-fit: cover !important;
+      border-radius: 2px !important;
+    }
+    
+    @media print {
+      .bv-label-page.bv-shipping-page {
+        padding: 3mm !important;
+      }
+      
+      .bv-product-img {
+        display: block !important;
+        visibility: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  `;
+}
+  
   // ===== 取得樣式內容 =====
   function getStyleContent() {
     return `
