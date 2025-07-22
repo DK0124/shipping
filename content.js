@@ -7887,10 +7887,10 @@ function getCSSContent() {
   function init() {
     console.log('BV Shop 出貨助手: 開始初始化...');
     
-    // 檢查是否為訂單列表頁面
-    const isOrderListPage = (window.location.pathname.includes('/order_print') || 
-                            window.location.pathname.includes('/admin/order')) && 
-                           document.querySelector('.order-content');
+    // 檢查是否為訂單列表頁面（A4 模式）
+    const isOrderListPage = document.querySelector('.order-content') || 
+                           window.location.pathname.includes('/order') ||
+                           window.location.pathname.includes('/admin');
     
     // 檢查是否為物流單頁面
     const isShippingPage = checkIfShippingPage();
@@ -7910,24 +7910,22 @@ function getCSSContent() {
       pathname: window.location.pathname
     });
     
+    // 直接設定頁面類型，不等待載入設定
+    state.currentPageType = isShippingPage ? CONFIG.PAGE_TYPES.SHIPPING : CONFIG.PAGE_TYPES.ORDER_LIST;
+    console.log('BV Shop 出貨助手: 設定頁面類型:', state.currentPageType);
+    
     console.log('BV Shop 出貨助手: 載入設定...');
     
     // 載入設定
     loadSettings(() => {
-      console.log('BV Shop 出貨助手: 設定載入完成');
-      
-      // 設定頁面類型 - 移到這裡！
-      state.currentPageType = isShippingPage ? CONFIG.PAGE_TYPES.SHIPPING : CONFIG.PAGE_TYPES.ORDER_LIST;
-      console.log('BV Shop 出貨助手: 設定頁面類型:', state.currentPageType);
-      
-      console.log('BV Shop 出貨助手: 注入樣式...');
+      console.log('BV Shop 出貨助手: 設定載入完成，注入樣式...');
       // 注入樣式
       injectStyles();
       
       console.log('BV Shop 出貨助手: 創建控制面板...');
       // 創建控制面板
       createControlPanel();
-           
+      
       // 檢查面板最小化狀態
       chrome.storage.local.get(['bvPanelMinimized'], (result) => {
         if (result.bvPanelMinimized) {
@@ -7939,7 +7937,7 @@ function getCSSContent() {
         }
       });
       
-      // 如果是訂單列表頁面，檢查轉換狀態
+      // 如果是訂單列表頁面（A4 模式），檢查轉換狀態
       if (state.currentPageType === CONFIG.PAGE_TYPES.ORDER_LIST) {
         console.log('BV Shop 出貨助手: 檢查轉換狀態...');
         checkConversionState();
