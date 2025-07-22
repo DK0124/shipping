@@ -5806,15 +5806,27 @@
   // ===== 初始化函數 =====
   function init() {
     // 檢查是否為訂單列表頁面
-    const isOrderListPage = window.location.pathname.includes('/admin/order') && 
+    const isOrderListPage = (window.location.pathname.includes('/order_print') || 
+                            window.location.pathname.includes('/admin/order')) && 
                            document.querySelector('.order-content');
     
     // 檢查是否為物流單頁面
     const isShippingPage = checkIfShippingPage();
     
     if (!isOrderListPage && !isShippingPage) {
+      console.log('BV Shop 出貨助手: 非目標頁面', {
+        pathname: window.location.pathname,
+        hasOrderContent: !!document.querySelector('.order-content'),
+        isOrderListPage,
+        isShippingPage
+      });
       return; // 不是目標頁面，不執行
     }
+    
+    console.log('BV Shop 出貨助手: 初始化中...', {
+      pageType: isShippingPage ? 'shipping' : 'order_list',
+      pathname: window.location.pathname
+    });
     
     // 設定頁面類型
     state.currentPageType = isShippingPage ? CONFIG.PAGE_TYPES.SHIPPING : CONFIG.PAGE_TYPES.ORDER_LIST;
@@ -5860,7 +5872,7 @@
         initShippingMode();
       }
     });
-  }  
+  }
   
   // ===== 初始化 =====
   init();
