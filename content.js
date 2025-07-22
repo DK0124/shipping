@@ -965,13 +965,14 @@ function getCSSContent() {
     
     /* === 精靈模式切換 === */
     .bv-mode-switch {
-      padding: 16px 20px;
+      padding: 16px 24px;
       background: rgba(240, 242, 245, 0.5);
       border-top: 1px solid rgba(0, 0, 0, 0.06);
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      margin-bottom: 16px;  /* 加入底部間距 */
     }
     
     .bv-mode-switch-label {
@@ -5972,21 +5973,17 @@ function getCSSContent() {
     const fontSizeSlider = document.getElementById('bv-font-size');
     if (fontSizeSlider) {
       fontSizeSlider.addEventListener('input', function() {
+        state.fontSize = this.value;  // 確保更新 state
         document.getElementById('bv-font-size-value').textContent = parseFloat(this.value).toFixed(1);
         updateRangeProgress(this);
         
-        const originalFontSize = document.querySelector('.ignore-print #fontSize');
-        if (originalFontSize) {
-          const closestSize = Math.round(parseFloat(this.value));
-          originalFontSize.value = closestSize + 'px';
-          if (typeof $ !== 'undefined') {
-            $(originalFontSize).trigger('change');
-          }
-        }
-        
         saveSettings();
         updateLabelStyles();
-        updatePreview();
+        
+        // 立即更新預覽
+        setTimeout(() => {
+          updatePreview();
+        }, 100);
       });
     }
     
