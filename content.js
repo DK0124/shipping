@@ -5771,6 +5771,65 @@
       }
     });
   }
+
+  // ===== 初始化函數 =====
+  function init() {
+    // 檢查是否為訂單列表頁面
+    const isOrderListPage = window.location.pathname.includes('/admin/order') && 
+                           document.querySelector('.order-content');
+    
+    // 檢查是否為物流單頁面
+    const isShippingPage = checkIfShippingPage();
+    
+    if (!isOrderListPage && !isShippingPage) {
+      return; // 不是目標頁面，不執行
+    }
+    
+    // 設定頁面類型
+    state.currentPageType = isShippingPage ? CONFIG.PAGE_TYPES.SHIPPING : CONFIG.PAGE_TYPES.ORDER_LIST;
+    
+    // 載入設定
+    loadSettings(() => {
+      // 注入樣式
+      injectStyles();
+      
+      // 創建控制面板
+      createControlPanel();
+      
+      // 設置事件監聽器
+      setupEventListeners();
+      
+      // 檢查面板最小化狀態
+      chrome.storage.local.get(['bvPanelMinimized'], (result) => {
+        if (result.bvPanelMinimized) {
+          state.isPanelMinimized = true;
+          const panel = document.getElementById('bv-label-control-panel');
+          const minButton = document.getElementById('bv-minimized-button');
+          if (panel) panel.classList.add('minimized');
+          if (minButton) minButton.style.display = 'flex';
+        }
+      });
+      
+      // 如果是訂單列表頁面，檢查轉換狀態
+      if (state.currentPageType === CONFIG.PAGE_TYPES.ORDER_LIST) {
+        checkConversionState();
+        
+        // 如果 URL 中有 highlightQty 參數，自動開啟數量標示
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('highlightQty') === 'true') {
+          state.highlightQuantity = true;
+          const checkbox = document.getElementById('bv-highlight-qty');
+          if (checkbox) checkbox.checked = true;
+          applyQuantityHighlight();
+        }
+      }
+      
+      // 如果是物流單頁面，初始化物流單模式
+      if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
+        initShippingMode();
+      }
+    });
+  }  
   
   // ===== 初始化 =====
   init();
