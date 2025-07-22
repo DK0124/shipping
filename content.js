@@ -50,8 +50,8 @@
   const CONFIG = {
     // 頁面類型
     PAGE_TYPES: {
-      ORDER_PRINT: 'order_print',
-      SHIPPING: 'shipping'
+      ORDER_LIST: 'order_list',    // 訂單列表頁面（A4 模式）
+      SHIPPING: 'shipping'         // 物流單頁面
     },
     
     // 物流供應商設定
