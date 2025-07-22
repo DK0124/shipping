@@ -7415,13 +7415,16 @@ function getCSSContent() {
   
   // 處理分頁
   function handlePagination() {
+    // 先移除所有現有的標籤頁面容器
+    document.querySelectorAll('.bv-page-container').forEach(container => container.remove());
+    
     const orderContents = document.querySelectorAll('.order-content:not(.bv-original)');
     
+    // 隱藏原始內容
     orderContents.forEach(order => {
       order.classList.add('bv-original');
+      order.style.display = 'none';  // 確保隱藏
     });
-    
-    document.querySelectorAll('.bv-page-container').forEach(container => container.remove());
     
     state.detailPages = [];
     state.shippingPages = [];
@@ -7430,6 +7433,9 @@ function getCSSContent() {
     const formatClass = state.labelFormat === '10x10' ? 'format-10x10' : 'format-10x15';
     
     orderContents.forEach((orderContent, orderIndex) => {
+      // 確保只處理有內容的訂單
+      if (!orderContent.querySelector('.cutomer-order')) return;
+      
       const pageContainer = document.createElement('div');
       pageContainer.className = 'bv-page-container';
       
