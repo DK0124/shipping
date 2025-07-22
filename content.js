@@ -338,6 +338,134 @@
     console.log('✗ 未偵測到支援的頁面類型');
   }
 
+  // 4.4 初始化拖曳功能
+  function initDragFunction() {
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+    
+    const panel = document.getElementById('bv-label-control-panel');
+    if (!panel) return;
+    
+    // 只有標題區域可以拖曳
+    const header = panel.querySelector('.bv-panel-header');
+    if (!header) return;
+    
+    header.style.cursor = 'move';
+    
+    header.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+    
+    function dragStart(e) {
+      if (e.target.closest('button')) return; // 如果點擊的是按鈕，不開始拖曳
+      
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
+      
+      if (e.target === header || header.contains(e.target)) {
+        isDragging = true;
+        panel.style.transition = 'none';
+      }
+    }
+    
+    function drag(e) {
+      if (isDragging) {
+        e.preventDefault();
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+        
+        xOffset = currentX;
+        yOffset = currentY;
+        
+        // 限制拖曳範圍在視窗內
+        const rect = panel.getBoundingClientRect();
+        const maxX = window.innerWidth - rect.width;
+        const maxY = window.innerHeight - rect.height;
+        
+        currentX = Math.min(Math.max(0, currentX), maxX);
+        currentY = Math.min(Math.max(0, currentY), maxY);
+        
+        panel.style.transform = `translate(${currentX}px, ${currentY}px)`;
+      }
+    }
+    
+    function dragEnd(e) {
+      initialX = currentX;
+      initialY = currentY;
+      
+      isDragging = false;
+      panel.style.transition = '';
+      
+      // 儲存位置
+      chrome.storage.local.set({
+        bvPanelPosition: { x: currentX, y: currentY }
+      });
+    }
+    
+    // 載入儲存的位置
+    chrome.storage.local.get(['bvPanelPosition'], (result) => {
+      if (result.bvPanelPosition) {
+        xOffset = result.bvPanelPosition.x || 0;
+        yOffset = result.bvPanelPosition.y || 0;
+        panel.style.transform = `translate(${xOffset}px, ${yOffset}px)`;
+      }
+    });
+  }
+  
+  // 4.5 初始化物流單模式
+  function initShippingMode() {
+    // 監聽 storage 變化，用於在物流單頁面即時更新狀態
+    state.storageListener = (changes, namespace) => {
+      if (namespace !== 'local') return;
+      
+      // 監聽物流單資料變化
+      if (changes.shippingDataBatches || changes.shippingData || changes.pdfShippingData) {
+        // 重新載入批次資料
+        chrome.storage.local.get(['shippingDataBatches', 'shippingData', 'pdfShippingData'], (result) => {
+          if (result.shippingDataBatches) {
+            state.shippingDataBatches = result.shippingDataBatches;
+            mergeAllBatchData();
+          } else {
+            state.shippingData = result.shippingData || [];
+            state.pdfShippingData = result.pdfShippingData || [];
+          }
+          
+          updateShippingCount();
+          updateBatchList();
+          
+          // 如果在明細頁面，檢查物流單狀態
+          if (state.currentPageType === CONFIG.PAGE_TYPES.DETAIL && state.isConverted) {
+            checkShippingDataStatus();
+            updatePreview();
+          }
+        });
+      }
+    };
+    
+    chrome.storage.onChanged.addListener(state.storageListener);
+    
+    // 初始載入物流單資料
+    chrome.storage.local.get(['shippingDataBatches', 'shippingData', 'pdfShippingData'], (result) => {
+      if (result.shippingDataBatches) {
+        state.shippingDataBatches = result.shippingDataBatches;
+        mergeAllBatchData();
+      } else {
+        state.shippingData = result.shippingData || [];
+        state.pdfShippingData = result.pdfShippingData || [];
+      }
+      
+      if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
+        updateShippingCount();
+        updateBatchList();
+      }
+    });
+  }
+
   // ============================================
   // 5. 控制面板創建與管理
   // ============================================
