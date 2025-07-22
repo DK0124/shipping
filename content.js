@@ -6201,7 +6201,7 @@
   // 初始化擴充功能
   function initializeExtension() {
     // 檢查頁面類型
-    checkPageType();
+    detectCurrentPage();
     
     // 如果不是支援的頁面，就不執行
     if (!state.currentPageType) {
