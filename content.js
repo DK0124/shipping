@@ -7741,6 +7741,8 @@ function getCSSContent() {
   
   // ===== 初始化函數 =====
   function init() {
+    console.log('BV Shop 出貨助手: 開始初始化...');
+    
     // 檢查是否為訂單列表頁面
     const isOrderListPage = (window.location.pathname.includes('/order_print') || 
                             window.location.pathname.includes('/admin/order')) && 
@@ -7756,7 +7758,7 @@ function getCSSContent() {
         isOrderListPage,
         isShippingPage
       });
-      return; // 不是目標頁面，不執行
+      return;
     }
     
     console.log('BV Shop 出貨助手: 初始化中...', {
@@ -7767,13 +7769,21 @@ function getCSSContent() {
     // 設定頁面類型
     state.currentPageType = isShippingPage ? CONFIG.PAGE_TYPES.SHIPPING : CONFIG.PAGE_TYPES.ORDER_LIST;
     
+    console.log('BV Shop 出貨助手: 載入設定...');
+    
     // 載入設定
     loadSettings(() => {
+      console.log('BV Shop 出貨助手: 設定載入完成，注入樣式...');
+      
       // 注入樣式
       injectStyles();
       
+      console.log('BV Shop 出貨助手: 創建控制面板...');
+      
       // 創建控制面板
       createControlPanel();
+      
+      console.log('BV Shop 出貨助手: 設置事件監聽器...');
       
       // 設置事件監聽器
       setupEventListeners();
@@ -7791,6 +7801,7 @@ function getCSSContent() {
       
       // 如果是訂單列表頁面，檢查轉換狀態
       if (state.currentPageType === CONFIG.PAGE_TYPES.ORDER_LIST) {
+        console.log('BV Shop 出貨助手: 檢查轉換狀態...');
         checkConversionState();
         
         // 如果 URL 中有 highlightQty 參數，自動開啟數量標示
@@ -7805,8 +7816,11 @@ function getCSSContent() {
       
       // 如果是物流單頁面，初始化物流單模式
       if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
+        console.log('BV Shop 出貨助手: 初始化物流單模式...');
         initShippingMode();
       }
+      
+      console.log('BV Shop 出貨助手: 初始化完成！');
     });
   }
   
