@@ -1254,11 +1254,6 @@
       padding-left: 1.2em;
     }
     
-    .bv-qty-star {
-      font-weight: 700;
-      color: inherit;
-    }
-    
     .bv-qty-star::before {
       content: "▲ ";
       color: #000;
