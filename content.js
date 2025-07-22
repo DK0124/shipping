@@ -2475,106 +2475,6 @@ function getCSSContent() {
     }
   }
   
-  /* === 主面板樣式 === */
-  #bv-label-control-panel {
-    position: fixed;
-    right: 24px;
-    top: 24px;
-    bottom: 24px;
-    width: 360px;
-    z-index: 10000;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans TC', sans-serif;
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    display: flex;
-    flex-direction: column;
-    max-height: calc(100vh - 48px);
-  }
-  
-  /* === Glass Panel 樣式 === */
-  .bv-glass-panel {
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(24px) saturate(140%);
-    -webkit-backdrop-filter: blur(24px) saturate(140%);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.75);
-    box-shadow: 
-      0 10px 40px rgba(0, 0, 0, 0.05),
-      0 0 0 0.5px rgba(255, 255, 255, 0.6) inset,
-      0 0 60px rgba(255, 255, 255, 0.4);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  
-  /* === 面板標頭樣式 === */
-  .bv-panel-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(20px);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-    cursor: move;
-    user-select: none;
-    min-height: 80px;
-  }
-  
-  /* === 內容區域樣式 === */
-  .bv-panel-content-wrapper {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    overflow: hidden;
-    min-height: 0;
-  }
-  
-  .bv-panel-body {
-    padding: 24px;
-    overflow-y: auto;
-    flex: 1;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  /* === 精靈步驟樣式 === */
-  .bv-wizard-steps-compact {
-    display: flex;
-    align-items: center;
-    padding: 12px 24px;
-    background: rgba(248, 250, 252, 0.5);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    overflow-x: auto;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-  
-  /* === 精靈模式開關（在標題列） === */
-  .bv-wizard-toggle {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 8px;
-    border-right: 1px solid rgba(0, 0, 0, 0.08);
-    margin-right: 8px;
-  }
-  這個修正版本應該能解決面板內容擠在一起的問題。主要的改動包括：
-  
-  修正了 HTML 結構，確保有正確的閉合標籤
-  確保 bv-panel-content-wrapper 正確包裹內容
-  添加了適當的 flex 屬性來確保內容正確分佈
-  確保標題區域有最小高度
-  精靈步驟區域不會被壓縮
-  You said: 給我整份 // ===== 樣式管理 ===== function
-  給我整份
-   // ===== 樣式管理 =====
-    function getPanelStyles() 
-  Copilot said: 這是完整的 `getPanelStyles()` 函數： ```javascript // ===== 樣式管理 ===== function getPanelStyles()
-  這是完整的 getPanelStyles() 函數：
-  
-  JavaScript
   // ===== 樣式管理 =====
   function getPanelStyles() {
     return `
@@ -2891,458 +2791,820 @@ function getCSSContent() {
         font-size: 13px;
         opacity: 0.8;
       }
-    
-    /* === 設定卡片樣式 === */
-    .bv-settings-card {
-      background: rgba(248, 250, 252, 0.5);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 16px;
-      transition: all 0.3s ease;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    }
-    
-    .bv-settings-card:hover {
-      background: rgba(248, 250, 252, 0.7);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-    }
-    
-    .bv-card-title {
-      margin: 0 0 20px 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: #000;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      user-select: none;
-      position: relative;
-      padding-right: 28px;
-    }
-    
-    .bv-card-title .material-icons {
-      font-size: 18px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-collapse-icon {
-      position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.3s ease;
-    }
-    
-    .bv-collapse-icon .material-icons {
-      font-size: 20px;
-      color: rgba(0, 0, 0, 0.4);
-    }
-    
-    .bv-settings-card.collapsed .bv-collapse-icon {
-      transform: translateY(-50%) rotate(-90deg);
-    }
-    
-    .bv-card-content {
-      overflow: hidden;
-      transition: all 0.3s ease;
-    }
-    
-    .bv-settings-card.collapsed .bv-card-content {
-      max-height: 0 !important;
-      margin-top: -20px;
-      opacity: 0;
-    }
-    
-    /* === 設定項目樣式 === */
-    .bv-setting-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 0;
-      border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
-    }
-    
-    .bv-setting-item:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-    
-    .bv-setting-item:first-child {
-      padding-top: 0;
-    }
-    
-    .bv-setting-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex: 1;
-    }
-    
-    .bv-setting-info .material-icons {
-      font-size: 20px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-setting-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    
-    .bv-setting-label {
-      font-size: 14px;
-      font-weight: 500;
-      color: #000;
-      letter-spacing: -0.01em;
-    }
-    
-    .bv-setting-desc {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    /* === 開關樣式 === */
-    .bv-glass-switch {
-      position: relative;
-      display: inline-block;
-      width: 48px;
-      height: 28px;
-      cursor: pointer;
-    }
-    
-    .bv-glass-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    
-    .bv-switch-slider {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.1);
-      border-radius: 28px;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    .bv-switch-slider:before {
-      position: absolute;
-      content: "";
-      height: 24px;
-      width: 24px;
-      left: 2px;
-      bottom: 2px;
-      background: white;
-      border-radius: 50%;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    
-    .bv-glass-switch input:checked + .bv-switch-slider {
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-    }
-    
-    .bv-glass-switch input:checked + .bv-switch-slider:before {
-      transform: translateX(20px);
-    }
-    
-    .bv-glass-switch.disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .bv-glass-switch.disabled input {
-      cursor: not-allowed;
-    }
-    
-    /* === 滑桿樣式 === */
-    .bv-slider-group {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    
-    .bv-slider-item {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding-bottom: 8px;
-    }
-    
-    .bv-slider-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-      color: #000;
-    }
-    
-    .bv-value-label {
-      background: rgba(81, 138, 255, 0.08);
-      color: #518aff;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', monospace;
-      min-width: 48px;
-      text-align: center;
-    }
-    
-    .bv-glass-slider {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 6px;
-      background: rgba(0, 0, 0, 0.06);
-      border-radius: 3px;
-      outline: none;
-      position: relative;
-      cursor: pointer;
-      margin: 12px 0;
-      overflow: visible;
-    }
-    
-    .bv-glass-slider:before {
-      content: '';
-      position: absolute;
-      height: 6px;
-      border-radius: 3px;
-      background: #518aff;
-      width: var(--value, 0%);
-      pointer-events: none;
-    }
-    
-    .bv-glass-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 20px;
-      height: 20px;
-      background: white;
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 
-        0 1px 4px rgba(0, 0, 0, 0.15),
-        0 0 0 0.5px rgba(0, 0, 0, 0.05);
-      transition: all 0.2s ease;
-      position: relative;
-      z-index: 1;
-    }
-    
-    .bv-glass-slider::-webkit-slider-thumb:hover {
-      transform: scale(1.1);
-      box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.2),
-        0 0 0 0.5px rgba(0, 0, 0, 0.08);
-    }
-    
-    .bv-glass-slider::-moz-range-thumb {
-      width: 20px;
-      height: 20px;
-      background: white;
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-      transition: all 0.2s ease;
-      border: none;
-    }
-    
-    /* === 輸入框樣式 === */
-    .bv-glass-input {
-      flex: 1;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(20px);
-      border: 0.5px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      padding: 0 12px;
-      font-size: 14px;
-      color: #000;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-glass-input::placeholder {
-      color: rgba(0, 0, 0, 0.4);
-    }
-    
-    .bv-glass-input:hover {
-      background-color: rgba(255, 255, 255, 0.9);
-      border-color: rgba(0, 0, 0, 0.12);
-    }
-    
-    .bv-glass-input:focus {
-      background-color: white;
-      border-color: #518aff;
-      box-shadow: 0 0 0 3px rgba(81, 138, 255, 0.1);
-    }
-    
-    /* === 下拉選單樣式 === */
-    .bv-glass-select {
-      flex: 1;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(20px);
-      border: 0.5px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      padding: 0 12px;
-      font-size: 14px;
-      color: #000;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23666666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      padding-right: 32px;
-    }
-    
-    .bv-glass-select:hover {
-      background-color: rgba(255, 255, 255, 0.9);
-      border-color: rgba(0, 0, 0, 0.12);
-    }
-    
-    .bv-glass-select:focus {
-      background-color: white;
-      border-color: #518aff;
-      box-shadow: 0 0 0 3px rgba(81, 138, 255, 0.1);
-    }
-    
-    /* === 頁尾樣式 === */
-    .bv-panel-footer {
-      padding: 16px 24px 24px;
-      background: rgba(255, 255, 255, 0.6);
-      backdrop-filter: blur(20px);
-      border-top: 1px solid rgba(0, 0, 0, 0.05);
-      flex-shrink: 0;
-    }
-    
-    .bv-glass-action-button {
-      width: 100%;
-      height: 48px;
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      box-shadow: 
-        0 3px 12px rgba(81, 138, 255, 0.25),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-      letter-spacing: -0.01em;
-    }
-    
-    .bv-glass-action-button:hover {
-      transform: translateY(-1px);
-      box-shadow: 
-        0 6px 20px rgba(81, 138, 255, 0.35),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
-    }
-    
-    .bv-glass-action-button:active {
-      transform: translateY(0);
-    }
-    
-    .bv-glass-action-button .material-icons {
-      font-size: 22px;
-    }
-    
-    /* === 滾動條樣式 === */
-    .bv-panel-body::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.15);
-      border-radius: 6px;
-      transition: background 0.2s ease;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.25);
-    }
-    
-    /* === 通知樣式 === */
-    .bv-notification {
-      position: fixed;
-      top: 32px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(50px) saturate(180%);
-      -webkit-backdrop-filter: blur(50px) saturate(180%);
-      padding: 16px 24px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.12),
-        0 0 0 0.5px rgba(0, 0, 0, 0.05),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.9);
-      z-index: 100001;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      letter-spacing: -0.01em;
-    }
-    
-    .bv-notification.success {
-      color: #248A3D;
-    }
-    
-    .bv-notification.warning {
-      color: #C04C00;
-    }
-    
-    .bv-notification.error {
-      color: #D70015;
-    }
-    
-    .bv-notification .material-icons {
-      font-size: 20px;
-    }
-    
-    @keyframes slideDown {
-      from {
+      
+      /* === 設定卡片樣式 === */
+      .bv-settings-card {
+        background: rgba(248, 250, 252, 0.5);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      }
+      
+      .bv-settings-card:hover {
+        background: rgba(248, 250, 252, 0.7);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      }
+      
+      .bv-card-title {
+        margin: 0 0 20px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        padding-right: 28px;
+      }
+      
+      .bv-card-title .material-icons {
+        font-size: 18px;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      .bv-collapse-icon {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+      }
+      
+      .bv-collapse-icon .material-icons {
+        font-size: 20px;
+        color: rgba(0, 0, 0, 0.4);
+      }
+      
+      .bv-settings-card.collapsed .bv-collapse-icon {
+        transform: translateY(-50%) rotate(-90deg);
+      }
+      
+      .bv-card-content {
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+      
+      .bv-settings-card.collapsed .bv-card-content {
+        max-height: 0 !important;
+        margin-top: -20px;
         opacity: 0;
-        transform: translate(-50%, -20px);
       }
-      to {
-        opacity: 1;
-        transform: translate(-50%, 0);
+      
+      /* === 設定項目樣式 === */
+      .bv-setting-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 0;
+        border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
       }
-    }
-    
-    @keyframes slideUp {
-      from {
-        opacity: 1;
-        transform: translate(-50%, 0);
+      
+      .bv-setting-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
       }
-      to {
+      
+      .bv-setting-item:first-child {
+        padding-top: 0;
+      }
+      
+      .bv-setting-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+      }
+      
+      .bv-setting-info .material-icons {
+        font-size: 20px;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      .bv-setting-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      
+      .bv-setting-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #000;
+        letter-spacing: -0.01em;
+      }
+      
+      .bv-setting-desc {
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      /* === 開關樣式 === */
+      .bv-glass-switch {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 28px;
+        cursor: pointer;
+      }
+      
+      .bv-glass-switch input {
         opacity: 0;
-        transform: translate(-50%, -20px);
+        width: 0;
+        height: 0;
       }
-    }
+      
+      .bv-switch-slider {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 28px;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      
+      .bv-switch-slider:before {
+        position: absolute;
+        content: "";
+        height: 24px;
+        width: 24px;
+        left: 2px;
+        bottom: 2px;
+        background: white;
+        border-radius: 50%;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      
+      .bv-glass-switch input:checked + .bv-switch-slider {
+        background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+      }
+      
+      .bv-glass-switch input:checked + .bv-switch-slider:before {
+        transform: translateX(20px);
+      }
+      
+      .bv-glass-switch.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      
+      .bv-glass-switch.disabled input {
+        cursor: not-allowed;
+      }
+      
+      /* === 小型開關樣式 === */
+      .bv-glass-switch.bv-small {
+        width: 36px;
+        height: 20px;
+      }
+      
+      .bv-glass-switch.bv-small .bv-switch-slider {
+        border-radius: 20px;
+      }
+      
+      .bv-glass-switch.bv-small .bv-switch-slider:before {
+        width: 16px;
+        height: 16px;
+        left: 2px;
+        bottom: 2px;
+      }
+      
+      .bv-glass-switch.bv-small input:checked + .bv-switch-slider:before {
+        transform: translateX(16px);
+      }
+      
+      /* === 滑桿樣式 === */
+      .bv-slider-group {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .bv-slider-item {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding-bottom: 8px;
+      }
+      
+      .bv-slider-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        color: #000;
+      }
+      
+      .bv-value-label {
+        background: rgba(81, 138, 255, 0.08);
+        color: #518aff;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', monospace;
+        min-width: 48px;
+        text-align: center;
+      }
+      
+      .bv-glass-slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 6px;
+        background: rgba(0, 0, 0, 0.06);
+        border-radius: 3px;
+        outline: none;
+        position: relative;
+        cursor: pointer;
+        margin: 12px 0;
+        overflow: visible;
+      }
+      
+      .bv-glass-slider:before {
+        content: '';
+        position: absolute;
+        height: 6px;
+        border-radius: 3px;
+        background: #518aff;
+        width: var(--value, 0%);
+        pointer-events: none;
+      }
+      
+      .bv-glass-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 
+          0 1px 4px rgba(0, 0, 0, 0.15),
+          0 0 0 0.5px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+        position: relative;
+        z-index: 1;
+      }
+      
+      .bv-glass-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.1);
+        box-shadow: 
+          0 2px 8px rgba(0, 0, 0, 0.2),
+          0 0 0 0.5px rgba(0, 0, 0, 0.08);
+      }
+      
+      .bv-glass-slider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+        border: none;
+      }
+      
+      /* === 輸入框樣式 === */
+      .bv-glass-input {
+        flex: 1;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(20px);
+        border: 0.5px solid rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        padding: 0 12px;
+        font-size: 14px;
+        color: #000;
+        transition: all 0.2s ease;
+      }
+      
+      .bv-glass-input::placeholder {
+        color: rgba(0, 0, 0, 0.4);
+      }
+      
+      .bv-glass-input:hover {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-color: rgba(0, 0, 0, 0.12);
+      }
+      
+      .bv-glass-input:focus {
+        background-color: white;
+        border-color: #518aff;
+        box-shadow: 0 0 0 3px rgba(81, 138, 255, 0.1);
+      }
+      
+      /* === 下拉選單樣式 === */
+      .bv-glass-select {
+        flex: 1;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(20px);
+        border: 0.5px solid rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        padding: 0 12px;
+        font-size: 14px;
+        color: #000;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23666666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
+      }
+      
+      .bv-glass-select:hover {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-color: rgba(0, 0, 0, 0.12);
+      }
+      
+      .bv-glass-select:focus {
+        background-color: white;
+        border-color: #518aff;
+        box-shadow: 0 0 0 3px rgba(81, 138, 255, 0.1);
+      }
+      
+      /* === 頁尾樣式 === */
+      .bv-panel-footer {
+        padding: 16px 24px 24px;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        flex-shrink: 0;
+      }
+      
+      .bv-glass-action-button {
+        width: 100%;
+        height: 48px;
+        background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        box-shadow: 
+          0 3px 12px rgba(81, 138, 255, 0.25),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+        letter-spacing: -0.01em;
+      }
+      
+      .bv-glass-action-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 
+          0 6px 20px rgba(81, 138, 255, 0.35),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
+      }
+      
+      .bv-glass-action-button:active {
+        transform: translateY(0);
+      }
+      
+      .bv-glass-action-button .material-icons {
+        font-size: 22px;
+      }
+      
+      /* === 滾動條樣式 === */
+      .bv-panel-body::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      .bv-panel-body::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      
+      .bv-panel-body::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 6px;
+        transition: background 0.2s ease;
+      }
+      
+      .bv-panel-body::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.25);
+      }
+      
+      /* === Wizard 步驟樣式 === */
+      .bv-wizard-steps {
+        padding: 20px 24px;
+        background: rgba(248, 250, 252, 0.95);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+      }
+      
+      .bv-wizard-step {
+        flex: 1;
+        text-align: center;
+        cursor: pointer;
+        position: relative;
+        z-index: 2;
+      }
+      
+      .bv-wizard-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 20px;
+        right: -50%;
+        width: 100%;
+        height: 2px;
+        background: rgba(0, 0, 0, 0.1);
+        z-index: -1;
+      }
+      
+      .bv-wizard-step.completed:not(:last-child)::after {
+        background: #10b981;
+      }
+      
+      .bv-wizard-step-number {
+        width: 40px;
+        height: 40px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 8px;
+        font-weight: 600;
+        color: rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+      }
+      
+      .bv-wizard-step.active .bv-wizard-step-number {
+        background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+        color: white;
+        box-shadow: 0 3px 12px rgba(81, 138, 255, 0.3);
+      }
+      
+      .bv-wizard-step.completed .bv-wizard-step-number {
+        background: #10b981;
+        color: white;
+      }
+      
+      .bv-wizard-step.visited:not(.active):not(.completed) .bv-wizard-step-number {
+        background: rgba(81, 138, 255, 0.1);
+        color: #518aff;
+      }
+      
+      .bv-wizard-step-number .material-icons {
+        font-size: 20px;
+      }
+      
+      .bv-wizard-step-title {
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.4);
+        font-weight: 500;
+      }
+      
+      .bv-wizard-step.active .bv-wizard-step-title,
+      .bv-wizard-step.completed .bv-wizard-step-title {
+        color: #000;
+      }
+      
+      /* === 緊湊型精靈步驟 === */
+      .bv-wizard-steps-compact {
+        display: flex;
+        align-items: center;
+        padding: 12px 24px;
+        background: rgba(248, 250, 252, 0.5);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        overflow-x: auto;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      
+      .bv-wizard-steps-compact::-webkit-scrollbar {
+        height: 4px;
+      }
+      
+      .bv-wizard-steps-compact::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      
+      .bv-wizard-steps-compact::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 2px;
+      }
+      
+      .bv-wizard-step-compact {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 16px;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.5);
+        cursor: default;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
+      
+      .bv-wizard-step-compact.visited {
+        cursor: pointer;
+      }
+      
+      .bv-wizard-step-compact.visited:hover {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(81, 138, 255, 0.2);
+      }
+      
+      .bv-wizard-step-compact.active {
+        background: linear-gradient(135deg, rgba(81, 138, 255, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+        border-color: #518aff;
+        color: #518aff;
+      }
+      
+      .bv-wizard-step-compact.completed {
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.3);
+      }
+      
+      .bv-wizard-step-indicator {
+        width: 20px;
+        height: 20px;
+        background: rgba(0, 0, 0, 0.08);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+      
+      .bv-wizard-step-compact.active .bv-wizard-step-indicator {
+        background: #518aff;
+        color: white;
+      }
+      
+      .bv-wizard-step-compact.completed .bv-wizard-step-indicator {
+        background: #10b981;
+        color: white;
+      }
+      
+      .bv-wizard-step-indicator .material-icons {
+        font-size: 14px;
+      }
+      
+      .bv-wizard-step-name {
+        font-weight: 500;
+      }
+      
+      .bv-wizard-step-connector {
+        width: 20px;
+        height: 1px;
+        background: rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+      }
+      
+      /* === Wizard 內容區域 === */
+      .bv-wizard-content {
+        padding: 24px;
+        min-height: 300px;
+        animation: fadeIn 0.3s ease;
+      }
+      
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .bv-wizard-header {
+        margin-bottom: 24px;
+        text-align: center;
+      }
+      
+      .bv-wizard-header h3 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #000;
+      }
+      
+      .bv-wizard-header p {
+        margin: 0;
+        font-size: 14px;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      /* === Wizard 導航按鈕 === */
+      .bv-wizard-navigation {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+      }
+      
+      .bv-wizard-nav-btn {
+        flex: 1;
+        padding: 12px 20px;
+        background: rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.7);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      
+      .bv-wizard-nav-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+        transform: translateY(-1px);
+      }
+      
+      .bv-wizard-nav-btn.primary {
+        background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+        color: white;
+        border: none;
+        box-shadow: 0 3px 12px rgba(81, 138, 255, 0.25);
+      }
+      
+      .bv-wizard-nav-btn.primary:hover {
+        box-shadow: 0 6px 20px rgba(81, 138, 255, 0.35);
+      }
+      
+      .bv-wizard-nav-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+      }
+      
+      /* === 精靈模式開關（在標題列） === */
+      .bv-wizard-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 8px;
+        border-right: 1px solid rgba(0, 0, 0, 0.08);
+        margin-right: 8px;
+      }
+      
+      /* === 模式切換開關 === */
+      .bv-mode-switch {
+        position: absolute;
+        bottom: 20px;
+        left: 24px;
+        right: 24px;
+        padding: 12px;
+        background: rgba(248, 250, 252, 0.8);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      .bv-mode-switch-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      /* === 格式選擇器樣式 === */
+      .bv-format-selector {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .bv-format-option {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .bv-format-option:hover {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(81, 138, 255, 0.2);
+      }
+      
+      .bv-format-option.selected {
+        background: rgba(81, 138, 255, 0.08);
+        border-color: #518aff;
+      }
+      
+      .bv-format-option input[type="radio"] {
+        margin-right: 12px;
+      }
+      
+      .bv-format-info {
+        flex: 1;
+      }
+      
+      .bv-format-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 2px;
+      }
+      
+      .bv-format-desc {
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      /* === 通知樣式 === */
+      .bv-notification {
+        position: fixed;
+        top: 32px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(50px) saturate(180%);
+        -webkit-backdrop-filter: blur(50px) saturate(180%);
+        padding: 16px 24px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 
+          0 8px 32px rgba(0, 0, 0, 0.12),
+          0 0 0 0.5px rgba(0, 0, 0, 0.05),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.9);
+        z-index: 100001;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        letter-spacing: -0.01em;
+      }
+      
+      .bv-notification.success {
+        color: #248A3D;
+      }
+      
+      .bv-notification.warning {
+        color: #C04C00;
+      }
+      
+      .bv-notification.error {
+        color: #D70015;
+      }
+      
+      .bv-notification .material-icons {
+        font-size: 20px;
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -20px);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, 0);
+        }
+      }
+      
+      @keyframes slideUp {
+        from {
+          opacity: 1;
+          transform: translate(-50%, 0);
+        }
+        to {
+          opacity: 0;
+          transform: translate(-50%, -20px);
+        }
+      }
     
     /* === 數量標示樣式 === */
     .bv-qty-star {
@@ -4641,7 +4903,7 @@ function getCSSContent() {
             <div class="bv-wizard-toggle">
               <span class="material-icons" style="font-size: 18px; color: rgba(0,0,0,0.5);">assistant</span>
               <label class="bv-glass-switch bv-small">
-                <input type="checkbox" id="bv-wizard-mode" checked>
+                <input type="checkbox" id="bv-wizard-mode">
                 <span class="bv-switch-slider"></span>
               </label>
             </div>
@@ -4652,7 +4914,6 @@ function getCSSContent() {
               <span class="material-icons">remove</span>
             </button>
           </div>
-        </div>
         
         <!-- 精靈步驟改為橫向緊湊版 -->
         <div class="bv-wizard-steps-compact">
