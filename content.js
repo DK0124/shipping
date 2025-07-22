@@ -5528,7 +5528,6 @@
   // 初始化
   function initialize() {
     document.body.setAttribute('data-label-size', state.selectedLabelSize);
-    initResources();
     detectCurrentPage();
   }
 
