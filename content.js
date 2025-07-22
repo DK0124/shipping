@@ -382,6 +382,14 @@
     state.currentPageType = null;
     console.log('✗ 未偵測到支援的頁面類型');
   }
+
+  // ===== 取得樣式內容 =====
+  function getStyleContent() {
+    return `
+      /* 這裡插入之前提供的所有 CSS 樣式內容 */
+      ${getCSSContent()}
+    `;
+  }
   
   // ===== UI 建立功能 =====
   function createControlPanel() {
