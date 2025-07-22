@@ -5616,51 +5616,66 @@ function getCSSContent() {
     const reverseShippingOption = document.getElementById('bv-reverse-shipping-option');
     const matchModeSelector = document.getElementById('bv-match-mode-selector');
     
+    // 如果元素不存在就直接返回（可能是在 A4 模式）
+    if (!sortOptions) return;
+    
     switch(state.printMode) {
       case CONFIG.PRINT_MODES.DETAIL_ONLY:
         sortOptions.style.display = 'block';
-        detailSortGroup.style.display = 'block';
-        shippingSort.style.display = 'none';
-        reverseShippingOption.style.display = 'none';
+        if (detailSortGroup) detailSortGroup.style.display = 'block';
+        if (shippingSort) shippingSort.style.display = 'none';
+        if (reverseShippingOption) reverseShippingOption.style.display = 'none';
         if (matchModeSelector) matchModeSelector.style.display = 'none';
         if (orderLabelSetting) {
           orderLabelSetting.style.display = 'flex';
-          orderLabelSwitch.classList.add('disabled');
-          orderLabelCheckbox.checked = false;
-          orderLabelCheckbox.disabled = true;
+          if (orderLabelSwitch) {
+            orderLabelSwitch.classList.add('disabled');
+            if (orderLabelCheckbox) {
+              orderLabelCheckbox.checked = false;
+              orderLabelCheckbox.disabled = true;
+            }
+          }
         }
         break;
         
       case CONFIG.PRINT_MODES.SHIPPING_ONLY:
         sortOptions.style.display = 'block';
-        detailSortGroup.style.display = 'none';
-        shippingSort.style.display = 'block';
-        reverseShippingOption.style.display = 'none';
+        if (detailSortGroup) detailSortGroup.style.display = 'none';
+        if (shippingSort) shippingSort.style.display = 'block';
+        if (reverseShippingOption) reverseShippingOption.style.display = 'none';
         if (matchModeSelector) matchModeSelector.style.display = 'none';
         if (orderLabelSetting) {
           orderLabelSetting.style.display = 'flex';
-          orderLabelSwitch.classList.add('disabled');
-          orderLabelCheckbox.checked = false;
-          orderLabelCheckbox.disabled = true;
+          if (orderLabelSwitch) {
+            orderLabelSwitch.classList.add('disabled');
+            if (orderLabelCheckbox) {
+              orderLabelCheckbox.checked = false;
+              orderLabelCheckbox.disabled = true;
+            }
+          }
         }
         break;
         
       case CONFIG.PRINT_MODES.MANUAL_MATCH:
         sortOptions.style.display = 'block';
-        detailSortGroup.style.display = 'block';
-        shippingSort.style.display = 'none';
-        reverseShippingOption.style.display = 'block';
+        if (detailSortGroup) detailSortGroup.style.display = 'block';
+        if (shippingSort) shippingSort.style.display = 'none';
+        if (reverseShippingOption) reverseShippingOption.style.display = 'block';
         if (matchModeSelector) matchModeSelector.style.display = 'block';
         if (orderLabelSetting) {
           orderLabelSetting.style.display = 'flex';
-          orderLabelSwitch.classList.remove('disabled');
-          orderLabelCheckbox.disabled = false;
+          if (orderLabelSwitch) {
+            orderLabelSwitch.classList.remove('disabled');
+            if (orderLabelCheckbox) {
+              orderLabelCheckbox.disabled = false;
+            }
+          }
         }
         break;
         
       default:
         sortOptions.style.display = 'none';
-        reverseShippingOption.style.display = 'none';
+        if (reverseShippingOption) reverseShippingOption.style.display = 'none';
         if (matchModeSelector) matchModeSelector.style.display = 'none';
         if (orderLabelSetting) orderLabelSetting.style.display = 'none';
     }
