@@ -5683,5 +5683,19 @@
   // ============================================
   // 9. 初始化
   // ============================================
+  // 統一初始化入口
+  function initialize() {
+    console.log('初始化 BV SHOP 出貨助手');
+    initResources();
+    initLazyLoad();
+    detectCurrentPage();
+  }
   
+  // 在 DOM 載入完成後自動呼叫 initialize()
+  if (document.readyState === "loading") {
+    document.addEventListener('DOMContentLoaded', initialize);
+  } else {
+    initialize(); // 若已載入直接執行
+  }
+
 })();
