@@ -338,6 +338,25 @@
     console.log('✗ 未偵測到支援的頁面類型');
   }
 
+  // 4.6 安全的元素操作函數
+  function safeSetStyle(element, property, value) {
+    if (element && element.style) {
+      try {
+        element.style[property] = value;
+      } catch (e) {
+        console.error('Error setting style:', e);
+      }
+    }
+  }
+  
+  function safeHideElement(element) {
+    safeSetStyle(element, 'display', 'none');
+  }
+  
+  function safeShowElement(element) {
+    safeSetStyle(element, 'display', '');
+  }
+
   // 4.4 初始化拖曳功能
   function initDragFunction() {
     let isDragging = false;
@@ -4727,13 +4746,13 @@
     
     switch(state.printMode) {
       case CONFIG.PRINT_MODES.DETAIL_ONLY:
-        sortOptions.style.display = 'block';
-        detailSortGroup.style.display = 'block';
-        shippingSort.style.display = 'none';
-        reverseShippingOption.style.display = 'none';
+        if (sortOptions) sortOptions.style.display = 'block';
+        if (detailSortGroup) detailSortGroup.style.display = 'block';
+        if (shippingSort) shippingSort.style.display = 'none';
+        if (reverseShippingOption) reverseShippingOption.style.display = 'none';
         if (matchModeSelector) matchModeSelector.style.display = 'none';
         if (orderLabelSetting) {
-          orderLabelSetting.style.display        = 'none';
+          orderLabelSetting.style.display = 'none';
         }
         break;
         
@@ -4996,8 +5015,55 @@
     ];
     
     selectorsToHide.forEach(selector => {
-      const elements = orderContent.querySelectorAll(selector);
-      elements.forEach(element => safeHideElement(element));
+      try {
+        const elements = orderContent.querySelectorAll(selector);
+        elements.forEach(element => safeHideElement(element));
+      } catch (e) {
+        console.error('Error with selector:', selector, e);
+      }
+    });
+  }
+  
+  // 處理子元素
+  function processChildElements(parentElement, fieldsToKeep) {
+    if (!parentElement || !parentElement.children) return;
+    
+    const children = Array.from(parentElement.children);
+    
+    children.forEach(child => {
+      if (!child) return;
+      
+      const childText = child.textContent || '';
+      let shouldKeep = false;
+      
+      // 檢查子元素是否包含需要保留的資訊
+      for (const field of fieldsToKeep) {
+        if (childText.includes(field)) {
+          shouldKeep = true;
+          break;
+        }
+      }
+      
+      if (!shouldKeep) {
+        // 檢查是否為包含值的元素（例如：欄位標籤的下一個兄弟元素）
+        const prevSibling = child.previousElementSibling;
+        if (prevSibling) {
+          const prevText = prevSibling.textContent || '';
+          for (const field of fieldsToKeep) {
+            if (prevText.includes(field)) {
+              shouldKeep = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      if (!shouldKeep) {
+        safeHideElement(child);
+      } else if (child.children && child.children.length > 0) {
+        // 遞迴處理子元素
+        processChildElements(child, fieldsToKeep);
+      }
     });
   }
   
