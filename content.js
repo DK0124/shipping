@@ -5061,7 +5061,15 @@ function getCSSContent() {
               <span class="bv-panel-subtitle">${CONFIG.LABEL_FORMATS[state.labelFormat].name} 標籤</span>
             </div>
           </div>
-          <div style="display: flex; gap: 8px;">
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <!-- 精靈模式開關 -->
+            <div class="bv-wizard-toggle">
+              <span class="material-icons" style="font-size: 18px; color: rgba(0,0,0,0.5);">assistant</span>
+              <label class="bv-glass-switch bv-small">
+                <input type="checkbox" id="bv-wizard-mode">
+                <span class="bv-switch-slider"></span>
+              </label>
+            </div>
             <button class="bv-glass-button" id="bv-revert-btn">
               <span class="material-icons">undo</span>
             </button>
@@ -5423,15 +5431,11 @@ function getCSSContent() {
             </button>
           </div>
           
-          <div class="bv-mode-switch">
-            <label class="bv-mode-switch-label">
-              <span class="material-icons">assistant</span>
-              精靈模式
-            </label>
-            <label class="bv-glass-switch">
-              <input type="checkbox" id="bv-wizard-mode">
-              <span class="bv-switch-slider"></span>
-            </label>
+          <div class="bv-panel-footer">
+            <button class="bv-glass-action-button" id="bv-apply-print">
+              <span class="material-icons">print</span>
+              <span>套用並列印</span>
+            </button>
           </div>
         </div>
       </div>
@@ -5544,9 +5548,12 @@ function getCSSContent() {
     const minimizedButton = document.getElementById('bv-minimized-button');
     const highlightQty = document.getElementById('bv-highlight-qty');
     const applyPrint = document.getElementById('bv-apply-print');
-    
+        
     if (convertBtn) {
-      convertBtn.addEventListener('click', convertToLabelFormat);
+      convertBtn.addEventListener('click', () => {
+        console.log('點擊轉換按鈕');
+        convertToLabelFormat();
+      });
     }
     
     if (revertBtn) {
@@ -5608,7 +5615,7 @@ function getCSSContent() {
     }
     
     // Wizard 步驟點擊
-    document.querySelectorAll('.bv-wizard-step').forEach(step => {
+    document.querySelectorAll('.bv-wizard-step-compact').forEach(step => {
       step.addEventListener('click', function() {
         const stepId = this.dataset.step;
         if (state.visitedSteps.has(stepId) || state.completedSteps.has(stepId)) {
@@ -7534,15 +7541,21 @@ function getCSSContent() {
     
     document.body.classList.add('bv-converted', `format-${state.labelFormat}`);
     
+    // 注入頁面樣式
+    updatePageStyles();
+    
     checkShippingDataStatus();
     
     updatePanelContent();
     
-    handlePagination();
-    
-    if (state.highlightQuantity) {
-      applyQuantityHighlight();
-    }
+    // 延遲執行分頁處理，確保 DOM 完全更新
+    setTimeout(() => {
+      handlePagination();
+      
+      if (state.highlightQuantity) {
+        applyQuantityHighlight();
+      }
+    }, 100);
     
     saveConversionState();
   }
@@ -7579,15 +7592,23 @@ function getCSSContent() {
   
   // 處理分頁
   function handlePagination() {
+    console.log('handlePagination: 開始處理分頁');
+    
     // 先移除所有現有的標籤頁面容器
     document.querySelectorAll('.bv-page-container').forEach(container => container.remove());
     
     const orderContents = document.querySelectorAll('.order-content:not(.bv-original)');
+    console.log('handlePagination: 找到訂單數量:', orderContents.length);
+    
+    if (orderContents.length === 0) {
+      console.log('handlePagination: 沒有找到訂單內容');
+      return;
+    }
     
     // 隱藏原始內容
     orderContents.forEach(order => {
       order.classList.add('bv-original');
-      order.style.display = 'none';  // 確保隱藏
+      order.style.display = 'none';
     });
     
     state.detailPages = [];
@@ -7610,7 +7631,7 @@ function getCSSContent() {
       pageContent.className = 'bv-page-content';
       
       // 添加底圖
-      if (state.logoSettings.imageData) {
+      if (state.logoSettings && state.logoSettings.imageData) {
         const logoBackground = document.createElement('div');
         logoBackground.className = 'bv-logo-background';
         logoBackground.style.cssText = `
@@ -7624,6 +7645,7 @@ function getCSSContent() {
       
       const clonedOrder = orderContent.cloneNode(true);
       clonedOrder.classList.remove('bv-original');
+      clonedOrder.style.display = 'block'; // 確保顯示
       
       const customerOrder = clonedOrder.querySelector('.cutomer-order');
       if (customerOrder) {
@@ -7667,6 +7689,8 @@ function getCSSContent() {
       document.body.appendChild(pageContainer);
       
       state.detailPages.push(pageContainer);
+      
+      console.log(`handlePagination: 創建第 ${orderIndex + 1} 個標籤頁`);
     });
     
     // 根據列印模式處理物流單
@@ -7675,6 +7699,8 @@ function getCSSContent() {
     }
     
     updateLabelStyles();
+    
+    console.log('handlePagination: 處理完成，共創建', state.detailPages.length, '個頁面');
   }
   
   // 更新產品列表樣式
