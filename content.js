@@ -3527,8 +3527,8 @@
           
           const page = await pdf.getPage(pageNum);
           
-          // 使用高解析度渲染（但不要太高，避免記憶體問題）
-          const scale = 5;
+          // 使用與截圖相同的參數
+          const scale = 3;
           const viewport = page.getViewport({ scale: scale });
           
           // 創建 canvas
@@ -3555,36 +3555,27 @@
             canvasContext: context,
             viewport: viewport,
             intent: 'display',
-            enableWebGL: false, // WebGL 在某些情況下可能導致問題
+            enableWebGL: false,
             renderInteractiveForms: true,
             annotationMode: pdfjsLib.AnnotationMode.ENABLE_FORMS
           };
           
           await page.render(renderContext).promise;
           
-          // 轉換為 WebP 格式
-          let imageData;
+          // 轉換為 WebP 格式，使用相同參數
+          const blob = await new Promise(resolve => {
+            canvas.toBlob(resolve, 'image/webp', 0.8);
+          });
           
-          // 檢查瀏覽器是否支援 WebP
-          if (canvas.toDataURL('image/webp').indexOf('image/webp') > -1) {
-            // 使用 toBlob 以獲得更好的品質控制
-            const blob = await new Promise(resolve => {
-              canvas.toBlob(
-                resolve, 
-                'image/webp', 
-                1.0
-              );
-            });
-            
-            imageData = await new Promise(resolve => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result);
-              reader.readAsDataURL(blob);
-            });
-          } else {
-            // 降級到 PNG（如果瀏覽器不支援 WebP）
-            imageData = canvas.toDataURL('image/png', 1.0);
-          }
+          const imageData = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+          
+          // 計算檔案大小
+          const sizeKB = (imageData.length / 1024).toFixed(2);
+          console.log(`PDF 頁面 ${pageNum} 大小: ${sizeKB}KB (WebP)`);
           
           // 釋放 canvas 記憶體
           canvas.width = 0;
