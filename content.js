@@ -4912,7 +4912,7 @@
       
       .bv-converted .list-item,
       .bv-label-page .list-item {
-        border-bottom: 0.2mm solid #ddd !important;
+        border-bottom: 1px solid #000 !important;
       }
 
       .bv-converted .list-item:last-child,
