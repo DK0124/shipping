@@ -3148,6 +3148,7 @@
     
     // 初始化列印模式 UI
     updatePrintModeUI();
+  }
 
   function resetPdfUploadArea() {
     const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
