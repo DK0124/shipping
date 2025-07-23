@@ -1635,19 +1635,20 @@
     
     .bv-order-label {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 15px;        /* 調整垂直位置 - 往下移一點 */
+      left: 15px;       /* 調整水平位置 - 往右移一點 */
       background: rgba(255, 255, 255, 0.95);
-      padding: 6px 12px;
-      border: 1px solid #333;
+      padding: 8px 16px;    /* 增加內距，讓字不會貼邊 */
+      border: 2px solid #333;    /* 加粗邊框 */
       border-radius: 4px;
-      font-size: 12px;
+      font-size: 14px;      /* 稍微加大字體 */
       font-weight: bold;
       z-index: 1000;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       white-space: nowrap;
+      line-height: 1.2;     /* 增加行高，讓字體更舒適 */
     }
-    
+        
     .bv-print-mode-selector {
       display: flex;
       flex-direction: column;
@@ -1805,7 +1806,41 @@
     .bv-label-page .list-item-name img:not(.bv-product-img) {
       display: none !important;
     }
+        
+    /* 表格邊框改為實心黑色 */
+    .bv-label-page table,
+    .bv-label-page .list-title,
+    .bv-label-page .list-item,
+    .bv-label-page td,
+    .bv-label-page th {
+      border-color: #000 !important;
+      border-style: solid !important;
+    }
     
+    .bv-label-page .list-title td,
+    .bv-label-page .list-item td {
+      border: 1px solid #000 !important;
+    }
+    
+    .bv-label-page table {
+      border-collapse: collapse !important;
+      border: 1px solid #000 !important;
+    }
+    
+    /* 確保列印時也是黑色 */
+    @media print {
+      .bv-label-page table,
+      .bv-label-page .list-title,
+      .bv-label-page .list-item,
+      .bv-label-page td,
+      .bv-label-page th {
+        border-color: #000 !important;
+        border-style: solid !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+
     @media print {
       .bv-product-image-col img,
       .bv-product-img {
