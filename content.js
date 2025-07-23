@@ -309,42 +309,38 @@
     console.log('✗ 未偵測到支援的頁面類型');
   }
   
-  function createControlPanel() {
-    // 只在支援的頁面創建面板
-    if (!state.currentPageType) return;
-    
-    if (document.getElementById('bv-label-control-panel')) return;
-    
-    const panel = document.createElement('div');
-    panel.innerHTML = getLabelModePanelContent();
-    document.body.appendChild(panel);
-    bindLabelSizeSelector(); // ← 確保在插入 HTML 後才綁定事件
+function createControlPanel() {
+  // 只在支援的頁面創建面板
+  if (!state.currentPageType) return;
+  if (document.getElementById('bv-label-control-panel')) return;
+
+  // 插入樣式
+  const style = document.createElement('style');
+  style.textContent = getPanelStyles();
+  document.head.appendChild(style);
+
+  // 創建面板
+  const panel = document.createElement('div');
+  panel.id = 'bv-label-control-panel';
+  panel.innerHTML = getLabelModePanelContent();
+  document.body.appendChild(panel);
+
+  // 插入最小化按鈕...（省略，照你原本寫法）
+
+  // 註冊下拉選單
+  bindLabelSizeSelector();
+
+  // 其他事件與初始化
+  setupEventListeners();
+  loadSettings();
+  initDragFunction();
+  initLazyLoad();
+  if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
+    initShippingMode();
+  } else if (state.isConverted) {
+    checkShippingDataStatus();
   }
-  
-    const style = document.createElement('style');
-    style.textContent = getPanelStyles();
-    document.head.appendChild(style);
-    document.body.appendChild(panel);
-    
-    // 最小化按鈕
-    const minimizedButton = document.createElement('button');
-    minimizedButton.className = 'bv-minimized-button';
-    minimizedButton.id = 'bv-minimized-button';
-    minimizedButton.innerHTML = '<span class="material-icons">apps</span>';
-    minimizedButton.style.display = 'none';
-    document.body.appendChild(minimizedButton);
-    
-    setupEventListeners();
-    loadSettings();
-    initDragFunction();
-    initLazyLoad();
-    
-    if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
-      initShippingMode();
-    } else if (state.isConverted) {
-      checkShippingDataStatus();
-    }
-  }
+}
 
 function bindLabelSizeSelector() {
   const sizeSelector = document.getElementById('bv-label-size-selector');
