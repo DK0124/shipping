@@ -2991,13 +2991,13 @@
       // 使用 html2canvas 截圖（只截圖單個元素）
       html2canvas(element, {
         backgroundColor: '#ffffff',
-        scale: 3, // 提高解析度
+        scale: 1, // 提高解析度
         logging: false,
         useCORS: true,
         allowTaint: true
       }).then(canvas => {
         // 轉換為高品質 JPG
-        const imageData = canvas.toDataURL('image/jpeg', 0.95);
+        const imageData = canvas.toDataURL('image/jpeg', 1);
         
         newBatch.data.push({
           ...data,
