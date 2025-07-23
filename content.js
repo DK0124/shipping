@@ -1808,35 +1808,74 @@
     }
         
     /* 只保留橫向分隔線，不要外框與內框線 */
-    .bv-label-page table {
-      border-collapse: collapse !important;
-      border: none !important; /* 移除表格外框 */
+    .bv-label-page table,
+    .bv-label-page th,
+    .bv-label-page td {
+      border: none !important;
+      box-shadow: none !important;
     }
     
-    .bv-label-page td,
-    .bv-label-page th {
-      border: none !important; /* 移除儲存格邊框 */
-      border-bottom: 1px solid #000 !important; /* 只保留底部橫線 */
+    /* 分隔線：只要每一筆商品 row 下方有純黑色的實心線 */
+    .bv-label-page .list-item {
+      border-bottom: 1.5px solid #000 !important;
+    }
+    .bv-label-page .list-item:last-child {
+      border-bottom: none !important;
     }
     
-    /* 移除標題列與項目列的額外框線 */
-    .bv-label-page .list-title td,
+    /* 表頭下方分隔線也是純黑色 */
+    .bv-label-page .list-title {
+      border-bottom: 2px solid #000 !important;
+      border-top: none !important;
+    }
+    
+    /* 不要有外框線也不要有上下以外的線 */
+    .bv-label-page .list-title th,
     .bv-label-page .list-item td {
       border: none !important;
-      border-bottom: 1px solid #000 !important;
     }
     
-    /* 列印時也套用相同效果 */
+    /* 費用區塊 (.order-fee, .hidePrice) 不要有任何分隔線 */
+    .bv-label-page .order-fee,
+    .bv-label-page .hidePrice {
+      border: none !important;
+    }
+    .bv-label-page .order-fee *,
+    .bv-label-page .hidePrice * {
+      border: none !important;
+      border-bottom: none !important;
+      border-top: none !important;
+    }
+    
+    /* 保護 @media print 時也是這樣 */
     @media print {
-      .bv-label-page table {
+      .bv-label-page table,
+      .bv-label-page th,
+      .bv-label-page td {
+        border: none !important;
+        box-shadow: none !important;
+      }
+      .bv-label-page .list-item {
+        border-bottom: 1.5px solid #000 !important;
+      }
+      .bv-label-page .list-item:last-child {
+        border-bottom: none !important;
+      }
+      .bv-label-page .list-title {
+        border-bottom: 2px solid #000 !important;
+        border-top: none !important;
+      }
+      .bv-label-page .list-title th,
+      .bv-label-page .list-item td {
         border: none !important;
       }
-      .bv-label-page td,
-      .bv-label-page th {
+      .bv-label-page .order-fee,
+      .bv-label-page .hidePrice,
+      .bv-label-page .order-fee *,
+      .bv-label-page .hidePrice * {
         border: none !important;
-        border-bottom: 1px solid #000 !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+        border-bottom: none !important;
+        border-top: none !important;
       }
     }
 
