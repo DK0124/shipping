@@ -4004,25 +4004,27 @@
           </div>
         `;
       }
-
-      // 監聽 storage 變化以自動更新
-      if (state.currentPageType === CONFIG.PAGE_TYPES.ORDER_PRINT && !state.storageListener) {
-        state.storageListener = chrome.storage.onChanged.addListener((changes, namespace) => {
-          if (namespace === 'local') {
-            // 檢查是否有物流單相關資料變化
-            if (changes.shippingDataBatches || changes.shippingData || changes.pdfShippingData) {
-              console.log('偵測到物流單資料更新');
-              checkShippingDataStatus();
-              updateBatchList();
-              
-              // 如果已轉換為標籤格式，自動更新預覽
-              if (state.isConverted) {
-                updatePreview();
-              }
+    });
+    
+    // 監聽 storage 變化以自動更新
+    if (state.currentPageType === CONFIG.PAGE_TYPES.ORDER_PRINT && !state.storageListener) {
+      state.storageListener = chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'local') {
+          // 檢查是否有物流單相關資料變化
+          if (changes.shippingDataBatches || changes.shippingData || changes.pdfShippingData) {
+            console.log('偵測到物流單資料更新');
+            checkShippingDataStatus();
+            updateBatchList();
+            
+            // 如果已轉換為標籤格式，自動更新預覽
+            if (state.isConverted) {
+              updatePreview();
             }
           }
-        });
-      }
+        }
+      });
+    }
+  }
       
   function setupCollapsibleCards() {
     document.querySelectorAll('.bv-card-title').forEach(title => {
