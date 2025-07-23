@@ -5389,10 +5389,24 @@
     saveSettings();
   }
   
-  // 初始化
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
+    // 初始化函數
+    function init() {
+      // 載入設定
+      loadSettings();
+      
+      // 初始化 UI
+      initUI();
+      
+      // 如果是物流單頁面，初始化物流單模式
+      if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
+        initShippingMode();
+      }
+    }
+    
+    // 初始化
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
