@@ -4878,33 +4878,40 @@
     
     const matchedCount = state.matchingResults.filter(r => r.matched).length;
     const totalCount = state.matchingResults.length;
-    const hasErrors = matchedCount < totalCount;
+    const failedResults = state.matchingResults.filter(r => !r.matched);
+    const hasErrors = failedResults.length > 0;
     
     if (totalCount === 0) {
       resultsEl.style.display = 'none';
       return;
     }
     
-    // 顯示錯誤通知
-    if (hasErrors) {
-      showNotification(`配對錯誤：${totalCount - matchedCount} 筆物流單未成功配對`, 'error');
+    // 如果全部成功，不顯示詳細清單
+    if (!hasErrors) {
+      resultsEl.style.display = 'block';
+      resultsEl.className = 'bv-matching-results';
+      resultsEl.innerHTML = `
+        <div class="bv-matching-results-title">
+          ✓ 配對結果：${matchedCount}/${totalCount} 筆全部成功
+        </div>
+      `;
+      return;
     }
     
+    // 顯示錯誤通知
+    showNotification(`配對錯誤：${failedResults.length} 筆物流單未成功配對`, 'error');
+    
     resultsEl.style.display = 'block';
-    resultsEl.className = hasErrors ? 'bv-matching-results error' : 'bv-matching-results';
+    resultsEl.className = 'bv-matching-results error';
     resultsEl.innerHTML = `
-      <div class="bv-matching-results-title ${hasErrors ? 'error' : ''}">
-        ${hasErrors ? '⚠️' : '✓'} 配對結果：${matchedCount}/${totalCount} 筆成功
+      <div class="bv-matching-results-title error">
+        ⚠️ 配對結果：${matchedCount}/${totalCount} 筆成功
       </div>
-      ${state.matchingResults.map(result => `
-        <div class="bv-matching-result-item ${result.matched ? '' : 'error'}">
-          ${result.matched ? '✓' : '❌'} 
-          訂單 ${result.orderNo || '無編號'} 
+      ${failedResults.map(result => `
+        <div class="bv-matching-result-item error">
+          ❌ 訂單 ${result.orderNo || '無編號'} 
           ${result.logisticsNo ? `(物流編號: ${result.logisticsNo})` : ''}
-          ${result.matched ? 
-            `→ 配對到物流單 ${result.shippingOrderNo}` : 
-            `→ 找不到對應的物流單`
-          }
+          → 找不到對應的物流單
         </div>
       `).join('')}
     `;
