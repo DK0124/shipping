@@ -2997,7 +2997,7 @@
         allowTaint: true
       }).then(canvas => {
         // 轉換為高品質 JPG
-        const imageData = canvas.toDataURL('image/webp', 1.0);
+        const imageData = canvas.toDataURL('image/jpeg', 0.95);
         
         newBatch.data.push({
           ...data,
@@ -3226,7 +3226,7 @@
           progressFill.style.width = `${progress}%`;
           
           const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 4 });
+          const viewport = page.getViewport({ scale: 2 });
           
           const canvas = document.createElement('canvas');
           const context = canvas.getContext('2d');
@@ -4610,7 +4610,7 @@
       wrapper.innerHTML = shippingInfo.data.html;
       
       if (!isStore) {
-        const scale = 1;
+        const scale = 0.85;
         wrapper.style.cssText = `
           transform: scale(${scale});
           transform-origin: center center;
