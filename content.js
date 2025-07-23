@@ -339,1946 +339,1858 @@
   
   function getPanelStyles() {
     return `
-    * {
-      outline: none !important;
-    }
-    
-    *:focus,
-    *:focus-visible,
-    *:focus-within,
-    *:active {
-      outline: none !important;
-      box-shadow: none !important;
-    }
-    
-    #bv-label-control-panel {
-      position: fixed;
-      right: 24px;
-      top: 24px;
-      bottom: 24px;
-      width: 360px;
-      z-index: 10000;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans TC', sans-serif;
-      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    .bv-glass-panel {
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(24px) saturate(140%);
-      -webkit-backdrop-filter: blur(24px) saturate(140%);
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.75);
-      box-shadow: 
-        0 10px 40px rgba(0, 0, 0, 0.05),
-        0 0 0 0.5px rgba(255, 255, 255, 0.6) inset,
-        0 0 60px rgba(255, 255, 255, 0.4);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    
-    #bv-label-control-panel.minimized {
-      display: none !important;
-    }
-    
-    .bv-minimized-button {
-      position: fixed;
-      bottom: 32px;
-      right: 32px;
-      width: 56px;
-      height: 56px;
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      color: white;
-      border: none;
-      border-radius: 28px;
-      box-shadow: 
-        0 4px 24px rgba(81, 138, 255, 0.3),
-        0 0 0 0.5px rgba(255, 255, 255, 0.2),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
-      cursor: pointer;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    .bv-minimized-button:hover {
-      transform: scale(1.05) translateY(-2px);
-      box-shadow: 
-        0 8px 32px rgba(81, 138, 255, 0.4),
-        0 0 0 0.5px rgba(255, 255, 255, 0.3),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
-    }
-    
-    .bv-minimized-button:active {
-      transform: scale(0.98);
-    }
-    
-    .bv-minimized-button .material-icons {
-      font-size: 28px;
-    }
-    
-    #bv-label-control-panel.minimized ~ .bv-minimized-button {
-      display: flex;
-    }
-    
-    .bv-panel-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(20px);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-shrink: 0;
-      cursor: move;
-      user-select: none;
-    }
-    
-    .bv-header-content {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex: 1;
-    }
-    
-    .bv-icon-wrapper {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      box-shadow: 
-        0 2px 8px rgba(81, 138, 255, 0.2),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-    }
-    
-    .bv-icon-wrapper.bv-label-mode {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      box-shadow: 
-        0 2px 8px rgba(16, 185, 129, 0.2),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-    }
-    
-    .bv-icon-wrapper.bv-shipping-mode {
-      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-      box-shadow: 
-        0 2px 8px rgba(255, 152, 0, 0.2),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-    }
-    
-    .bv-icon-wrapper .material-icons {
-      font-size: 22px;
-    }
-    
-    .bv-title-group {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    
-    .bv-panel-title {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 600;
-      color: #000;
-      letter-spacing: -0.02em;
-    }
-    
-    .bv-panel-subtitle {
-      font-size: 13px;
-      color: rgba(0, 0, 0, 0.5);
-      font-weight: 400;
-    }
-    
-    .bv-glass-button {
-      width: 32px;
-      height: 32px;
-      background: rgba(0, 0, 0, 0.03);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: rgba(0, 0, 0, 0.7);
-    }
-    
-    .bv-glass-button:hover {
-      background: rgba(0, 0, 0, 0.05);
-      transform: scale(1.04);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-    
-    .bv-glass-button:active {
-      transform: scale(0.96);
-    }
-    
-    .bv-glass-button .material-icons {
-      font-size: 20px;
-    }
-    
-    .bv-glass-button.bv-primary {
-      background: rgba(81, 138, 255, 0.08);
-      color: #518aff;
-      border-color: rgba(81, 138, 255, 0.15);
-    }
-    
-    .bv-glass-button.bv-primary:hover {
-      background: rgba(81, 138, 255, 0.12);
-    }
-    
-    .bv-panel-content-wrapper {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      overflow: hidden;
-    }
-    
-    .bv-panel-body {
-      padding: 24px;
-      overflow-y: auto;
-      flex: 1;
-      -webkit-overflow-scrolling: touch;
-    }
-    
-    .bv-primary-section {
-      margin-bottom: 28px;
-    }
-    
-    .bv-primary-button,
-    .bv-secondary-button {
-      width: 100%;
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      box-shadow: 
-        0 3px 12px rgba(81, 138, 255, 0.25),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px 20px;
-      color: white;
-    }
-    
-    .bv-secondary-button {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      box-shadow: 
-        0 3px 12px rgba(16, 185, 129, 0.25),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-    }
-    
-    .bv-primary-button:hover {
-      transform: translateY(-1px);
-      box-shadow: 
-        0 6px 20px rgba(81, 138, 255, 0.35),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
-    }
-    
-    .bv-secondary-button:hover {
-      transform: translateY(-1px);
-      box-shadow: 
-        0 6px 20px rgba(16, 185, 129, 0.35),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
-    }
-    
-    .bv-primary-button:active,
-    .bv-secondary-button:active {
-      transform: translateY(0);
-    }
-    
-    .bv-button-icon {
-      width: 44px;
-      height: 44px;
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(20px);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    
-    .bv-button-icon .material-icons {
-      font-size: 26px;
-    }
-    
-    .bv-button-content {
-      flex: 1;
-      text-align: left;
-    }
-    
-    .bv-button-title {
-      display: block;
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 2px;
-      letter-spacing: -0.01em;
-    }
-    
-    .bv-button-subtitle {
-      display: block;
-      font-size: 13px;
-      opacity: 0.8;
-    }
-    
-    .bv-settings-card {
-      background: rgba(248, 250, 252, 0.5);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 16px;
-      transition: all 0.3s ease;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    }
-    
-    .bv-settings-card:hover {
-      background: rgba(248, 250, 252, 0.7);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-    }
-    
-    .bv-card-title {
-      margin: 0 0 20px 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: #000;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      user-select: none;
-      position: relative;
-      padding-right: 28px;
-    }
-    
-    .bv-card-title .material-icons {
-      font-size: 18px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-collapse-icon {
-      position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.3s ease;
-    }
-    
-    .bv-collapse-icon .material-icons {
-      font-size: 20px;
-      color: rgba(0, 0, 0, 0.4);
-    }
-    
-    .bv-settings-card.collapsed .bv-collapse-icon {
-      transform: translateY(-50%) rotate(-90deg);
-    }
-    
-    .bv-card-content {
-      overflow: hidden;
-      transition: all 0.3s ease;
-    }
-    
-    .bv-settings-card.collapsed .bv-card-content {
-      max-height: 0 !important;
-      margin-top: -20px;
-      opacity: 0;
-    }
-    
-    .bv-setting-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 0;
-      border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
-    }
-    
-    .bv-setting-item:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-    
-    .bv-setting-item:first-child {
-      padding-top: 0;
-    }
-    
-    .bv-setting-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex: 1;
-    }
-    
-    .bv-setting-info .material-icons {
-      font-size: 20px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-setting-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    
-    .bv-setting-label {
-      font-size: 14px;
-      font-weight: 500;
-      color: #000;
-      letter-spacing: -0.01em;
-    }
-    
-    .bv-setting-desc {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-glass-switch {
-      position: relative;
-      display: inline-block;
-      width: 48px;
-      height: 28px;
-      cursor: pointer;
-    }
-    
-    .bv-glass-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    
-    .bv-switch-slider {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.1);
-      border-radius: 28px;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    .bv-switch-slider:before {
-      position: absolute;
-      content: "";
-      height: 24px;
-      width: 24px;
-      left: 2px;
-      bottom: 2px;
-      background: white;
-      border-radius: 50%;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    
-    .bv-glass-switch input:checked + .bv-switch-slider {
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-    }
-    
-    .bv-glass-switch input:checked + .bv-switch-slider:before {
-      transform: translateX(20px);
-    }
-    
-    .bv-glass-switch.disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .bv-glass-switch.disabled input {
-      cursor: not-allowed;
-    }
-    
-    .bv-slider-group {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    
-    .bv-slider-item {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding-bottom: 8px;
-    }
-    
-    .bv-slider-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-      color: #000;
-    }
-    
-    .bv-value-label {
-      background: rgba(81, 138, 255, 0.08);
-      color: #518aff;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', monospace;
-      min-width: 48px;
-      text-align: center;
-    }
-    
-    .bv-glass-slider {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 6px;
-      background: rgba(0, 0, 0, 0.06);
-      border-radius: 3px;
-      outline: none;
-      position: relative;
-      cursor: pointer;
-      margin: 12px 0;
-      overflow: visible;
-    }
-    
-    .bv-glass-slider:before {
-      content: '';
-      position: absolute;
-      height: 6px;
-      border-radius: 3px;
-      background: #518aff;
-      width: var(--value, 0%);
-      pointer-events: none;
-    }
-    
-    .bv-glass-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 20px;
-      height: 20px;
-      background: white;
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 
-        0 1px 4px rgba(0, 0, 0, 0.15),
-        0 0 0 0.5px rgba(0, 0, 0, 0.05);
-      transition: all 0.2s ease;
-      position: relative;
-      z-index: 1;
-    }
-    
-    .bv-glass-slider::-webkit-slider-thumb:hover {
-      transform: scale(1.1);
-      box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.2),
-        0 0 0 0.5px rgba(0, 0, 0, 0.08);
-    }
-    
-    .bv-glass-slider::-moz-range-thumb {
-      width: 20px;
-      height: 20px;
-      background: white;
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-      transition: all 0.2s ease;
-      border: none;
-    }
-    
-    .bv-preset-controls {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    
-    .bv-glass-select {
-      flex: 1;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(20px);
-      border: 0.5px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      padding: 0 12px;
-      font-size: 14px;
-      color: #000;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23666666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      padding-right: 32px;
-    }
-    
-    .bv-glass-select:hover {
-      background-color: rgba(255, 255, 255, 0.9);
-      border-color: rgba(0, 0, 0, 0.12);
-    }
-    
-    .bv-glass-select:focus {
-      background-color: white;
-      border-color: #518aff;
-      box-shadow: 0 0 0 3px rgba(81, 138, 255, 0.1);
-    }
-    
-    .bv-preset-buttons {
-      display: flex;
-      gap: 4px;
-      flex-shrink: 0;
-    }
-    
-    .bv-preset-save-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-      align-items: center;
-    }
-    
-    .bv-glass-input {
-      flex: 1;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(20px);
-      border: 0.5px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      padding: 0 12px;
-      font-size: 14px;
-      color: #000;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-glass-input::placeholder {
-      color: rgba(0, 0, 0, 0.4);
-    }
-    
-    .bv-glass-input:hover {
-      background-color: rgba(255, 255, 255, 0.9);
-      border-color: rgba(0, 0, 0, 0.12);
-    }
-    
-    .bv-glass-input:focus {
-      background-color: white;
-      border-color: #518aff;
-      box-shadow: 0 0 0 3px rgba(81, 138, 255, 0.1);
-    }
-    
-    .bv-panel-footer {
-      padding: 16px 24px 24px;
-      background: rgba(255, 255, 255, 0.6);
-      backdrop-filter: blur(20px);
-      border-top: 1px solid rgba(0, 0, 0, 0.05);
-      flex-shrink: 0;
-    }
-    
-    .bv-glass-action-button {
-      width: 100%;
-      height: 48px;
-      background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      box-shadow: 
-        0 3px 12px rgba(81, 138, 255, 0.25),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-      letter-spacing: -0.01em;
-    }
-    
-    .bv-glass-action-button:hover {
-      transform: translateY(-1px);
-      box-shadow: 
-        0 6px 20px rgba(81, 138, 255, 0.35),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
-    }
-    
-    .bv-glass-action-button:active {
-      transform: translateY(0);
-    }
-    
-    .bv-glass-action-button .material-icons {
-      font-size: 22px;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.15);
-      border-radius: 6px;
-      transition: background 0.2s ease;
-    }
-    
-    .bv-panel-body::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.25);
-    }
-    
-    .bv-notification {
-      position: fixed;
-      top: 32px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(50px) saturate(180%);
-      -webkit-backdrop-filter: blur(50px) saturate(180%);
-      padding: 16px 24px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.12),
-        0 0 0 0.5px rgba(0, 0, 0, 0.05),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.9);
-      z-index: 100001;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      letter-spacing: -0.01em;
-    }
-    
-    .bv-notification.success {
-      color: #248A3D;
-    }
-    
-    .bv-notification.warning {
-      color: #C04C00;
-    }
-    
-    .bv-notification.error {
-      color: #D70015;
-    }
-    
-    .bv-notification .material-icons {
-      font-size: 20px;
-    }
-    
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translate(-50%, -20px);
-      }
-      to {
-        opacity: 1;
-        transform: translate(-50%, 0);
-      }
-    }
-    
-    @keyframes slideUp {
-      from {
-        opacity: 1;
-        transform: translate(-50%, 0);
-      }
-      to {
-        opacity: 0;
-        transform: translate(-50%, -20px);
-      }
-    }
-    
-    /* 修改數量標示樣式 - 純黑色星號 */
-    .bv-qty-star {
-      font-weight: 700;
-      color: inherit;
-      position: relative;
-      white-space: nowrap;
-    }
-    
-    .bv-qty-star::before {
-      content: "★";
-      color: #000000;
-      font-size: 0.8em;
-      margin-right: 2px;
-      vertical-align: baseline;
-    }
-    
-    @media print {
-      .bv-qty-star {
-        font-weight: 700 !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        white-space: nowrap !important;
-      }
-      
-      .bv-qty-star::before {
-        content: "★" !important;
-        color: #000000 !important;
-      }
-    }
-    
-    .bv-counter-icon {
-      font-family: 'Material Icons';
-      font-weight: normal;
-      font-style: normal;
-      font-size: 20px;
-      display: inline-block;
-      line-height: 1;
-      text-transform: none;
-      letter-spacing: normal;
-      word-wrap: normal;
-      white-space: nowrap;
-      direction: ltr;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-      -moz-osx-font-smoothing: grayscale;
-      font-feature-settings: 'liga';
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-counter-icon::before {
-      content: "star";
-    }
-    
-    body.bv-converted {
-      width: auto !important;
-      max-width: none !important;
-      min-width: auto !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    
-    .bv-logo-upload-area {
-      border: 2px dashed rgba(0, 0, 0, 0.08);
-      border-radius: 12px;
-      padding: 32px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      background: rgba(248, 250, 252, 0.3);
-      margin-bottom: 20px;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .bv-logo-upload-area:hover {
-      border-color: #518aff;
-      background: rgba(81, 138, 255, 0.02);
-    }
-    
-    .bv-logo-upload-area.has-logo {
-      border-style: solid;
-      padding: 20px;
-      background: rgba(255, 255, 255, 0.6);
-    }
-    
-    .bv-logo-upload-area .material-icons {
-      vertical-align: middle;
-      line-height: 1;
-    }
-    
-    .bv-logo-preview {
-      max-width: 100%;
-      max-height: 120px;
-      margin: 0 auto;
-      display: block;
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-    }
-    
-    .bv-upload-hint {
-      color: rgba(0, 0, 0, 0.5);
-      font-size: 14px;
-      margin-top: 12px;
-      font-weight: 500;
-    }
-    
-    .bv-logo-controls {
-      display: none;
-    }
-    
-    .bv-logo-controls.active {
-      display: block;
-      animation: fadeIn 0.3s ease;
-    }
-    
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .bv-remove-logo-btn {
-      background: linear-gradient(135deg, #FF3B30 0%, #D70015 100%);
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 20px;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      letter-spacing: -0.01em;
-    }
-    
-    .bv-remove-logo-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
-    }
-    
-    .bv-remove-logo-btn .material-icons {
-      font-size: 18px;
-      vertical-align: middle;
-      line-height: 1;
-    }
-    
-    .label-background-logo {
-      position: absolute !important;
-      z-index: 1 !important;
-      pointer-events: none;
-      object-fit: contain !important;
-    }
-    
-    .bv-label-page > *:not(.label-background-logo) {
-      position: relative !important;
-      z-index: 2 !important;
-    }
-    
-    @media screen {
-      body.bv-converted {
-        background: white;
-        padding: 20px 0;
-      }
-      
-      .bv-page-container {
-        margin: 0 auto 20px;
-        width: fit-content;
-      }
-      
-      /* 預覽始終顯示 10×15 尺寸 */
-      .bv-label-page {
-        width: 377px !important;
-        height: 566px !important;
-        background: white;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-        position: relative;
-        overflow: hidden;
-        box-sizing: border-box;
-        padding: 18.9px !important;
-      }
-      
-      .bv-label-page.bv-shipping-page {
-        padding: 3mm !important;
-        background: #f5f5f5 !important;
-      }
-      
-      .bv-converted .order-content.bv-original {
-        display: none !important;
-      }
-    }
-    
-    @page {
-      size: auto;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    
-    @media print {
-      #bv-label-control-panel,
-      .bv-minimized-button {
-        display: none !important;
-      }
-      
-      body:not(.bv-converted) {
-        visibility: visible !important;
-      }
-      
-      body:not(.bv-converted) .order-content {
-        display: block !important;
-        visibility: visible !important;
-      }
-      
+      /* ===== 全域重置 ===== */
       * {
-        margin: 0 !important;
-        padding: 0 !important;
+        outline: none !important;
       }
       
-      html, body {
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
+      *:focus,
+      *:focus-visible,
+      *:focus-within,
+      *:active {
+        outline: none !important;
+        box-shadow: none !important;
       }
       
+      /* ===== 主體轉換樣式 ===== */
       body.bv-converted {
         width: auto !important;
         max-width: none !important;
         min-width: auto !important;
         margin: 0 !important;
         padding: 0 !important;
-        background: white !important;
       }
       
-      body.bv-converted .bv-original {
+      /* ===== 控制面板 ===== */
+      #bv-label-control-panel {
+        position: fixed;
+        right: 24px;
+        top: 24px;
+        bottom: 24px;
+        width: 360px;
+        z-index: 10000;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans TC', sans-serif;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      
+      #bv-label-control-panel.minimized {
         display: none !important;
       }
       
-      body.bv-converted .bv-page-container {
-        page-break-inside: avoid !important;
-        page-break-after: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
+      .bv-glass-panel {
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(24px) saturate(140%);
+        -webkit-backdrop-filter: blur(24px) saturate(140%);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.75);
+        box-shadow: 
+          0 10px 40px rgba(0, 0, 0, 0.05),
+          0 0 0 0.5px rgba(255, 255, 255, 0.6) inset,
+          0 0 60px rgba(255, 255, 255, 0.4);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
       }
       
-      /* 列印時自動適應紙張尺寸 */
-      body.bv-converted .bv-label-page {
-        width: 100% !important;
-        max-width: 100mm !important;
-        height: auto !important;
-        max-height: 150mm !important;
-        margin: 0 !important;
-        padding: 5mm !important;
-        box-sizing: border-box !important;
-        page-break-after: always !important;
-        page-break-inside: avoid !important;
-        box-shadow: none !important;
-        border: none !important;
-        position: relative !important;
-        display: block !important;
-        background: white !important;
+      /* ===== 最小化按鈕 ===== */
+      .bv-minimized-button {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+        color: white;
+        border: none;
+        border-radius: 28px;
+        box-shadow: 
+          0 4px 24px rgba(81, 138, 255, 0.3),
+          0 0 0 0.5px rgba(255, 255, 255, 0.2),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       }
       
-      body.bv-converted .bv-label-page.bv-shipping-page {
-        padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        page-break-after: always !important;
-        page-break-inside: avoid !important;
-        height: 150mm !important;
-        width: 100mm !important;
-        max-width: 100mm !important;
-        max-height: 150mm !important;
+      .bv-minimized-button:hover {
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: 
+          0 8px 32px rgba(81, 138, 255, 0.4),
+          0 0 0 0.5px rgba(255, 255, 255, 0.3),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
       }
       
-      body.bv-converted .bv-label-page:last-child {
-        page-break-after: auto !important;
+      .bv-minimized-button:active {
+        transform: scale(0.98);
       }
       
-      body.bv-converted .bv-page-content {
-        position: relative !important;
-        page-break-inside: avoid !important;
-        width: auto !important;
-        max-width: 90mm !important;
-        height: auto !important;
+      .bv-minimized-button .material-icons {
+        font-size: 28px;
       }
       
-      body.bv-converted .bv-shipping-page .bv-page-content {
-        width: 100% !important;
-        max-width: 100mm !important;
-        height: auto !important;
-        max-height: 150mm !important;
+      #bv-label-control-panel.minimized ~ .bv-minimized-button {
+        display: flex;
       }
       
-      body.bv-converted > *:not(.bv-page-container) {
-        display: none !important;
+      /* ===== 面板頭部 ===== */
+      .bv-panel-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        cursor: move;
+        user-select: none;
       }
-    }
-    
-    .bv-shipping-status {
-      background: rgba(248, 250, 252, 0.8);
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    
-    .bv-status-count {
-      font-size: 48px;
-      font-weight: 700;
-      color: #ff9800;
-      margin: 8px 0;
-    }
-    
-    .bv-status-text {
-      color: #666;
-      font-size: 14px;
-    }
-    
-    .bv-integration-status {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px;
-      background: rgba(248, 250, 252, 0.8);
-      border-radius: 8px;
-      margin-bottom: 16px;
-    }
-    
-    .bv-integration-status .material-icons {
-      font-size: 32px;
-    }
-    
-    .bv-integration-status.success {
-      background: rgba(16, 185, 129, 0.08);
-    }
-    
-    .bv-integration-status.success .material-icons {
-      color: #10b981;
-    }
-    
-    .bv-integration-status.warning {
-      background: rgba(255, 152, 0, 0.08);
-    }
-    
-    .bv-integration-status.warning .material-icons {
-      color: #ff9800;
-    }
-    
-    .bv-status-info h4 {
-      margin: 0 0 4px 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: #000;
-    }
-    
-    .bv-status-info p {
-      margin: 0;
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-pdf-upload-area {
-      border: 2px dashed #f44336;
-      border-color: rgba(244, 67, 54, 0.3);
-      background: rgba(255, 245, 245, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100px;
-      padding: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    
-    .bv-pdf-upload-area:hover {
-      border-color: #f44336;
-      background: rgba(255, 235, 235, 0.5);
-    }
-    
-    .bv-pdf-upload-area.has-file {
-      border-style: solid;
-      border-color: #4caf50;
-      background: rgba(241, 248, 233, 0.5);
-      min-height: auto;
-      padding: 12px 16px;
-    }
-    
-    #bv-pdf-upload-prompt {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    #bv-pdf-upload-prompt .material-icons {
-      font-size: 36px;
-      color: #f44336;
-    }
-    
-    #bv-pdf-upload-prompt .bv-upload-hint {
-      font-size: 13px;
-      color: rgba(0, 0, 0, 0.6);
-      font-weight: 500;
-    }
-    
-    .bv-pdf-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: #2e7d32;
-      width: 100%;
-    }
-    
-    .bv-pdf-info .material-icons {
-      font-size: 28px;
-      flex-shrink: 0;
-    }
-    
-    .bv-pdf-pages-info {
-      flex: 1;
-      min-width: 0;
-    }
-    
-    .bv-pdf-pages-info h4 {
-      margin: 0;
-      font-size: 13px;
-      color: #2e7d32;
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    
-    .bv-pdf-pages-info p {
-      margin: 2px 0 0 0;
-      font-size: 11px;
-      color: #558b2f;
-    }
-    
-    #bv-clear-shipping {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 8px 16px;
-      font-size: 13px;
-      font-weight: 500;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.8);
-      color: rgba(0, 0, 0, 0.7);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-    }
-    
-    #bv-clear-shipping .material-icons {
-      font-size: 18px;
-    }
-    
-    #bv-clear-shipping:hover {
-      background: rgba(255, 255, 255, 0.9);
-      border-color: rgba(0, 0, 0, 0.12);
-      transform: translateY(-1px);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    }
-    
-    .bv-conversion-progress {
-      margin-top: 16px;
-      padding: 16px;
-      background: rgba(232, 245, 233, 0.5);
-      border-radius: 8px;
-      display: none;
-    }
-    
-    .bv-conversion-progress.active {
-      display: block;
-    }
-    
-    .bv-conversion-progress h5 {
-      margin: 0 0 8px 0;
-      color: #2e7d32;
-      font-size: 14px;
-    }
-    
-    .bv-conversion-progress-bar {
-      height: 6px;
-      background: #c8e6c9;
-      border-radius: 3px;
-      overflow: hidden;
-      margin-bottom: 8px;
-    }
-    
-    .bv-conversion-progress-fill {
-      height: 100%;
-      background: #4caf50;
-      width: 0;
-      transition: width 0.3s ease;
-    }
-    
-    .bv-conversion-status {
-      font-size: 12px;
-      color: #558b2f;
-      text-align: center;
-    }
-    
-    .bv-shipping-page {
-      background: #f5f5f5 !important;
-    }
-    
-    .bv-shipping-content {
-      width: 100% !important;
-      height: 100% !important;
-      position: relative !important;
-      overflow: hidden !important;
-      background: white !important;
-      margin: 0 !important;
-      box-sizing: border-box !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    }
-    
-    .bv-shipping-wrapper-inner {
-      position: relative !important;
-      width: 100% !important;
-      height: 100% !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    }
-
-    /* 訂單標籤置於紙張底部置中 */
-    .bv-order-label {
-      position: absolute;
-      bottom: 15px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.95);
-      padding: 8px 16px;
-      border: 2px solid #333;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: bold;
-      z-index: 1000;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      white-space: nowrap;
-      line-height: 1.2;
-    }
-    
-    .bv-shipping-content img {
-      max-width: 100% !important;
-      max-height: 100% !important;
-      object-fit: contain !important;
-      display: block !important;
-      margin: auto !important;
-    }
-
-    /* 確保列印時也能正確顯示 */
-    @media print {
+      
+      .bv-header-content {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex: 1;
+      }
+      
+      .bv-icon-wrapper {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        box-shadow: 
+          0 2px 8px rgba(81, 138, 255, 0.2),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      }
+      
+      .bv-icon-wrapper.bv-label-mode {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 
+          0 2px 8px rgba(16, 185, 129, 0.2),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      }
+      
+      .bv-icon-wrapper.bv-shipping-mode {
+        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        box-shadow: 
+          0 2px 8px rgba(255, 152, 0, 0.2),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      }
+      
+      .bv-icon-wrapper .material-icons {
+        font-size: 22px;
+      }
+      
+      .bv-title-group {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      
+      .bv-panel-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #000;
+        letter-spacing: -0.02em;
+      }
+      
+      .bv-panel-subtitle {
+        font-size: 13px;
+        color: rgba(0, 0, 0, 0.5);
+        font-weight: 400;
+      }
+      
+      /* ===== 面板內容區域 ===== */
+      .bv-panel-content-wrapper {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+      }
+      
+      .bv-panel-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .bv-panel-body::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      .bv-panel-body::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      
+      .bv-panel-body::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 6px;
+        transition: background 0.2s ease;
+      }
+      
+      .bv-panel-body::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.25);
+      }
+      
+      .bv-panel-footer {
+        padding: 16px 24px 24px;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        flex-shrink: 0;
+      }
+      
+      /* ===== 按鈕樣式 ===== */
+      .bv-glass-button {
+        width: 32px;
+        height: 32px;
+        background: rgba(0, 0, 0, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: rgba(0, 0, 0, 0.7);
+      }
+      
+      .bv-glass-button:hover {
+        background: rgba(0, 0, 0, 0.05);
+        transform: scale(1.04);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      
+      .bv-glass-button:active {
+        transform: scale(0.96);
+      }
+      
+      .bv-glass-button .material-icons {
+        font-size: 20px;
+      }
+      
+      .bv-glass-button.bv-primary {
+        background: rgba(81, 138, 255, 0.08);
+        color: #518aff;
+        border-color: rgba(81, 138, 255, 0.15);
+      }
+      
+      .bv-glass-button.bv-primary:hover {
+        background: rgba(81, 138, 255, 0.12);
+      }
+      
+      .bv-primary-button,
+      .bv-secondary-button {
+        width: 100%;
+        background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        box-shadow: 
+          0 3px 12px rgba(81, 138, 255, 0.25),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        color: white;
+      }
+      
+      .bv-secondary-button {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 
+          0 3px 12px rgba(16, 185, 129, 0.25),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      }
+      
+      .bv-primary-button:hover,
+      .bv-secondary-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 
+          0 6px 20px rgba(81, 138, 255, 0.35),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
+      }
+      
+      .bv-primary-button:active,
+      .bv-secondary-button:active {
+        transform: translateY(0);
+      }
+      
+      .bv-button-icon {
+        width: 44px;
+        height: 44px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(20px);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      
+      .bv-button-icon .material-icons {
+        font-size: 26px;
+      }
+      
+      .bv-button-content {
+        flex: 1;
+        text-align: left;
+      }
+      
+      .bv-button-title {
+        display: block;
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 2px;
+        letter-spacing: -0.01em;
+      }
+      
+      .bv-button-subtitle {
+        display: block;
+        font-size: 13px;
+        opacity: 0.8;
+      }
+      
+      .bv-glass-action-button {
+        width: 100%;
+        height: 48px;
+        background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        box-shadow: 
+          0 3px 12px rgba(81, 138, 255, 0.25),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+        letter-spacing: -0.01em;
+      }
+      
+      .bv-glass-action-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 
+          0 6px 20px rgba(81, 138, 255, 0.35),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
+      }
+      
+      .bv-glass-action-button:active {
+        transform: translateY(0);
+      }
+      
+      .bv-glass-action-button .material-icons {
+        font-size: 22px;
+      }
+      
+      /* ===== 設定卡片 ===== */
+      .bv-settings-card {
+        background: rgba(248, 250, 252, 0.5);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      }
+      
+      .bv-settings-card:hover {
+        background: rgba(248, 250, 252, 0.7);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      }
+      
+      .bv-card-title {
+        margin: 0 0 20px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        padding-right: 28px;
+      }
+      
+      .bv-card-title .material-icons {
+        font-size: 18px;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      .bv-collapse-icon {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+      }
+      
+      .bv-collapse-icon .material-icons {
+        font-size: 20px;
+        color: rgba(0, 0, 0, 0.4);
+      }
+      
+      .bv-settings-card.collapsed .bv-collapse-icon {
+        transform: translateY(-50%) rotate(-90deg);
+      }
+      
+      .bv-card-content {
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+      
+      .bv-settings-card.collapsed .bv-card-content {
+        max-height: 0 !important;
+        margin-top: -20px;
+        opacity: 0;
+      }
+      
+      /* ===== 設定項目 ===== */
+      .bv-setting-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 0;
+        border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+      }
+      
+      .bv-setting-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+      
+      .bv-setting-item:first-child {
+        padding-top: 0;
+      }
+      
+      .bv-setting-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+      }
+      
+      .bv-setting-info .material-icons {
+        font-size: 20px;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      .bv-setting-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      
+      .bv-setting-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #000;
+        letter-spacing: -0.01em;
+      }
+      
+      .bv-setting-desc {
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      /* ===== 開關元件 ===== */
+      .bv-glass-switch {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 28px;
+        cursor: pointer;
+      }
+      
+      .bv-glass-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      
+      .bv-switch-slider {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 28px;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      
+      .bv-switch-slider:before {
+        position: absolute;
+        content: "";
+        height: 24px;
+        width: 24px;
+        left: 2px;
+        bottom: 2px;
+        background: white;
+        border-radius: 50%;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      
+      .bv-glass-switch input:checked + .bv-switch-slider {
+        background: linear-gradient(135deg, #518aff 0%, #0040ff 100%);
+      }
+      
+      .bv-glass-switch input:checked + .bv-switch-slider:before {
+        transform: translateX(20px);
+      }
+      
+      .bv-glass-switch.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      
+      .bv-glass-switch.disabled input {
+        cursor: not-allowed;
+      }
+      
+      /* ===== 滑桿元件 ===== */
+      .bv-slider-group {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .bv-slider-item {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding-bottom: 8px;
+      }
+      
+      .bv-slider-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        color: #000;
+      }
+      
+      .bv-value-label {
+        background: rgba(81, 138, 255, 0.08);
+        color: #518aff;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', monospace;
+        min-width: 48px;
+        text-align: center;
+      }
+      
+      .bv-glass-slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 6px;
+        background: rgba(0, 0, 0, 0.06);
+        border-radius: 3px;
+        outline: none;
+        position: relative;
+        cursor: pointer;
+        margin: 12px 0;
+        overflow: visible;
+      }
+      
+      .bv-glass-slider:before {
+        content: '';
+        position: absolute;
+        height: 6px;
+        border-radius: 3px;
+        background: #518aff;
+        width: var(--value, 0%);
+        pointer-events: none;
+      }
+      
+      .bv-glass-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 
+          0 1px 4px rgba(0, 0, 0, 0.15),
+          0 0 0 0.5px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+        position: relative;
+        z-index: 1;
+      }
+      
+      .bv-glass-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.1);
+        box-shadow: 
+          0 2px 8px rgba(0, 0, 0, 0.2),
+          0 0 0 0.5px rgba(0, 0, 0, 0.08);
+      }
+      
+      .bv-glass-slider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+        border: none;
+      }
+      
+      /* ===== 輸入元件 ===== */
+      .bv-glass-input {
+        flex: 1;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(20px);
+        border: 0.5px solid rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        padding: 0 12px;
+        font-size: 14px;
+        color: #000;
+        transition: all 0.2s ease;
+      }
+      
+      .bv-glass-input::placeholder {
+        color: rgba(0, 0, 0, 0.4);
+      }
+      
+      .bv-glass-input:hover {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-color: rgba(0, 0, 0, 0.12);
+      }
+      
+      .bv-glass-input:focus {
+        background-color: white;
+        border-color: #518aff;
+        box-shadow: 0 0 0 3px rgba(81, 138, 255, 0.1);
+      }
+      
+      /* ===== 通知樣式 ===== */
+      .bv-notification {
+        position: fixed;
+        top: 32px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(50px) saturate(180%);
+        -webkit-backdrop-filter: blur(50px) saturate(180%);
+        padding: 16px 24px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 
+          0 8px 32px rgba(0, 0, 0, 0.12),
+          0 0 0 0.5px rgba(0, 0, 0, 0.05),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.9);
+        z-index: 100001;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        letter-spacing: -0.01em;
+      }
+      
+      .bv-notification.success {
+        color: #248A3D;
+      }
+      
+      .bv-notification.warning {
+        color: #C04C00;
+      }
+      
+      .bv-notification.error {
+        color: #D70015;
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid rgba(215, 0, 21, 0.2);
+        box-shadow: 
+          0 8px 32px rgba(215, 0, 21, 0.2),
+          0 0 0 0.5px rgba(215, 0, 21, 0.1),
+          inset 0 0 0 0.5px rgba(255, 255, 255, 0.9);
+      }
+      
+      .bv-notification .material-icons {
+        font-size: 20px;
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -20px);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, 0);
+        }
+      }
+      
+      @keyframes slideUp {
+        from {
+          opacity: 1;
+          transform: translate(-50%, 0);
+        }
+        to {
+          opacity: 0;
+          transform: translate(-50%, -20px);
+        }
+      }
+      
+      /* ===== 數量標示 ===== */
+      .bv-qty-star {
+        font-weight: 700;
+        color: inherit;
+        position: relative;
+        white-space: nowrap;
+      }
+      
+      .bv-qty-star::before {
+        content: "★";
+        color: #000000;
+        font-size: 0.8em;
+        margin-right: 2px;
+        vertical-align: baseline;
+      }
+      
+      .bv-counter-icon {
+        font-family: 'Material Icons';
+        font-weight: normal;
+        font-style: normal;
+        font-size: 20px;
+        display: inline-block;
+        line-height: 1;
+        text-transform: none;
+        letter-spacing: normal;
+        word-wrap: normal;
+        white-space: nowrap;
+        direction: ltr;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: 'liga';
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      .bv-counter-icon::before {
+        content: "star";
+      }
+      
+      /* ===== 頁面容器與標籤頁 ===== */
+      @media screen {
+        body.bv-converted {
+          background: white;
+          padding: 20px 0;
+        }
+        
+        .bv-page-container {
+          margin: 0 auto 20px;
+          width: fit-content;
+        }
+        
+        .bv-label-page {
+          width: 377px !important;
+          height: 566px !important;
+          background: white;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+          margin-bottom: 20px;
+          position: relative;
+          overflow: hidden;
+          box-sizing: border-box;
+          padding: 18.9px !important;
+        }
+        
+        .bv-label-page.bv-shipping-page {
+          padding: 0 !important;
+          background: white !important;
+          position: relative !important;
+        }
+        
+        .bv-converted .order-content.bv-original {
+          display: none !important;
+        }
+      }
+      
+      /* ===== 物流單樣式 - 靠上顯示 ===== */
       .bv-shipping-content {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
         width: 100% !important;
         height: 100% !important;
         position: relative !important;
+        overflow: hidden !important;
+        background: white !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        padding-top: 20px !important;
       }
       
-      .bv-shipping-wrapper-inner,
-      .bv-store-shipping-content {
+      .bv-shipping-wrapper-inner {
+        position: relative !important;
         display: flex !important;
-        align-items: center !important;
+        align-items: flex-start !important;
         justify-content: center !important;
       }
-          
+      
       .bv-shipping-content img {
-        max-width: 100% !important;
-        max-height: 100% !important;
+        max-width: 90% !important;
+        max-height: 85% !important;
         object-fit: contain !important;
-        position: static !important;
-        margin: auto !important;
+        display: block !important;
       }
-
+      
+      /* 訂單標籤 - 統一樣式 */
       .bv-order-label {
         position: absolute !important;
-        bottom: 15px !important;
+        bottom: 20px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
+        background: white !important;
+        padding: 10px 20px !important;
+        border: 2px solid #333 !important;
+        border-radius: 6px !important;
+        font-size: 15px !important;
+        font-weight: bold !important;
         z-index: 1000 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+        white-space: nowrap !important;
+        line-height: 1.3 !important;
+        color: #000 !important;
+        font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif !important;
       }
-    }
-        
-    .bv-print-mode-selector {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    
-    .bv-mode-option {
-      display: flex;
-      align-items: center;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.6);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-mode-option:hover {
-      background: rgba(255, 255, 255, 0.8);
-      border-color: rgba(81, 138, 255, 0.2);
-    }
-    
-    .bv-mode-option.selected {
-      background: rgba(81, 138, 255, 0.08);
-      border-color: #518aff;
-    }
-    
-    .bv-mode-option input[type="radio"] {
-      margin-right: 12px;
-    }
-    
-    .bv-mode-info {
-      flex: 1;
-    }
-    
-    .bv-mode-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #000;
-      margin-bottom: 2px;
-    }
-    
-    .bv-mode-desc {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-sort-options {
-      display: flex;
-      gap: 12px;
-      margin-top: 12px;
-    }
-    
-    .bv-sort-group {
-      flex: 1;
-    }
-    
-    .bv-sort-label {
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.5);
-      margin-bottom: 4px;
-    }
-    
-    .bv-sort-buttons {
-      display: flex;
-      gap: 4px;
-    }
-    
-    .bv-sort-button {
-      flex: 1;
-      padding: 6px 12px;
-      background: rgba(255, 255, 255, 0.8);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 6px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-sort-button:hover {
-      background: rgba(255, 255, 255, 0.9);
-      border-color: rgba(0, 0, 0, 0.12);
-    }
-    
-    .bv-sort-button.active {
-      background: rgba(81, 138, 255, 0.08);
-      border-color: #518aff;
-      color: #518aff;
-    }
-    
-    /* 超商物流單特殊處理 */
-    .bv-store-shipping-content {
-      transform: scale(0.9);
-      transform-origin: center center;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      width: 100% !important;
-      height: 100% !important;
-    }
-    
-    .bv-store-shipping-content .div_frame,
-    .bv-store-shipping-content .print-area,
-    .bv-store-shipping-content .print_area,
-    .bv-store-shipping-content .printarea {
-      width: 100% !important;
-      height: auto !important;
-      max-width: none !important;
-      margin: 0 auto !important;
-    }
-    
-    /* 保護 QR Code */
-    .bv-store-shipping-content img[src*="qr"],
-    .bv-store-shipping-content img[src*="QR"],
-    .bv-store-shipping-content img[src*="barcode"],
-    .bv-store-shipping-content .qrcode,
-    .bv-store-shipping-content .QRCode {
-      image-rendering: pixelated !important;
-      image-rendering: -moz-crisp-edges !important;
-      image-rendering: crisp-edges !important;
-      width: auto !important;
-      height: auto !important;
-      max-width: 100% !important;
-    }
-    
-    /* 商品圖片欄位 - 加強版 */
-    .bv-product-image-col {
-      width: 8mm !important;
-      padding: 2px !important;
-      vertical-align: top !important;
-    }
-    
-    .bv-product-image-col img,
-    .bv-product-img {
-      display: block !important;
-      visibility: visible !important;
-      width: 7mm !important;
-      height: 7mm !important;
-      object-fit: cover !important;
-      border-radius: 2px !important;
-      max-width: 7mm !important;
-      min-width: 7mm !important;
-      max-height: 7mm !important;
-      min-height: 7mm !important;
-    }
-    
-    /* 確保 10×15 模式下圖片可見 */
-    .bv-label-page .bv-product-image-col img,
-    .bv-label-page .bv-product-img {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-    
-    @media print {
+      
+      /* 超商物流單特殊處理 */
+      .bv-store-shipping-content {
+        transform: scale(0.9);
+        transform-origin: center top;
+        display: flex !important;
+        align-items: flex-start !important;
+        justify-content: center !important;
+        width: 100% !important;
+        height: 100% !important;
+        padding-top: 10px !important;
+      }
+      
+      .bv-store-shipping-content .div_frame,
+      .bv-store-shipping-content .print-area,
+      .bv-store-shipping-content .print_area,
+      .bv-store-shipping-content .printarea {
+        width: 100% !important;
+        height: auto !important;
+        max-width: none !important;
+        margin: 0 auto !important;
+      }
+      
+      /* 保護 QR Code */
+      .bv-store-shipping-content img[src*="qr"],
+      .bv-store-shipping-content img[src*="QR"],
+      .bv-store-shipping-content img[src*="barcode"],
+      .bv-store-shipping-content .qrcode,
+      .bv-store-shipping-content .QRCode {
+        image-rendering: pixelated !important;
+        image-rendering: -moz-crisp-edges !important;
+        image-rendering: crisp-edges !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: 100% !important;
+      }
+      
+      /* ===== 底圖樣式 ===== */
+      .label-background-logo {
+        position: absolute !important;
+        z-index: 1 !important;
+        pointer-events: none;
+        object-fit: contain !important;
+      }
+      
+      .bv-label-page > *:not(.label-background-logo) {
+        position: relative !important;
+        z-index: 2 !important;
+      }
+      
+      .bv-logo-upload-area {
+        border: 2px dashed rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+        padding: 32px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(248, 250, 252, 0.3);
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .bv-logo-upload-area:hover {
+        border-color: #518aff;
+        background: rgba(81, 138, 255, 0.02);
+      }
+      
+      .bv-logo-upload-area.has-logo {
+        border-style: solid;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.6);
+      }
+      
+      .bv-logo-upload-area .material-icons {
+        vertical-align: middle;
+        line-height: 1;
+      }
+      
+      .bv-logo-preview {
+        max-width: 100%;
+        max-height: 120px;
+        margin: 0 auto;
+        display: block;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+      }
+      
+      .bv-upload-hint {
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 14px;
+        margin-top: 12px;
+        font-weight: 500;
+      }
+      
+      .bv-logo-controls {
+        display: none;
+      }
+      
+      .bv-logo-controls.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
+      
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .bv-remove-logo-btn {
+        background: linear-gradient(135deg, #FF3B30 0%, #D70015 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        letter-spacing: -0.01em;
+      }
+      
+      .bv-remove-logo-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
+      }
+      
+      .bv-remove-logo-btn .material-icons {
+        font-size: 18px;
+        vertical-align: middle;
+        line-height: 1;
+      }
+      
+      /* ===== 商品圖片 ===== */
+      .bv-product-image-col {
+        width: 8mm !important;
+        padding: 2px !important;
+        vertical-align: top !important;
+      }
+      
       .bv-product-image-col img,
       .bv-product-img {
         display: block !important;
         visibility: visible !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        opacity: 1 !important;
-      }
-    }
-
-    /* 預設管理優化 */
-    .bv-preset-controls {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: center;
-      width: 100%;
-    }
-    
-    .bv-preset-buttons {
-      display: flex;
-      gap: 4px;
-      flex-shrink: 0;
-    }
-    
-    .bv-preset-save-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      margin-top: 12px;
-      align-items: center;
-      width: 100%;
-    }
-    
-    /* 簡化的設定檔管理 */
-    .bv-preset-simple-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .bv-preset-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.6);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-preset-item:hover {
-      background: rgba(255, 255, 255, 0.8);
-      border-color: rgba(81, 138, 255, 0.2);
-    }
-    
-    .bv-preset-item.active {
-      background: rgba(81, 138, 255, 0.08);
-      border-color: #518aff;
-    }
-    
-    .bv-preset-name {
-      flex: 1;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    
-    .bv-preset-actions {
-      display: flex;
-      gap: 4px;
-    }
-    
-    .bv-preset-action-btn {
-      width: 28px;
-      height: 28px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 6px;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-preset-action-btn:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-    
-    .bv-preset-action-btn .material-icons {
-      font-size: 18px;
-      color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .bv-preset-action-btn.delete:hover .material-icons {
-      color: #f44336;
-    }
-    
-    .bv-new-preset-input {
-      width: 100%;
-      margin-top: 12px;
-    }
-    
-    /* 物流單批次管理 */
-    .bv-batch-list {
-      margin-top: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .bv-batch-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      background: rgba(248, 250, 252, 0.8);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 6px;
-      font-size: 12px;
-    }
-    
-    .bv-batch-item-info {
-      flex: 1;
-    }
-    
-    .bv-batch-item-name {
-      font-weight: 500;
-      color: #000;
-    }
-    
-    .bv-batch-item-count {
-      color: rgba(0, 0, 0, 0.5);
-      font-size: 11px;
-    }
-    
-    .bv-batch-actions {
-      display: flex;
-      gap: 4px;
-    }
-    
-    .bv-batch-order {
-      display: flex;
-      gap: 2px;
-    }
-    
-    .bv-batch-order-btn {
-      width: 24px;
-      height: 24px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-batch-order-btn:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-    
-    .bv-batch-order-btn:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-    
-    .bv-batch-order-btn .material-icons {
-      font-size: 16px;
-      color: rgba(0, 0, 0, 0.7);
-    }
-    
-    /* 物流單反序開關 */
-    .bv-reverse-shipping-option {
-      margin-top: 12px;
-      padding: 12px;
-      background: rgba(255, 245, 235, 0.5);
-      border: 1px solid rgba(255, 152, 0, 0.2);
-      border-radius: 8px;
-    }
-    
-    .bv-reverse-shipping-note {
-      font-size: 11px;
-      color: rgba(0, 0, 0, 0.5);
-      margin-top: 4px;
-    }
-    
-    /* 配對結果顯示 - 加強錯誤提示 */
-    .bv-matching-results {
-      margin-top: 16px;
-      padding: 12px;
-      background: rgba(240, 248, 255, 0.5);
-      border: 1px solid rgba(81, 138, 255, 0.2);
-      border-radius: 8px;
-    }
-    
-    .bv-matching-results.error {
-      background: rgba(255, 235, 235, 0.8);
-      border-color: rgba(244, 67, 54, 0.4);
-      animation: pulse 0.5s ease-in-out;
-    }
-    
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.02); }
-      100% { transform: scale(1); }
-    }
-    
-    .bv-matching-results-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #518aff;
-      margin-bottom: 8px;
-    }
-    
-    .bv-matching-results-title.error {
-      color: #f44336;
-      font-weight: 700;
-    }
-    
-    .bv-matching-result-item {
-      font-size: 11px;
-      color: rgba(0, 0, 0, 0.7);
-      padding: 4px 0;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    
-    .bv-matching-result-item.error {
-      color: #f44336;
-      font-weight: 500;
-      background: rgba(244, 67, 54, 0.05);
-      padding: 6px 8px;
-      margin: 4px 0;
-      border-radius: 4px;
-      border: none;
-    }
-    
-    .bv-matching-result-item:last-child {
-      border-bottom: none;
-    }
-    
-    /* 通知樣式加強 */
-    .bv-notification.error {
-      background: rgba(255, 255, 255, 0.98);
-      color: #D70015;
-      border: 1px solid rgba(215, 0, 21, 0.2);
-      box-shadow: 
-        0 8px 32px rgba(215, 0, 21, 0.2),
-        0 0 0 0.5px rgba(215, 0, 21, 0.1),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.9);
-    }
-    
-    /* 配對模式選擇 */
-    .bv-match-mode-selector {
-      margin-top: 12px;
-      padding: 12px;
-      background: rgba(248, 250, 252, 0.5);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-    }
-    
-    .bv-match-mode-title {
-      font-size: 13px;
-      font-weight: 500;
-      color: #000;
-      margin-bottom: 8px;
-    }
-    
-    .bv-match-mode-options {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    
-    .bv-match-mode-option {
-      display: flex;
-      align-items: center;
-      font-size: 12px;
-      color: rgba(0, 0, 0, 0.7);
-    }
-    
-    .bv-match-mode-option input[type="radio"] {
-      margin-right: 8px;
-    }
-
-    .bv-reload-shipping-btn {
-      margin-top: 12px;
-      padding: 8px 16px;
-      background: rgba(81, 138, 255, 0.08);
-      color: #518aff;
-      border: 1px solid rgba(81, 138, 255, 0.2);
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-reload-shipping-btn:hover {
-      background: rgba(81, 138, 255, 0.12);
-      transform: translateY(-1px);
-    }
-    
-    .bv-reload-shipping-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-    
-    .bv-reload-shipping-btn .material-icons {
-      font-size: 18px;
-    }
-    
-    /* 確保商品圖片顯示 */
-    .bv-product-img {
-      display: block !important;
-      visibility: visible !important;
-      width: 7mm !important;
-      height: 7mm !important;
-      object-fit: cover !important;
-      border-radius: 2px !important;
-    }
-    
-    @media print {
-      .bv-label-page.bv-shipping-page {
-        padding: 3mm !important;
+        width: 7mm !important;
+        height: 7mm !important;
+        object-fit: cover !important;
+        border-radius: 2px !important;
+        max-width: 7mm !important;
+        min-width: 7mm !important;
+        max-height: 7mm !important;
+        min-height: 7mm !important;
       }
       
-      .bv-product-img {
+      .bv-label-page .bv-product-image-col img,
+      .bv-label-page .bv-product-img {
         display: block !important;
         visibility: visible !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+        opacity: 1 !important;
       }
+      
+      /* ===== 其他元件樣式 ===== */
+      .bv-primary-section {
+        margin-bottom: 28px;
+      }
+      
+      .bv-shipping-status {
+        background: rgba(248, 250, 252, 0.8);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      
+      .bv-status-count {
+        font-size: 48px;
+        font-weight: 700;
+        color: #ff9800;
+        margin: 8px 0;
+      }
+      
+      .bv-status-text {
+        color: #666;
+        font-size: 14px;
+      }
+      
+      .bv-integration-status {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        background: rgba(248, 250, 252, 0.8);
+        border-radius: 8px;
+        margin-bottom: 16px;
+      }
+      
+      .bv-integration-status .material-icons {
+        font-size: 32px;
+      }
+      
+      .bv-integration-status.success {
+        background: rgba(16, 185, 129, 0.08);
+      }
+      
+      .bv-integration-status.success .material-icons {
+        color: #10b981;
+      }
+      
+      .bv-integration-status.warning {
+        background: rgba(255, 152, 0, 0.08);
+      }
+      
+      .bv-integration-status.warning .material-icons {
+        color: #ff9800;
+      }
+      
+      .bv-status-info h4 {
+        margin: 0 0 4px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+      }
+      
+      .bv-status-info p {
+        margin: 0;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      /* ===== PDF 上傳區域 ===== */
+      .bv-pdf-upload-area {
+        border: 2px dashed #f44336;
+        border-color: rgba(244, 67, 54, 0.3);
+        background: rgba(255, 245, 245, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100px;
+        padding: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      
+      .bv-pdf-upload-area:hover {
+        border-color: #f44336;
+        background: rgba(255, 235, 235, 0.5);
+      }
+      
+      .bv-pdf-upload-area.has-file {
+        border-style: solid;
+        border-color: #4caf50;
+        background: rgba(241, 248, 233, 0.5);
+        min-height: auto;
+        padding: 12px 16px;
+      }
+      
+      #bv-pdf-upload-prompt {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      #bv-pdf-upload-prompt .material-icons {
+        font-size: 36px;
+        color: #f44336;
+      }
+      
+      #bv-pdf-upload-prompt .bv-upload-hint {
+        font-size: 13px;
+        color: rgba(0, 0, 0, 0.6);
+        font-weight: 500;
+      }
+      
+      .bv-pdf-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #2e7d32;
+        width: 100%;
+      }
+      
+      .bv-pdf-info .material-icons {
+        font-size: 28px;
+        flex-shrink: 0;
+      }
+      
+      .bv-pdf-pages-info {
+        flex: 1;
+        min-width: 0;
+      }
+      
+      .bv-pdf-pages-info h4 {
+        margin: 0;
+        font-size: 13px;
+        color: #2e7d32;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .bv-pdf-pages-info p {
+        margin: 2px 0 0 0;
+        font-size: 11px;
+        color: #558b2f;
+      }
+      
+      #bv-clear-shipping {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.8);
+        color: rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+      }
+      
+      #bv-clear-shipping .material-icons {
+        font-size: 18px;
+      }
+      
+      #bv-clear-shipping:hover {
+        background: rgba(255, 255, 255, 0.9);
+        border-color: rgba(0, 0, 0, 0.12);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      }
+      
+      .bv-conversion-progress {
+        margin-top: 16px;
+        padding: 16px;
+        background: rgba(232, 245, 233, 0.5);
+        border-radius: 8px;
+        display: none;
+      }
+      
+      .bv-conversion-progress.active {
+        display: block;
+      }
+      
+      .bv-conversion-progress h5 {
+        margin: 0 0 8px 0;
+        color: #2e7d32;
+        font-size: 14px;
+      }
+      
+      .bv-conversion-progress-bar {
+        height: 6px;
+        background: #c8e6c9;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 8px;
+      }
+      
+      .bv-conversion-progress-fill {
+        height: 100%;
+        background: #4caf50;
+        width: 0;
+        transition: width 0.3s ease;
+      }
+      
+      .bv-conversion-status {
+        font-size: 12px;
+        color: #558b2f;
+        text-align: center;
+      }
+      
+      /* ===== 列印模式 ===== */
+      .bv-print-mode-selector {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      
+      .bv-mode-option {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .bv-mode-option:hover {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(81, 138, 255, 0.2);
+      }
+      
+      .bv-mode-option.selected {
+        background: rgba(81, 138, 255, 0.08);
+        border-color: #518aff;
+      }
+      
+      .bv-mode-option input[type="radio"] {
+        margin-right: 12px;
+      }
+      
+      .bv-mode-info {
+        flex: 1;
+      }
+      
+      .bv-mode-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 2px;
+      }
+      
+      .bv-mode-desc {
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      /* ===== 排序選項 ===== */
+      .bv-sort-options {
+        display: flex;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      
+      .bv-sort-group {
+        flex: 1;
+      }
+      
+      .bv-sort-label {
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.5);
+        margin-bottom: 4px;
+      }
+      
+      .bv-sort-buttons {
+        display: flex;
+        gap: 4px;
+      }
+      
+      .bv-sort-button {
+        flex: 1;
+        padding: 6px 12px;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .bv-sort-button:hover {
+        background: rgba(255, 255, 255, 0.9);
+        border-color: rgba(0, 0, 0, 0.12);
+      }
+      
+      .bv-sort-button.active {
+        background: rgba(81, 138, 255, 0.08);
+        border-color: #518aff;
+        color: #518aff;
+      }
+      
+      /* ===== 其他功能元件 ===== */
+      .bv-batch-list {
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .bv-batch-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        background: rgba(248, 250, 252, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 6px;
+        font-size: 12px;
+      }
+      
+      .bv-batch-item-info {
+        flex: 1;
+      }
+      
+      .bv-batch-item-name {
+        font-weight: 500;
+        color: #000;
+      }
+      
+      .bv-batch-item-count {
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 11px;
+      }
+      
+      .bv-batch-actions {
+        display: flex;
+        gap: 4px;
+      }
+      
+      .bv-batch-order {
+        display: flex;
+        gap: 2px;
+      }
+      
+      .bv-batch-order-btn {
+        width: 24px;
+        height: 24px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+      
+      .bv-batch-order-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
+      
+      .bv-batch-order-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+      
+      .bv-batch-order-btn .material-icons {
+        font-size: 16px;
+        color: rgba(0, 0, 0, 0.7);
+      }
+      
+      /* ===== 配對結果 ===== */
+      .bv-matching-results {
+        margin-top: 16px;
+        padding: 12px;
+        background: rgba(240, 248, 255, 0.5);
+        border: 1px solid rgba(81, 138, 255, 0.2);
+        border-radius: 8px;
+      }
+      
+      .bv-matching-results.error {
+        background: rgba(255, 235, 235, 0.8);
+        border-color: rgba(244, 67, 54, 0.4);
+        animation: pulse 0.5s ease-in-out;
+      }
+      
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+      }
+      
+      .bv-matching-results-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #518aff;
+        margin-bottom: 8px;
+      }
+      
+      .bv-matching-results-title.error {
+        color: #f44336;
+        font-weight: 700;
+      }
+      
+      .bv-matching-result-item {
+        font-size: 11px;
+        color: rgba(0, 0, 0, 0.7);
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      }
+      
+      .bv-matching-result-item.error {
+        color: #f44336;
+        font-weight: 500;
+        background: rgba(244, 67, 54, 0.05);
+        padding: 6px 8px;
+        margin: 4px 0;
+        border-radius: 4px;
+        border: none;
+      }
+      
+      .bv-matching-result-item:last-child {
+        border-bottom: none;
+      }
+      
+      /* ===== 其他小元件 ===== */
+      .bv-reverse-shipping-option {
+        margin-top: 12px;
+        padding: 12px;
+        background: rgba(255, 245, 235, 0.5);
+        border: 1px solid rgba(255, 152, 0, 0.2);
+        border-radius: 8px;
+      }
+      
+      .bv-reverse-shipping-note {
+        font-size: 11px;
+        color: rgba(0, 0, 0, 0.5);
+        margin-top: 4px;
+      }
+      
+      .bv-match-mode-selector {
+        margin-top: 12px;
+        padding: 12px;
+        background: rgba(248, 250, 252, 0.5);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+      }
+      
+      .bv-match-mode-title {
+        font-size: 13px;
+        font-weight: 500;
+        color: #000;
+        margin-bottom: 8px;
+      }
+      
+      .bv-match-mode-options {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      
+      .bv-match-mode-option {
+        display: flex;
+        align-items: center;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.7);
+      }
+      
+      .bv-match-mode-option input[type="radio"] {
+        margin-right: 8px;
+      }
+      
+      /* ===== 預設管理 ===== */
+      .bv-preset-controls {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        align-items: center;
+        width: 100%;
+      }
+      
+      .bv-preset-buttons {
+        display: flex;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      
+      .bv-preset-save-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        margin-top: 12px;
+        align-items: center;
+        width: 100%;
+      }
+      
+      .bv-preset-simple-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .bv-preset-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        transition: all 0.2s ease;
+      }
+      
+      .bv-preset-item:hover {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: rgba(81, 138, 255, 0.2);
+      }
+      
+      .bv-preset-item.active {
+        background: rgba(81, 138, 255, 0.08);
+        border-color: #518aff;
+      }
+      
+      .bv-preset-name {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      
+      .bv-preset-actions {
+        display: flex;
+        gap: 4px;
+      }
+      
+      .bv-preset-action-btn {
+        width: 28px;
+        height: 28px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+      }
+      
+      .bv-preset-action-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
+      
+      .bv-preset-action-btn .material-icons {
+        font-size: 18px;
+        color: rgba(0, 0, 0, 0.5);
+      }
+      
+      .bv-preset-action-btn.delete:hover .material-icons {
+        color: #f44336;
+      }
+      
+      .bv-new-preset-input {
+        width: 100%;
+        margin-top: 12px;
+      }
+      
+      /* ===== 模態框 ===== */
+      .bv-capacity-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 100000;
+      }
+      
+      .bv-modal-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+      }
+      
+      .bv-modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        max-width: 400px;
+        width: 90%;
+      }
+      
+      .bv-modal-content h3 {
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        color: #f44336;
+      }
+      
+      .bv-modal-content p {
+        margin: 0 0 12px 0;
+        font-size: 14px;
+        color: #666;
+      }
+      
+      .bv-modal-options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 20px;
+      }
+      
+      .bv-modal-btn {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .bv-modal-btn.clear-all {
+        background: #f44336;
+        color: white;
+      }
+      
+      .bv-modal-btn.cancel {
+        background: #f5f5f5;
+        color: #666;
+      }
+      
+      .bv-modal-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
+      
+      /* ===== 列印樣式 ===== */
+      @page {
+        size: auto;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      @media print {
+        #bv-label-control-panel,
+        .bv-minimized-button {
+          display: none !important;
+        }
+        
+        body:not(.bv-converted) {
+          visibility: visible !important;
+        }
+        
+        body:not(.bv-converted) .order-content {
+          display: block !important;
+          visibility: visible !important;
+        }
+        
+        * {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
+        
+        body.bv-converted {
+          width: auto !important;
+          max-width: none !important;
+          min-width: auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: white !important;
+        }
+        
+        body.bv-converted .bv-original {
+          display: none !important;
+        }
+        
+        body.bv-converted .bv-page-container {
+          page-break-inside: avoid !important;
+          page-break-after: auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        /* 出貨明細列印 */
+        body.bv-converted .bv-label-page {
+          width: 100% !important;
+          max-width: 100mm !important;
+          height: auto !important;
+          max-height: 150mm !important;
+          margin: 0 !important;
+          padding: 5mm !important;
+          box-sizing: border-box !important;
+          page-break-after: always !important;
+          page-break-inside: avoid !important;
+          box-shadow: none !important;
+          border: none !important;
+          position: relative !important;
+          display: block !important;
+          background: white !important;
+        }
+        
+        /* 物流單列印 - 重點修改 */
+        body.bv-converted .bv-label-page.bv-shipping-page {
+          padding: 0 !important;
+          display: block !important;
+          page-break-after: always !important;
+          page-break-inside: avoid !important;
+          height: 150mm !important;
+          width: 100mm !important;
+          max-width: 100mm !important;
+          max-height: 150mm !important;
+          position: relative !important;
+          background: white !important;
+        }
+        
+        body.bv-converted .bv-label-page:last-child {
+          page-break-after: auto !important;
+        }
+        
+        body.bv-converted .bv-page-content {
+          position: relative !important;
+          page-break-inside: avoid !important;
+          width: auto !important;
+          max-width: 90mm !important;
+          height: auto !important;
+        }
+        
+        body.bv-converted .bv-shipping-page .bv-page-content {
+          width: 100% !important;
+          max-width: 100mm !important;
+          height: auto !important;
+          max-height: 150mm !important;
+        }
+        
+        body.bv-converted > *:not(.bv-page-container) {
+          display: none !important;
+        }
+        
+        /* 列印時物流單靠上顯示 */
+        .bv-shipping-content {
+          width: 100% !important;
+          height: 100% !important;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: flex-start !important;
+          padding-top: 20px !important;
+          position: relative !important;
+          background: white !important;
+        }
+        
+        .bv-shipping-wrapper-inner,
+        .bv-store-shipping-content {
+          display: flex !important;
+          align-items: flex-start !important;
+          justify-content: center !important;
+        }
+        
+        .bv-shipping-content img {
+          max-width: 90% !important;
+          max-height: 85% !important;
+          object-fit: contain !important;
+          display: block !important;
+        }
+        
+        /* 列印時訂單標籤一致性 */
+        .bv-order-label {
+          position: absolute !important;
+          bottom: 20px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          background: white !important;
+          padding: 10px 20px !important;
+          border: 2px solid #333 !important;
+          border-radius: 6px !important;
+          font-size: 15px !important;
+          font-weight: bold !important;
+          z-index: 1000 !important;
+          color: #000 !important;
+          font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        /* 數量標示列印 */
+        .bv-qty-star {
+          font-weight: 700 !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          white-space: nowrap !important;
+        }
+        
+        .bv-qty-star::before {
+          content: "★" !important;
+          color: #000000 !important;
+        }
+        
+        /* 商品圖片列印 */
+        .bv-product-image-col img,
+        .bv-product-img {
+          display: block !important;
+          visibility: visible !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          opacity: 1 !important;
+        }
+        
+        /* 底圖列印 */
+        .label-background-logo {
+          opacity: ${state.logoOpacity ? state.logoOpacity / 100 : 0.2} !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+      `;
     }
-
-    /* 容量警告模態框 */
-    .bv-capacity-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 100000;
-    }
-    
-    .bv-modal-backdrop {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
-    }
-    
-    .bv-modal-content {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-      max-width: 400px;
-      width: 90%;
-    }
-    
-    .bv-modal-content h3 {
-      margin: 0 0 16px 0;
-      font-size: 18px;
-      color: #f44336;
-    }
-    
-    .bv-modal-content p {
-      margin: 0 0 12px 0;
-      font-size: 14px;
-      color: #666;
-    }
-    
-    .bv-modal-options {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 20px;
-    }
-    
-    .bv-modal-btn {
-      padding: 12px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .bv-modal-btn.delete-old {
-      background: #ff9800;
-      color: white;
-    }
-    
-    .bv-modal-btn.clear-all {
-      background: #f44336;
-      color: white;
-    }
-    
-    .bv-modal-btn.cancel {
-      background: #f5f5f5;
-      color: #666;
-    }
-    
-    .bv-modal-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }    
-    `;
-    
-    document.head.appendChild(labelStyles);
-  }
   
   function getPanelContent() {
     const collapseIcon = '<span class="bv-collapse-icon"><span class="material-icons">expand_more</span></span>';
