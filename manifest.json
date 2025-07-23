@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "BV SHOP 出貨助手",
-  "version": "5.4.0",
+  "version": "2.5.0",
   "description": "BV SHOP 出貨標籤列印輔助工具",
+  "author": "Derek Yu",
   "permissions": [
     "storage",
     "activeTab"
@@ -38,5 +39,21 @@
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
+  }
+
+  "action": {
+    "default_title": "BV SHOP 條碼列印排版器",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+
+  "minimum_chrome_version": "88",
+  
+  "offline_enabled": true,
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
