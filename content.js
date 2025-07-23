@@ -2991,30 +2991,27 @@
       // 使用 html2canvas 截圖（只截圖單個元素）
       html2canvas(element, {
         backgroundColor: '#ffffff',
-        scale: 3, // 提高解析度
+        scale: 5, //
         logging: false,
         useCORS: true,
-        allowTaint: true
+        allowTaint: true,
+        // 加入更多優化選項
+        imageTimeout: 0,
+        removeContainer: true,
+        foreignObjectRendering: false,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
       }).then(canvas => {
-        // 轉換為高品質 JPG
-        const imageData = canvas.toDataURL('image/jpeg', 0.95);
-        
-        newBatch.data.push({
-          ...data,
-          imageData: imageData,
-          index: newBatch.data.length,
-          width: canvas.width,
-          height: canvas.height
-        });
-        
-        processedCount++;
-        checkComplete();
-      }).catch(err => {
-        console.error('截圖失敗:', err);
-        processedCount++;
-        checkComplete();
+        // 使用 WebP 格式
+        canvas.toBlob(blob => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const imageData = reader.result;
+            // ... 處理圖片資料
+          };
+          reader.readAsDataURL(blob);
+        }, 'image/webp', 1.0); // 98% 品質
       });
-    });
     
     function checkComplete() {
       if (processedCount === totalToProcess) {
@@ -3238,7 +3235,7 @@
           const page = await pdf.getPage(pageNum);
           
           // 使用高解析度渲染（但不要太高，避免記憶體問題）
-          const scale = 3; // 3倍解析度通常足夠
+          const scale = 5;
           const viewport = page.getViewport({ scale: scale });
           
           // 創建 canvas
