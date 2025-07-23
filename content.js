@@ -1810,6 +1810,23 @@
       }
     }
     
+    .bv-label-page .list-item {
+      border-bottom: 1px solid #000 !important;
+    }
+    .bv-label-page .list-item:last-child {
+      border-bottom: none !important;
+    }
+    
+    /* 不要有外框線和內框線 */
+    .bv-label-page table,
+    .bv-label-page th,
+    .bv-label-page td,
+    .bv-label-page .list-title th,
+    .bv-label-page .list-item td {
+      border: none !important;
+      box-shadow: none !important;
+    }
+
     /* 預設管理優化 */
     .bv-preset-controls {
       display: grid;
