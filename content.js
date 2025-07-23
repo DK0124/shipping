@@ -3324,31 +3324,6 @@
       modal.remove();
     });
   }
-
-    function checkComplete() {
-      if (processedCount === totalToProcess) {
-        if (newBatch.data.length > 0) {
-          state.shippingDataBatches.push(newBatch);
-          mergeAllBatchData();
-          updateBatchList();
-          updateShippingCount();
-          
-          // 立即儲存
-          chrome.storage.local.set({
-            shippingDataBatches: state.shippingDataBatches,
-            shippingData: state.shippingData,
-            pdfShippingData: state.pdfShippingData,
-            shippingProvider: state.currentProvider,
-            shippingTimestamp: new Date().toISOString()
-          }, () => {
-            showNotification(`成功抓取並儲存 ${newBatch.data.length} 張物流單`);
-          });
-        } else {
-          showNotification('沒有成功抓取到物流單', 'warning');
-        }
-      }
-    }
-  }
   
   function setupLabelModeEventListeners() {
     const hideExtraInfoCheckbox = document.getElementById('bv-hide-extra-info');
@@ -5811,36 +5786,6 @@
     }
   }
     
-  function applyQuantityHighlight() {
-    const containers = state.isConverted ? 
-      document.querySelectorAll('.bv-label-page') : 
-      document.querySelectorAll('.order-content');
-    
-    containers.forEach(container => {
-      container.querySelectorAll('.list-item').forEach(item => {
-        let qtyCell = null;
-        const cells = item.querySelectorAll('td');
-        
-        // 從右往左數第二個開始尋找純數字的欄位（排除最右邊的價格欄位）
-        for (let i = cells.length - 2; i >= 0; i--) {
-          const text = cells[i].textContent.trim();
-          if (/^\d+$/.test(text) && parseInt(text) > 0) {
-            qtyCell = cells[i];
-            break;
-          }
-        }
-        
-        if (qtyCell && !qtyCell.querySelector('.bv-qty-star')) {
-          const qty = parseInt(qtyCell.textContent.trim());
-          
-          if (qty >= 2) {
-            qtyCell.innerHTML = `<span class="bv-qty-star">${qty}</span>`;
-          }
-        }
-      });
-    });
-  }
-  
   function removeQuantityHighlight() {
     document.querySelectorAll('.bv-qty-star').forEach(star => {
       const parent = star.parentElement;
