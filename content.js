@@ -1809,13 +1809,6 @@
         opacity: 1 !important;
       }
     }
-    
-      tr.list-item {
-        border-bottom: 1px solid #000 !important;
-      }
-      tr.list-item:last-child {
-        border-bottom: none !important;
-      }
 
     /* 預設管理優化 */
     .bv-preset-controls {
