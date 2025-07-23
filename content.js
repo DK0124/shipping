@@ -2991,7 +2991,7 @@
       // 使用 html2canvas 截圖（只截圖單個元素）
       html2canvas(element, {
         backgroundColor: '#ffffff',
-        scale: 5, // 提高解析度
+        scale: 3, // 提高解析度
         logging: false,
         useCORS: true,
         allowTaint: true
@@ -3226,7 +3226,7 @@
           progressFill.style.width = `${progress}%`;
           
           const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 2 });
+          const viewport = page.getViewport({ scale: 4 });
           
           const canvas = document.createElement('canvas');
           const context = canvas.getContext('2d');
@@ -4610,7 +4610,7 @@
       wrapper.innerHTML = shippingInfo.data.html;
       
       if (!isStore) {
-        const scale = 0.85;
+        const scale = 1;
         wrapper.style.cssText = `
           transform: scale(${scale});
           transform-origin: center center;
