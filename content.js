@@ -316,9 +316,11 @@
     if (document.getElementById('bv-label-control-panel')) return;
     
     const panel = document.createElement('div');
-    panel.id = 'bv-label-control-panel';
-    panel.innerHTML = getPanelContent();
-    
+    panel.innerHTML = getLabelModePanelContent();
+    document.body.appendChild(panel);
+    bindLabelSizeSelector(); // ← 確保在插入 HTML 後才綁定事件
+  }
+  
     const style = document.createElement('style');
     style.textContent = getPanelStyles();
     document.head.appendChild(style);
@@ -343,7 +345,21 @@
       checkShippingDataStatus();
     }
   }
-  
+
+  function bindLabelSizeSelector() {
+    const sizeSelector = document.getElementById('bv-label-size-selector');
+    if (!sizeSelector) {
+      console.warn('無法找到 bv-label-size-selector 元素');
+      return;
+    }
+    sizeSelector.value = state.selectedLabelSize;
+    sizeSelector.addEventListener('change', (e) => {
+      state.selectedLabelSize = e.target.value;
+      document.body.setAttribute('data-label-size', state.selectedLabelSize);
+      console.log('✅ 已選擇紙張尺寸:', state.selectedLabelSize);
+    });
+  }
+ 
   function getPanelStyles() {
     return `
       @media print {
@@ -2206,44 +2222,43 @@
   
   function getLabelModePanelContent(collapseIcon) {
     return `
-      <div class="bv-glass-panel">
-        <div class="bv-panel-header">
-          <div class="bv-header-content">
-            <div class="bv-icon-wrapper bv-label-mode">
-              <span class="material-icons">label</span>
-            </div>
-            <div class="bv-title-group">
-              <h3 class="bv-panel-title">BV SHOP 出貨助手</h3>
-              <span class="bv-panel-subtitle">標籤模式</span>
-            </div>
-          </div>
-          <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
-            <span class="material-icons">remove</span>
-          </button>
-        </div>
-  
-        <div class="bv-panel-content-wrapper">
-          <div class="bv-panel-body">
-  
-            <!-- 紙張尺寸選擇器 -->
-            <div class="bv-settings-card">
-              <h4 class="bv-card-title">紙張尺寸</h4>
-              <div class="bv-card-content">
-                <div class="bv-setting-item">
-                  <div class="bv-setting-info">
-                    <span class="material-icons">aspect_ratio</span>
-                    <div class="bv-setting-text">
-                      <span class="bv-setting-label">標籤尺寸</span>
-                      <span class="bv-setting-desc">選擇紙張大小</span>
-                    </div>
-                  </div>
-                  <select id="bv-label-size-selector" class="bv-glass-select">
-                    <option value="10x15">10×15cm（預設）</option>
-                    <option value="10x10">10×10cm</option>
-                  </select>
+          <div class="bv-glass-panel">
+            <div class="bv-panel-header">
+              <div class="bv-header-content">
+                <div class="bv-icon-wrapper bv-label-mode">
+                  <span class="material-icons">label</span>
+                </div>
+                <div class="bv-title-group">
+                  <h3 class="bv-panel-title">BV SHOP 出貨助手</h3>
+                  <span class="bv-panel-subtitle">標籤模式</span>
                 </div>
               </div>
+              <button class="bv-glass-button bv-minimize-btn" id="bv-minimize-btn">
+                <span class="material-icons">remove</span>
+              </button>
             </div>
+    
+            <div class="bv-panel-content-wrapper">
+              <div class="bv-panel-body">
+    
+                <div class="bv-settings-card">
+                  <h4 class="bv-card-title">紙張尺寸</h4>
+                  <div class="bv-card-content">
+                    <div class="bv-setting-item">
+                      <div class="bv-setting-info">
+                        <span class="material-icons">aspect_ratio</span>
+                        <div class="bv-setting-text">
+                          <span class="bv-setting-label">標籤尺寸</span>
+                          <span class="bv-setting-desc">選擇紙張大小</span>
+                        </div>
+                      </div>
+                      <select id="bv-label-size-selector" class="bv-glass-select">
+                        <option value="10x15">10×15cm（預設）</option>
+                        <option value="10x10">10×10cm</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
                 
         <div class="bv-panel-content-wrapper">
           <div class="bv-panel-body">
@@ -5527,16 +5542,7 @@
   
   // 初始化
   function initialize() {
-    document.addEventListener('DOMContentLoaded', () => {
-      const sizeSelector = document.getElementById('bv-label-size-selector');
-    
-      if (sizeSelector) {
-        sizeSelector.addEventListener('change', (e) => {
-          state.selectedLabelSize = e.target.value;
-          document.body.setAttribute('data-label-size', state.selectedLabelSize);
-          console.log('已選擇紙張尺寸:', state.selectedLabelSize);
-        });
-      } else {
-        console.error("找不到元素：bv-label-size-selector");
-      }
+    createControlPanel();
+    bindLabelSizeSelector();
+  }
     });
