@@ -1810,6 +1810,16 @@
       }
     }
     
+    .bv-label-page .list-item {
+      border-bottom: 1px solid #000 !important;
+    }
+    
+    @media print {
+      .bv-label-page .list-item {
+        border-bottom: 1px solid #000 !important;
+      }
+    }
+
     /* 預設管理優化 */
     .bv-preset-controls {
       display: grid;
