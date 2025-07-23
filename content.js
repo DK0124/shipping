@@ -3198,11 +3198,10 @@
     });
   }
   
-  // 優化截圖函數
   async function captureElementWithOptimization(element, data) {
     try {
-      // 降低解析度以減少檔案大小
-      const scale = 3; // 從 5 降到 3
+      // 進一步降低解析度
+      const scale = 2; // 從 3 降到 2
       
       const canvas = await html2canvas(element, {
         backgroundColor: '#ffffff',
@@ -3217,7 +3216,7 @@
         windowHeight: element.scrollHeight
       });
       
-      // 使用 JPEG 格式並調整品質來控制檔案大小
+      // 使用 JPEG 格式並降低品質
       return new Promise((resolve) => {
         canvas.toBlob(blob => {
           const reader = new FileReader();
@@ -3235,7 +3234,7 @@
             resolve(data);
           };
           reader.readAsDataURL(blob);
-        }, 'image/jpeg', 0.85); // 使用 JPEG 85% 品質
+        }, 'image/jpeg', 0.7); // 從 0.85 降到 0.7
       });
     } catch (error) {
       console.error('截圖錯誤:', error);
