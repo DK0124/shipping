@@ -2981,39 +2981,55 @@
       }
     });
     
+    showNotification(`開始抓取 ${totalToProcess} 張物流單...`, 'info');
+    
     // 處理每個物流單元素
     elements.forEach((element, index) => {
       const data = extractShippingData(element);
-      if (!data || !data.orderNo || processedOrders.has(data.orderNo)) return;
+      if (!data || !data.orderNo || processedOrders.has(data.orderNo)) {
+        processedCount++;
+        checkComplete();
+        return;
+      }
       
       processedOrders.add(data.orderNo);
       
-      // 使用 html2canvas 截圖（只截圖單個元素）
+      // 使用 html2canvas 截圖
       html2canvas(element, {
         backgroundColor: '#ffffff',
-        scale: 5, //
+        scale: 5, // 高解析度
         logging: false,
         useCORS: true,
         allowTaint: true,
-        // 加入更多優化選項
         imageTimeout: 0,
         removeContainer: true,
         foreignObjectRendering: false,
         windowWidth: element.scrollWidth,
         windowHeight: element.scrollHeight
       }).then(canvas => {
-        // 使用 WebP 格式
+        // 轉換為 WebP 格式
         canvas.toBlob(blob => {
           const reader = new FileReader();
           reader.onloadend = () => {
-            const imageData = reader.result;
-            // ... 處理圖片資料
+            // 將截圖資料加入物流單資料
+            data.imageData = reader.result;
+            data.imageFormat = 'webp';
+            data.width = canvas.width;
+            data.height = canvas.height;
+            
+            newBatch.data.push(data);
+            processedCount++;
+            checkComplete();
           };
           reader.readAsDataURL(blob);
-        }, 'image/webp', 1.0);
+        }, 'image/webp', 0.98); // 98% 品質
+      }).catch(error => {
+        console.error('截圖失敗:', error);
+        processedCount++;
+        checkComplete();
       });
     });
-
+  
     function checkComplete() {
       if (processedCount === totalToProcess) {
         if (newBatch.data.length > 0) {
@@ -3032,6 +3048,8 @@
           }, () => {
             showNotification(`成功抓取並儲存 ${newBatch.data.length} 張物流單`);
           });
+        } else {
+          showNotification('沒有成功抓取到物流單', 'warning');
         }
       }
     }
