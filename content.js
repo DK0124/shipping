@@ -188,23 +188,6 @@
   fontLink.rel = 'stylesheet';
   fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap';
   document.head.appendChild(fontLink);
-
-  // 載入必要的庫
-  function loadRequiredLibraries() {
-    // 載入 html2canvas
-    if (typeof html2canvas === 'undefined') {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-      document.head.appendChild(script);
-    }
-    
-    // 載入 PDF.js
-    if (typeof pdfjsLib === 'undefined') {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-      document.head.appendChild(script);
-    }
-  }
     
   // 初始化 Lazy Load
   function initLazyLoad() {
@@ -5166,14 +5149,11 @@
   // 檢查頁面是否已載入完成
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      // 載入必要的庫
-      loadRequiredLibraries();
       // 偵測當前頁面類型
       detectCurrentPage();
     });
   } else {
     // 頁面已載入，直接執行
-    loadRequiredLibraries();
     detectCurrentPage();
   }
 })();
