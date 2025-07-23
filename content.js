@@ -5166,14 +5166,11 @@
   // 檢查頁面是否已載入完成
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      // state.currentPageType 已經在開頭設定了，不需要再次檢測
-      insertStyles();
       createControlPanel();
       loadSettings();
     });
   } else {
     // 頁面已載入，直接執行
-    insertStyles();
     createControlPanel();
     loadSettings();
   }
