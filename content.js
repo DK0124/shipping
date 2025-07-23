@@ -5162,6 +5162,20 @@
     }, 3000);
   }
   
-  // 初始化
-  init();
+  // 初始化 - 直接執行，不需要 init 函數
+  // 檢查頁面是否已載入完成
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      detectPageType();
+      insertStyles();
+      createControlPanel();
+      loadSettings();
+    });
+  } else {
+    // 頁面已載入，直接執行
+    detectPageType();
+    insertStyles();
+    createControlPanel();
+    loadSettings();
+  }
 })();
