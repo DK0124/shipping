@@ -1990,13 +1990,25 @@
       margin-top: 4px;
     }
     
-    /* 配對結果顯示 */
+    /* 配對結果顯示 - 加強錯誤提示 */
     .bv-matching-results {
       margin-top: 16px;
       padding: 12px;
       background: rgba(240, 248, 255, 0.5);
       border: 1px solid rgba(81, 138, 255, 0.2);
       border-radius: 8px;
+    }
+    
+    .bv-matching-results.error {
+      background: rgba(255, 235, 235, 0.8);
+      border-color: rgba(244, 67, 54, 0.4);
+      animation: pulse 0.5s ease-in-out;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
     }
     
     .bv-matching-results-title {
@@ -2006,6 +2018,11 @@
       margin-bottom: 8px;
     }
     
+    .bv-matching-results-title.error {
+      color: #f44336;
+      font-weight: 700;
+    }
+    
     .bv-matching-result-item {
       font-size: 11px;
       color: rgba(0, 0, 0, 0.7);
@@ -2013,8 +2030,29 @@
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
     
+    .bv-matching-result-item.error {
+      color: #f44336;
+      font-weight: 500;
+      background: rgba(244, 67, 54, 0.05);
+      padding: 6px 8px;
+      margin: 4px 0;
+      border-radius: 4px;
+      border: none;
+    }
+    
     .bv-matching-result-item:last-child {
       border-bottom: none;
+    }
+    
+    /* 通知樣式加強 */
+    .bv-notification.error {
+      background: rgba(255, 255, 255, 0.98);
+      color: #D70015;
+      border: 1px solid rgba(215, 0, 21, 0.2);
+      box-shadow: 
+        0 8px 32px rgba(215, 0, 21, 0.2),
+        0 0 0 0.5px rgba(215, 0, 21, 0.1),
+        inset 0 0 0 0.5px rgba(255, 255, 255, 0.9);
     }
     
     /* 配對模式選擇 */
@@ -2413,13 +2451,13 @@
                   <div class="bv-match-mode-options">
                     <label class="bv-match-mode-option">
                       <input type="radio" name="match-mode" value="index" ${state.matchMode === 'index' ? 'checked' : ''}>
-                      索引配對（依順序）
+                      依順序排列
                     </label>
                     <label class="bv-match-mode-option">
                       <input type="radio" name="match-mode" value="logistics" ${state.matchMode === 'logistics' ? 'checked' : ''}>
                       物流編號配對
                     </label>
-                  </div>
+                  </div>                  
                 </div>
                 
                 <div class="bv-sort-options" id="bv-sort-options" style="display:none;">
