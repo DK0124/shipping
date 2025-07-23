@@ -3289,9 +3289,6 @@
         <p>新批次包含 ${newBatch.data.length} 張物流單</p>
         
         <div class="bv-modal-options">
-          <button class="bv-modal-btn delete-old" id="bv-delete-oldest">
-            刪除最舊的批次並重試
-          </button>
           <button class="bv-modal-btn clear-all" id="bv-clear-all-shipping">
             清除所有物流單資料
           </button>
@@ -3305,15 +3302,6 @@
     document.body.appendChild(modal);
     
     // 綁定事件
-    document.getElementById('bv-delete-oldest').addEventListener('click', () => {
-      if (state.shippingDataBatches.length > 0) {
-        // 刪除最舊的批次
-        state.shippingDataBatches.shift();
-        modal.remove();
-        saveWithCapacityCheck(newBatch);
-      }
-    });
-    
     document.getElementById('bv-clear-all-shipping').addEventListener('click', () => {
       chrome.storage.local.remove(['shippingDataBatches', 'shippingData', 'pdfShippingData'], () => {
         state.shippingDataBatches = [];
