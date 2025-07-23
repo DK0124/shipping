@@ -3282,7 +3282,7 @@
               canvas.toBlob(
                 resolve, 
                 'image/webp', 
-                0.95  // 95% 品質，在品質和檔案大小之間取得平衡
+                1.0
               );
             });
             
