@@ -325,8 +325,23 @@ function createControlPanel() {
   panel.innerHTML = getLabelModePanelContent();
   document.body.appendChild(panel);
 
-  // 插入最小化按鈕...（省略，照你原本寫法）
+  // 插入最小化按鈕（如尚未存在）
+  if (!document.getElementById('bv-minimized-button')) {
+    const minimizedButton = document.createElement('button');
+    minimizedButton.className = 'bv-minimized-button';
+    minimizedButton.id = 'bv-minimized-button';
+    minimizedButton.innerHTML = '<span class="material-icons">apps</span>';
+    minimizedButton.style.display = 'none';
+    minimizedButton.onclick = restorePanel;
+    document.body.appendChild(minimizedButton);
+  }
 
+  // 綁定最小化行為
+  const minimizeBtn = document.getElementById('bv-minimize-btn');
+  if (minimizeBtn) {
+    minimizeBtn.addEventListener('click', minimizePanel);
+  }
+  
   // 註冊下拉選單
   bindLabelSizeSelector();
 
@@ -5538,9 +5553,17 @@ function bindLabelSizeSelector() {
     }, 3000);
   }
   
-  // 初始化
+  /** ========== 初始化入口 ========== */
   function initialize() {
+    // 進階可加入偵測頁面或判斷邏輯
     createControlPanel();
-    bindLabelSizeSelector();
   }
-    });
+
+  // 啟動
+  if (document.readyState === "loading") {
+    document.addEventListener('DOMContentLoaded', initialize);
+  } else {
+    initialize();
+  }
+
+})();
