@@ -1635,18 +1635,20 @@
     
     .bv-order-label {
       position: absolute;
-      top: 15px;        /* 調整垂直位置 - 往下移一點 */
-      left: 15px;       /* 調整水平位置 - 往右移一點 */
+      left: 50%;               /* 水平置中用 */
+      bottom: 15px;            /* 距離底部 15px */
+      top: auto;               /* 移除 top 定位 */
+      transform: translateX(-50%);  /* 讓 left:50% 真正置中 */
       background: rgba(255, 255, 255, 0.95);
-      padding: 8px 16px;    /* 增加內距，讓字不會貼邊 */
-      border: 2px solid #333;    /* 加粗邊框 */
+      padding: 8px 16px;
+      border: 2px solid #333;
       border-radius: 4px;
-      font-size: 14px;      /* 稍微加大字體 */
+      font-size: 14px;
       font-weight: bold;
       z-index: 1000;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       white-space: nowrap;
-      line-height: 1.2;     /* 增加行高，讓字體更舒適 */
+      line-height: 1.2;
     }
         
     .bv-print-mode-selector {
