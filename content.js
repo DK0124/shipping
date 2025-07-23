@@ -3200,8 +3200,7 @@
   
   async function captureElementWithOptimization(element, data) {
     try {
-      // 進一步降低解析度
-      const scale = 2; // 從 3 降到 2
+      const scale = 3;
       
       const canvas = await html2canvas(element, {
         backgroundColor: '#ffffff',
@@ -3216,25 +3215,31 @@
         windowHeight: element.scrollHeight
       });
       
-      // 使用 JPEG 格式並降低品質
+      // 直接使用 WebP 格式
       return new Promise((resolve) => {
         canvas.toBlob(blob => {
+          if (!blob) {
+            console.error('無法創建 blob');
+            resolve(null);
+            return;
+          }
+          
           const reader = new FileReader();
           reader.onloadend = () => {
             data.imageData = reader.result;
-            data.imageFormat = 'jpeg';
+            data.imageFormat = 'webp';
             data.width = canvas.width;
             data.height = canvas.height;
             data.scale = scale;
             
             // 計算檔案大小
             const sizeKB = (reader.result.length / 1024).toFixed(2);
-            console.log(`物流單 ${data.orderNo} 大小: ${sizeKB}KB`);
+            console.log(`物流單 ${data.orderNo} 大小: ${sizeKB}KB (WebP)`);
             
             resolve(data);
           };
           reader.readAsDataURL(blob);
-        }, 'image/jpeg', 0.7); // 從 0.85 降到 0.7
+        }, 'image/webp', 0.8);
       });
     } catch (error) {
       console.error('截圖錯誤:', error);
