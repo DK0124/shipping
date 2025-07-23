@@ -5166,12 +5166,14 @@
   // 檢查頁面是否已載入完成
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      createControlPanel();
-      loadSettings();
+      // 載入必要的庫
+      loadRequiredLibraries();
+      // 偵測當前頁面類型
+      detectCurrentPage();
     });
   } else {
     // 頁面已載入，直接執行
-    createControlPanel();
-    loadSettings();
+    loadRequiredLibraries();
+    detectCurrentPage();
   }
 })();
