@@ -1371,6 +1371,12 @@
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        page-break-after: always !important;
+        page-break-inside: avoid !important;
+        height: 150mm !important;
+        width: 100mm !important;
+        max-width: 100mm !important;
+        max-height: 150mm !important;
       }
       
       body.bv-converted .bv-label-page:last-child {
@@ -1608,27 +1614,27 @@
     }
     
     .bv-shipping-content {
-      width: 100%;
-      height: 100%;
-      position: relative;
-      overflow: hidden;
-      background: white;
-      margin: 0;
-      box-sizing: border-box;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 100% !important;
+      height: 100% !important;
+      position: relative !important;
+      overflow: hidden !important;
+      background: white !important;
+      margin: 0 !important;
+      box-sizing: border-box !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
     
     .bv-shipping-wrapper-inner {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: relative !important;
+      width: 100% !important;
+      height: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
-    
+
     /* 訂單標籤置於紙張底部置中 */
     .bv-order-label {
       position: absolute;
@@ -1647,6 +1653,14 @@
       line-height: 1.2;
     }
     
+    .bv-shipping-content img {
+      max-width: 100% !important;
+      max-height: 100% !important;
+      object-fit: contain !important;
+      display: block !important;
+      margin: auto !important;
+    }
+
     /* 確保列印時也能正確顯示 */
     @media print {
       .bv-shipping-content {
@@ -1655,6 +1669,7 @@
         justify-content: center !important;
         width: 100% !important;
         height: 100% !important;
+        position: relative !important;
       }
       
       .bv-shipping-wrapper-inner,
@@ -1663,11 +1678,13 @@
         align-items: center !important;
         justify-content: center !important;
       }
-      
+          
       .bv-shipping-content img {
         max-width: 100% !important;
         max-height: 100% !important;
         object-fit: contain !important;
+        position: static !important;
+        margin: auto !important;
       }
 
       .bv-order-label {
@@ -1675,6 +1692,7 @@
         bottom: 15px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
+        z-index: 1000 !important;
       }
     }
         
@@ -1773,11 +1791,11 @@
     .bv-store-shipping-content {
       transform: scale(0.9);
       transform-origin: center center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 100% !important;
+      height: 100% !important;
     }
     
     .bv-store-shipping-content .div_frame,
@@ -5005,6 +5023,8 @@
         width: 100%;
         height: 100%;
         object-fit: contain;
+        display: block;
+        margin: auto;
       `;
       content.appendChild(img);
     } else if (shippingInfo.data.html) {
