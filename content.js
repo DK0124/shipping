@@ -1290,16 +1290,6 @@
         background: #f5f5f5 !important;
       }
       
-      .bv-shipping-content {
-        width: calc(100% - 6mm);
-        height: calc(100% - 6mm);
-        position: relative;
-        overflow: hidden;
-        background: white;
-        margin: 0;
-        box-sizing: border-box;
-      }
-      
       .bv-converted .order-content.bv-original {
         display: none !important;
       }
@@ -1378,6 +1368,9 @@
       
       body.bv-converted .bv-label-page.bv-shipping-page {
         padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
       }
       
       body.bv-converted .bv-label-page:last-child {
@@ -1622,6 +1615,9 @@
       background: white;
       margin: 0;
       box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     
     .bv-shipping-wrapper-inner {
@@ -1633,12 +1629,12 @@
       justify-content: center;
     }
     
+    /* 訂單標籤置於紙張底部置中 */
     .bv-order-label {
       position: absolute;
-      left: 50%;               /* 水平置中用 */
-      bottom: 15px;            /* 距離底部 15px */
-      top: auto;               /* 移除 top 定位 */
-      transform: translateX(-50%);  /* 讓 left:50% 真正置中 */
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
       background: rgba(255, 255, 255, 0.95);
       padding: 8px 16px;
       border: 2px solid #333;
@@ -1649,6 +1645,37 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       white-space: nowrap;
       line-height: 1.2;
+    }
+    
+    /* 確保列印時也能正確顯示 */
+    @media print {
+      .bv-shipping-content {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+      
+      .bv-shipping-wrapper-inner,
+      .bv-store-shipping-content {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      
+      .bv-shipping-content img {
+        max-width: 100% !important;
+        max-height: 100% !important;
+        object-fit: contain !important;
+      }
+
+      .bv-order-label {
+        position: absolute !important;
+        bottom: 15px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+      }
     }
         
     .bv-print-mode-selector {
@@ -1746,6 +1773,11 @@
     .bv-store-shipping-content {
       transform: scale(0.9);
       transform-origin: center center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
     }
     
     .bv-store-shipping-content .div_frame,
