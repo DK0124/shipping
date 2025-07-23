@@ -3149,24 +3149,6 @@
     // 初始化列印模式 UI
     updatePrintModeUI();
 
-  // 每 5 秒自動檢查一次是否有新的物流單資料
-    if (state.autoCheckInterval) {
-      clearInterval(state.autoCheckInterval);
-    }
-    
-    state.autoCheckInterval = setInterval(() => {
-      // 只在沒有資料時自動檢查
-      if (state.shippingData.length === 0 && state.pdfShippingData.length === 0) {
-        chrome.storage.local.get(['shippingDataBatches', 'shippingData', 'pdfShippingData'], (result) => {
-          if (result.shippingDataBatches || result.shippingData || result.pdfShippingData) {
-            checkShippingDataStatus();
-            updatePreview();
-          }
-        });
-      }
-    }, 5000);
-  }
-  
   function resetPdfUploadArea() {
     const uploadPrompt = document.getElementById('bv-pdf-upload-prompt');
     const pdfInfo = document.getElementById('bv-pdf-info');
