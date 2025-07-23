@@ -346,19 +346,21 @@
     }
   }
 
-  function bindLabelSizeSelector() {
-    const sizeSelector = document.getElementById('bv-label-size-selector');
-    if (!sizeSelector) {
-      console.warn('無法找到 bv-label-size-selector 元素');
-      return;
-    }
-    sizeSelector.value = state.selectedLabelSize;
-    sizeSelector.addEventListener('change', (e) => {
-      state.selectedLabelSize = e.target.value;
-      document.body.setAttribute('data-label-size', state.selectedLabelSize);
-      console.log('✅ 已選擇紙張尺寸:', state.selectedLabelSize);
-    });
+function bindLabelSizeSelector() {
+  const sizeSelector = document.getElementById('bv-label-size-selector');
+  if (!sizeSelector) {
+    console.warn('找不到尺寸選擇器');
+    return;
   }
+
+  sizeSelector.value = state.selectedLabelSize || '10x15';
+
+  sizeSelector.addEventListener('change', (e) => {
+    state.selectedLabelSize = e.target.value;
+    document.body.setAttribute('data-label-size', state.selectedLabelSize);
+    console.log('✅ 已選擇紙張尺寸:', state.selectedLabelSize);
+  });
+}
  
   function getPanelStyles() {
     return `
