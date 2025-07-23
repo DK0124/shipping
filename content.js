@@ -5389,20 +5389,202 @@
     saveSettings();
   }
   
-    // 直接初始化
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        loadSettings();
-        initUI();
-        if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
-          initShippingMode();
+  // ===== 輔助函數 =====
+  
+  function hideOriginalControls() {
+    // 隱藏原始控制面板
+    const originalControls = document.querySelector('.ignore-print');
+    if (originalControls) {
+      originalControls.style.display = 'none';
+    }
+  }
+  
+  function updateRangeProgress(slider) {
+    if (!slider) return;
+    const min = parseFloat(slider.min) || 0;
+    const max = parseFloat(slider.max) || 100;
+    const value = parseFloat(slider.value) || 0;
+    const percentage = ((value - min) / (max - min)) * 100;
+    slider.style.setProperty('--value', percentage + '%');
+  }
+  
+  function toggleQuantityHighlight(e) {
+    state.highlightQuantity = e.target.checked;
+    saveSettings();
+    
+    if (state.highlightQuantity) {
+      applyQuantityHighlight();
+    } else {
+      removeQuantityHighlight();
+    }
+  }
+  
+  function applyQuantityHighlight() {
+    document.querySelectorAll('.bv-label-page').forEach(page => {
+      const rows = page.querySelectorAll('tr:not(:first-child)');
+      rows.forEach(row => {
+        const qtyCell = row.querySelector('td:nth-child(4)');
+        if (qtyCell) {
+          const qty = parseInt(qtyCell.textContent);
+          if (qty >= 2 && !qtyCell.querySelector('.bv-qty-star')) {
+            qtyCell.innerHTML = `<span class="bv-qty-star">${qty}</span>`;
+          }
         }
       });
-    } else {
-      loadSettings();
-      initUI();
-      if (state.currentPageType === CONFIG.PAGE_TYPES.SHIPPING) {
-        initShippingMode();
+    });
+  }
+  
+  function removeQuantityHighlight() {
+    document.querySelectorAll('.bv-qty-star').forEach(star => {
+      const parent = star.parentElement;
+      if (parent) {
+        parent.textContent = star.textContent;
       }
+    });
+  }
+  
+  function triggerOriginalPageUpdate() {
+    // 觸發原始頁面的更新邏輯
+    const event = new Event('change', { bubbles: true });
+    
+    // 更新字體大小
+    const fontSizeSelect = document.querySelector('.ignore-print #fontSize');
+    if (fontSizeSelect) {
+      fontSizeSelect.dispatchEvent(event);
     }
-  })();
+    
+    // 更新其他設定
+    const checkboxes = document.querySelectorAll('.ignore-print input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+      checkbox.dispatchEvent(event);
+    });
+  }
+  
+  function updateLabelStyles() {
+    // 移除舊的樣式
+    const oldStyle = document.getElementById('bv-label-dynamic-styles');
+    if (oldStyle) {
+      oldStyle.remove();
+    }
+    
+    // 創建新的樣式
+    const style = document.createElement('style');
+    style.id = 'bv-label-dynamic-styles';
+    
+    let css = '';
+    
+    // 底圖樣式
+    if (state.logoDataUrl) {
+      const size = state.logoSize || 30;
+      const x = state.logoX || 50;
+      const y = state.logoY || 50;
+      const opacity = (state.logoOpacity || 20) / 100;
+      
+      css += `
+        .label-background-logo {
+          position: absolute !important;
+          left: ${x}% !important;
+          top: ${y}% !important;
+          transform: translate(-50%, -50%) !important;
+          width: ${size}% !important;
+          height: auto !important;
+          opacity: ${opacity} !important;
+          pointer-events: none !important;
+          z-index: 1 !important;
+        }
+        
+        .label-background-logo img {
+          width: 100% !important;
+          height: auto !important;
+          display: block !important;
+        }
+      `;
+    }
+    
+    // 精簡模式
+    if (state.hideExtraInfo) {
+      css += `
+        .bv-label-page .order-content th:nth-child(6),
+        .bv-label-page .order-content td:nth-child(6),
+        .bv-label-page .order-content th:nth-child(7),
+        .bv-label-page .order-content td:nth-child(7),
+        .bv-label-page .order-content th:nth-child(8),
+        .bv-label-page .order-content td:nth-child(8) {
+          display: none !important;
+        }
+      `;
+    }
+    
+    // 隱藏表格標題
+    if (state.hideTableHeader) {
+      css += `
+        .bv-label-page .order-content table thead,
+        .bv-label-page .order-content table tr:first-child {
+          display: none !important;
+        }
+      `;
+    }
+    
+    // 顯示訂單編號標籤
+    if (state.showOrderLabel) {
+      css += `
+        .bv-order-label {
+          display: block !important;
+        }
+      `;
+    }
+    
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+  
+  function initUI() {
+    // 偵測頁面類型
+    detectCurrentPage();
+    
+    // 如果不是支援的頁面，不創建面板
+    if (!state.currentPageType) {
+      console.log('不是支援的頁面類型，不載入出貨助手');
+      return;
+    }
+    
+    // 創建控制面板
+    createControlPanel();
+    
+    // 檢查是否需要最小化
+    chrome.storage.local.get(['bvPanelMinimized'], (result) => {
+      if (result.bvPanelMinimized) {
+        const panel = document.getElementById('bv-label-control-panel');
+        const minButton = document.getElementById('bv-minimized-button');
+        
+        if (panel) {
+          panel.classList.add('minimized');
+        }
+        if (minButton) {
+          minButton.style.display = 'flex';
+        }
+      }
+    });
+  }
+  
+  // ===== 初始化函數 =====
+  function init() {
+    console.log('=== BV SHOP 出貨助手 v6.1 初始化 ===');
+    
+    // 載入設定
+    loadSettings();
+    
+    // 延遲初始化 UI，確保頁面載入完成
+    setTimeout(() => {
+      initUI();
+    }, 100);
+  }
+  
+  // ===== 程式進入點 =====
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+  
+})();
