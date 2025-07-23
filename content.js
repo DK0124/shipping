@@ -2997,7 +2997,7 @@
         allowTaint: true
       }).then(canvas => {
         // 轉換為高品質 JPG
-        const imageData = canvas.toDataURL('image/jpeg', 1);
+        const imageData = canvas.toDataURL('image/webp', 1.0);
         
         newBatch.data.push({
           ...data,
