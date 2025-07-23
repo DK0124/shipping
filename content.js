@@ -3010,9 +3010,10 @@
             // ... 處理圖片資料
           };
           reader.readAsDataURL(blob);
-        }, 'image/webp', 1.0); // 98% 品質
+        }, 'image/webp', 1.0);
       });
-    
+    });
+
     function checkComplete() {
       if (processedCount === totalToProcess) {
         if (newBatch.data.length > 0) {
