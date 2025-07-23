@@ -2771,6 +2771,12 @@
     const reverseShippingOption = document.getElementById('bv-reverse-shipping-option');
     const matchModeSelector = document.getElementById('bv-match-mode-selector');
     
+    // 檢查是否有超商物流單
+    const hasStoreShipping = state.shippingDataBatches.some(batch => {
+      const provider = CONFIG.PROVIDERS[batch.provider];
+      return provider && provider.type === 'store';
+    });
+    
     switch(state.printMode) {
       case CONFIG.PRINT_MODES.DETAIL_ONLY:
         sortOptions.style.display = 'block';
@@ -2805,7 +2811,18 @@
         detailSortGroup.style.display = 'block';
         shippingSort.style.display = 'none';
         reverseShippingOption.style.display = 'block';
-        if (matchModeSelector) matchModeSelector.style.display = 'block';
+        
+        if (matchModeSelector) {
+          if (hasStoreShipping) {
+            // 超商物流單：隱藏選項，強制使用物流編號配對
+            matchModeSelector.style.display = 'none';
+            state.matchMode = CONFIG.MATCH_MODES.LOGISTICS;
+          } else {
+            // 宅配：顯示選項
+            matchModeSelector.style.display = 'block';
+          }
+        }
+        
         if (orderLabelSetting) {
           orderLabelSetting.style.display = 'flex';
           orderLabelSwitch.classList.remove('disabled');
@@ -3601,20 +3618,11 @@
       recipientName: '',
       recipientPhone: '',
       barcode: '',
-      logisticsNo: '',  // 新增專門的物流編號欄位
+      logisticsNo: '',  // 專門的物流編號欄位
       html: '',
       timestamp: new Date().toISOString(),
       isBatchPrint: false
     };
-    
-    // 檢查是否為 7-11 批次列印格式
-    if (state.currentProvider === 'SEVEN') {
-      const frame = element.querySelector('.div_frame') || element;
-      if (frame.classList.contains('div_frame')) {
-        data.isBatchPrint = true;
-        element = frame.closest('td > div') || frame.parentElement || element;
-      }
-    }
     
     const clonedElement = element.cloneNode(true);
     removeScripts(clonedElement);
@@ -3634,8 +3642,8 @@
       for (const pattern of serviceCodePatterns) {
         const match = text.match(pattern);
         if (match) {
-          data.orderNo = match[1].trim();  // 使用 orderNo 欄位存放服務代碼
-          data.logisticsNo = match[1].trim();  // 同時存入 logisticsNo
+          data.logisticsNo = match[1].trim();  // 存入 logisticsNo
+          data.orderNo = match[1].trim();      // 同時存入 orderNo (相容性)
           break;
         }
       }
@@ -3650,7 +3658,7 @@
       if (storeIdMatch) data.storeId = storeIdMatch[1].trim();
       
     } else {
-      // 其他物流商的一般處理
+      // 其他物流商的處理
       const currentPatterns = CONFIG.PROVIDERS[state.currentProvider]?.patterns;
       
       if (currentPatterns) {
@@ -3659,7 +3667,13 @@
             const match = text.match(pattern);
             if (match) {
               switch(key) {
-                case 'order': data.orderNo = match[1].trim(); break;
+                case 'order': 
+                  data.orderNo = match[1].trim();
+                  // 超商類型同時存入 logisticsNo
+                  if (CONFIG.PROVIDERS[state.currentProvider]?.type === 'store') {
+                    data.logisticsNo = match[1].trim();
+                  }
+                  break;
                 case 'store': data.storeName = match[1].trim(); break;
                 case 'storeId': data.storeId = match[1].trim(); break;
                 case 'recipient': data.recipientName = match[1].trim(); break;
@@ -3673,8 +3687,8 @@
       }
     }
     
-    // 只要有服務代碼就算有效（針對 7-11）
-    return (data.orderNo || data.logisticsNo) ? data : null;
+    // 只要有物流編號就算有效
+    return (data.logisticsNo || data.orderNo) ? data : null;
   }
   
   function removeScripts(element) {
@@ -4609,24 +4623,32 @@
     
     const matchedCount = state.matchingResults.filter(r => r.matched).length;
     const totalCount = state.matchingResults.length;
+    const hasErrors = matchedCount < totalCount;
     
     if (totalCount === 0) {
       resultsEl.style.display = 'none';
       return;
     }
     
+    // 顯示錯誤通知
+    if (hasErrors) {
+      showNotification(`配對錯誤：${totalCount - matchedCount} 筆物流單未成功配對`, 'error');
+    }
+    
     resultsEl.style.display = 'block';
+    resultsEl.className = hasErrors ? 'bv-matching-results error' : 'bv-matching-results';
     resultsEl.innerHTML = `
-      <div class="bv-matching-results-title">
-        配對結果：${matchedCount}/${totalCount} 筆成功
+      <div class="bv-matching-results-title ${hasErrors ? 'error' : ''}">
+        ${hasErrors ? '⚠️' : '✓'} 配對結果：${matchedCount}/${totalCount} 筆成功
       </div>
       ${state.matchingResults.map(result => `
-        <div class="bv-matching-result-item">
-          ${result.matched ? '✓' : '✗'} 
+        <div class="bv-matching-result-item ${result.matched ? '' : 'error'}">
+          ${result.matched ? '✓' : '❌'} 
           訂單 ${result.orderNo || '無編號'} 
+          ${result.logisticsNo ? `(物流編號: ${result.logisticsNo})` : ''}
           ${result.matched ? 
-            `→ 物流單 ${result.shippingOrderNo}` : 
-            `(${result.matchType === 'logistics' ? '物流編號' : result.matchType === 'order' ? '訂單編號' : '索引'}配對失敗)`
+            `→ 配對到物流單 ${result.shippingOrderNo}` : 
+            `→ 找不到對應的物流單`
           }
         </div>
       `).join('')}
