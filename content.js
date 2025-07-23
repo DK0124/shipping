@@ -3236,7 +3236,7 @@
           const page = await pdf.getPage(pageNum);
           
           // 使用高解析度渲染（但不要太高，避免記憶體問題）
-          const scale = 5;
+          const scale = 1;
           const viewport = page.getViewport({ scale: scale });
           
           // 創建 canvas
