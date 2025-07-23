@@ -5166,14 +5166,13 @@
   // 檢查頁面是否已載入完成
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      checkPageType();  // 正確的函數名稱
+      // state.currentPageType 已經在開頭設定了，不需要再次檢測
       insertStyles();
       createControlPanel();
       loadSettings();
     });
   } else {
     // 頁面已載入，直接執行
-    checkPageType();  // 正確的函數名稱
     insertStyles();
     createControlPanel();
     loadSettings();
