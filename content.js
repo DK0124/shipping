@@ -2140,6 +2140,88 @@
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
+    }
+
+    /* 容量警告模態框 */
+    .bv-capacity-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 100000;
+    }
+    
+    .bv-modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+    
+    .bv-modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      max-width: 400px;
+      width: 90%;
+    }
+    
+    .bv-modal-content h3 {
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      color: #f44336;
+    }
+    
+    .bv-modal-content p {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .bv-modal-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    
+    .bv-modal-btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .bv-modal-btn.delete-old {
+      background: #ff9800;
+      color: white;
+    }
+    
+    .bv-modal-btn.clear-all {
+      background: #f44336;
+      color: white;
+    }
+    
+    .bv-modal-btn.cancel {
+      background: #f5f5f5;
+      color: #666;
+    }
+    
+    .bv-modal-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }    
     `;
     
@@ -3002,14 +3084,32 @@
       return;
     }
     
-    // 7-11 特殊處理：只選擇單個 frame 而非整個 table
+    // 7-11 特殊處理
     if (state.currentProvider === 'SEVEN') {
       const frames = document.querySelectorAll('.div_frame');
       if (frames.length > 0) {
-        elements = frames; // 使用所有的 frame
+        elements = frames;
       }
     }
     
+    console.log(`找到 ${elements.length} 個物流單元素`);
+    
+    // 檢查現有儲存空間使用量
+    chrome.storage.local.getBytesInUse(null, (bytesInUse) => {
+      const maxBytes = 5 * 1024 * 1024; // 5MB
+      const usedPercentage = (bytesInUse / maxBytes) * 100;
+      
+      console.log(`儲存空間已使用: ${(bytesInUse / 1024 / 1024).toFixed(2)}MB (${usedPercentage.toFixed(1)}%)`);
+      
+      if (usedPercentage > 80) {
+        showNotification(`儲存空間快滿了 (${usedPercentage.toFixed(1)}%)，建議清除舊資料`, 'warning');
+      }
+      
+      processShippingElements(elements, provider);
+    });
+  }
+  
+  function processShippingElements(elements, provider) {
     // 清除該提供商的舊批次資料
     state.shippingDataBatches = state.shippingDataBatches.filter(batch => 
       batch.provider !== state.currentProvider
@@ -3027,6 +3127,8 @@
     const processedOrders = new Set();
     let processedCount = 0;
     let totalToProcess = 0;
+    let totalSize = 0;
+    const maxBatchSize = 2 * 1024 * 1024; // 每批次最大 2MB
     
     // 計算需要處理的元素數量
     elements.forEach((element) => {
@@ -3038,21 +3140,73 @@
     
     showNotification(`開始抓取 ${totalToProcess} 張物流單...`, 'info');
     
-    // 處理每個物流單元素
+    // 使用 Promise 來確保順序
+    const promises = [];
+    
     elements.forEach((element, index) => {
       const data = extractShippingData(element);
       if (!data || !data.orderNo || processedOrders.has(data.orderNo)) {
-        processedCount++;
-        checkComplete();
         return;
       }
       
       processedOrders.add(data.orderNo);
       
-      // 使用 html2canvas 截圖
-      html2canvas(element, {
+      // 記錄原始索引以保持順序
+      data.originalIndex = index;
+      
+      const promise = captureElementWithOptimization(element, data)
+        .then(capturedData => {
+          if (capturedData) {
+            const dataSize = new Blob([capturedData.imageData]).size;
+            totalSize += dataSize;
+            
+            // 如果超過批次大小限制，警告使用者
+            if (totalSize > maxBatchSize) {
+              console.warn(`批次大小超過限制: ${(totalSize / 1024 / 1024).toFixed(2)}MB`);
+            }
+            
+            return capturedData;
+          }
+          return null;
+        })
+        .catch(error => {
+          console.error('截圖失敗:', error);
+          return null;
+        });
+      
+      promises.push(promise);
+    });
+    
+    // 等待所有截圖完成
+    Promise.all(promises).then(results => {
+      // 過濾掉失敗的結果並按原始順序排序
+      const validResults = results
+        .filter(r => r !== null)
+        .sort((a, b) => a.originalIndex - b.originalIndex);
+      
+      validResults.forEach(data => {
+        delete data.originalIndex; // 移除臨時屬性
+        newBatch.data.push(data);
+      });
+      
+      if (newBatch.data.length > 0) {
+        // 儲存前先檢查容量
+        saveWithCapacityCheck(newBatch);
+      } else {
+        showNotification('沒有成功抓取到物流單', 'warning');
+      }
+    });
+  }
+  
+  // 優化截圖函數
+  async function captureElementWithOptimization(element, data) {
+    try {
+      // 降低解析度以減少檔案大小
+      const scale = 3; // 從 5 降到 3
+      
+      const canvas = await html2canvas(element, {
         backgroundColor: '#ffffff',
-        scale: 5, // 高解析度
+        scale: scale,
         logging: false,
         useCORS: true,
         allowTaint: true,
@@ -3061,30 +3215,116 @@
         foreignObjectRendering: false,
         windowWidth: element.scrollWidth,
         windowHeight: element.scrollHeight
-      }).then(canvas => {
-        // 轉換為 WebP 格式
+      });
+      
+      // 使用 JPEG 格式並調整品質來控制檔案大小
+      return new Promise((resolve) => {
         canvas.toBlob(blob => {
           const reader = new FileReader();
           reader.onloadend = () => {
-            // 將截圖資料加入物流單資料
             data.imageData = reader.result;
-            data.imageFormat = 'webp';
+            data.imageFormat = 'jpeg';
             data.width = canvas.width;
             data.height = canvas.height;
+            data.scale = scale;
             
-            newBatch.data.push(data);
-            processedCount++;
-            checkComplete();
+            // 計算檔案大小
+            const sizeKB = (reader.result.length / 1024).toFixed(2);
+            console.log(`物流單 ${data.orderNo} 大小: ${sizeKB}KB`);
+            
+            resolve(data);
           };
           reader.readAsDataURL(blob);
-        }, 'image/webp', 0.98); // 98% 品質
-      }).catch(error => {
-        console.error('截圖失敗:', error);
-        processedCount++;
-        checkComplete();
+        }, 'image/jpeg', 0.85); // 使用 JPEG 85% 品質
+      });
+    } catch (error) {
+      console.error('截圖錯誤:', error);
+      return null;
+    }
+  }
+  
+  // 儲存前檢查容量
+  function saveWithCapacityCheck(newBatch) {
+    // 先嘗試儲存
+    chrome.storage.local.set({
+      shippingDataBatches: [...state.shippingDataBatches, newBatch],
+      shippingData: state.shippingData,
+      pdfShippingData: state.pdfShippingData,
+      shippingProvider: state.currentProvider,
+      shippingTimestamp: new Date().toISOString()
+    }, () => {
+      if (chrome.runtime.lastError) {
+        console.error('儲存失敗:', chrome.runtime.lastError);
+        
+        if (chrome.runtime.lastError.message.includes('quota')) {
+          // 容量不足，提供選項
+          showCapacityError(newBatch);
+        } else {
+          showNotification('儲存失敗: ' + chrome.runtime.lastError.message, 'error');
+        }
+      } else {
+        // 儲存成功
+        state.shippingDataBatches.push(newBatch);
+        mergeAllBatchData();
+        updateBatchList();
+        updateShippingCount();
+        showNotification(`成功抓取並儲存 ${newBatch.data.length} 張物流單`);
+      }
+    });
+  }
+  
+  // 顯示容量錯誤並提供解決方案
+  function showCapacityError(newBatch) {
+    const modal = document.createElement('div');
+    modal.className = 'bv-capacity-modal';
+    modal.innerHTML = `
+      <div class="bv-modal-backdrop"></div>
+      <div class="bv-modal-content">
+        <h3>儲存空間不足</h3>
+        <p>無法儲存新的物流單，儲存空間已滿。</p>
+        <p>新批次包含 ${newBatch.data.length} 張物流單</p>
+        
+        <div class="bv-modal-options">
+          <button class="bv-modal-btn delete-old" id="bv-delete-oldest">
+            刪除最舊的批次並重試
+          </button>
+          <button class="bv-modal-btn clear-all" id="bv-clear-all-shipping">
+            清除所有物流單資料
+          </button>
+          <button class="bv-modal-btn cancel" id="bv-cancel-save">
+            取消
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 綁定事件
+    document.getElementById('bv-delete-oldest').addEventListener('click', () => {
+      if (state.shippingDataBatches.length > 0) {
+        // 刪除最舊的批次
+        state.shippingDataBatches.shift();
+        modal.remove();
+        saveWithCapacityCheck(newBatch);
+      }
+    });
+    
+    document.getElementById('bv-clear-all-shipping').addEventListener('click', () => {
+      chrome.storage.local.remove(['shippingDataBatches', 'shippingData', 'pdfShippingData'], () => {
+        state.shippingDataBatches = [];
+        state.shippingData = [];
+        state.pdfShippingData = [];
+        modal.remove();
+        saveWithCapacityCheck(newBatch);
       });
     });
-  
+    
+    document.getElementById('bv-cancel-save').addEventListener('click', () => {
+      modal.remove();
+    });
+  }
+
     function checkComplete() {
       if (processedCount === totalToProcess) {
         if (newBatch.data.length > 0) {
