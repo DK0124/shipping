@@ -132,12 +132,6 @@
       INDEX: 'index',
       ORDER: 'order',
       LOGISTICS: 'logistics'
-    },
-    
-    // 新增紙張尺寸設定
-    PAPER_SIZES: {
-      '10x15': { width: 100, height: 150, padding: 5 },
-      '10x10': { width: 100, height: 100, padding: 3 }
     }
   };
   
@@ -180,10 +174,7 @@
     sevenBatchCache: new Map(),
     
     // 新增自動檢查 interval
-    autoCheckInterval: null,
-    
-    // 新增：當前紙張尺寸
-    currentPaperSize: '10x15'
+    autoCheckInterval: null
   };
 
   const fontLink = document.createElement('link');
@@ -1104,7 +1095,7 @@
       }
     }
     
-    /* 修改數量標示樣式，避免換行 */
+    /* 修改數量標示樣式 - 純黑色星號 */
     .bv-qty-star {
       font-weight: 700;
       color: inherit;
@@ -1114,7 +1105,7 @@
     
     .bv-qty-star::before {
       content: "★";
-      color: #ff6b6b;
+      color: #000000;
       font-size: 0.8em;
       margin-right: 2px;
       vertical-align: baseline;
@@ -1125,11 +1116,12 @@
         font-weight: 700 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        white-space: nowrap !important;
       }
       
       .bv-qty-star::before {
         content: "★" !important;
-        color: #ff6b6b !important;
+        color: #000000 !important;
       }
     }
     
@@ -1280,26 +1272,17 @@
         width: fit-content;
       }
       
-      /* 動態頁面大小 */
+      /* 預覽始終顯示 10×15 尺寸 */
       .bv-label-page {
+        width: 377px !important;
+        height: 566px !important;
         background: white;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         margin-bottom: 20px;
         position: relative;
         overflow: hidden;
         box-sizing: border-box;
-      }
-      
-      .bv-label-page[data-paper-size="10x15"] {
-        width: 377px !important;
-        height: 566px !important;
         padding: 18.9px !important;
-      }
-      
-      .bv-label-page[data-paper-size="10x10"] {
-        width: 377px !important;
-        height: 377px !important;
-        padding: 11.3px !important;
       }
       
       .bv-label-page.bv-shipping-page {
@@ -1322,15 +1305,8 @@
       }
     }
     
-    /* 動態 @page 規則 */
-    @page label-10x15 {
-      size: 100mm 150mm;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    
-    @page label-10x10 {
-      size: 100mm 100mm;
+    @page {
+      size: auto;
       margin: 0 !important;
       padding: 0 !important;
     }
@@ -1382,23 +1358,14 @@
         padding: 0 !important;
       }
       
-      /* 動態列印尺寸 */
-      body.bv-converted .bv-label-page[data-paper-size="10x15"] {
-        width: 100mm !important;
-        height: 150mm !important;
-        padding: 5mm !important;
-        page: label-10x15;
-      }
-      
-      body.bv-converted .bv-label-page[data-paper-size="10x10"] {
-        width: 100mm !important;
-        height: 100mm !important;
-        padding: 3mm !important;
-        page: label-10x10;
-      }
-      
+      /* 列印時自動適應紙張尺寸 */
       body.bv-converted .bv-label-page {
+        width: 100% !important;
+        max-width: 100mm !important;
+        height: auto !important;
+        max-height: 150mm !important;
         margin: 0 !important;
+        padding: 5mm !important;
         box-sizing: border-box !important;
         page-break-after: always !important;
         page-break-inside: avoid !important;
@@ -1420,21 +1387,16 @@
       body.bv-converted .bv-page-content {
         position: relative !important;
         page-break-inside: avoid !important;
-      }
-      
-      body.bv-converted .bv-label-page[data-paper-size="10x15"] .bv-page-content {
-        width: 90mm !important;
-        height: 140mm !important;
-      }
-      
-      body.bv-converted .bv-label-page[data-paper-size="10x10"] .bv-page-content {
-        width: 94mm !important;
-        height: 94mm !important;
+        width: auto !important;
+        max-width: 90mm !important;
+        height: auto !important;
       }
       
       body.bv-converted .bv-shipping-page .bv-page-content {
         width: 100% !important;
-        height: 100% !important;
+        max-width: 100mm !important;
+        height: auto !important;
+        max-height: 150mm !important;
       }
       
       body.bv-converted > *:not(.bv-page-container) {
@@ -2152,7 +2114,6 @@
     
     document.head.appendChild(labelStyles);
   }
-  
   
   function getPanelContent() {
     const collapseIcon = '<span class="bv-collapse-icon"><span class="material-icons">expand_more</span></span>';
@@ -4201,14 +4162,10 @@
     document.querySelectorAll('.bv-page-container').forEach(container => container.remove());
     document.querySelectorAll('.bv-label-page').forEach(page => page.remove());
     
-    // 偵測當前紙張尺寸
-    detectPaperSize();
-    
-    const paperSize = CONFIG.PAPER_SIZES[state.currentPaperSize];
-    const paddingMm = paperSize.padding;
+    // 固定使用 10×15 尺寸參數
+    const paddingMm = 5;
     const paddingPx = paddingMm * 3.78;
-    const pageWidth = paperSize.width * 3.78;
-    const pageHeight = paperSize.height * 3.78;
+    const pageHeight = 566;
     const contentHeight = pageHeight - (paddingPx * 2);
     
     const orderContents = document.querySelectorAll('.order-content');
@@ -4282,7 +4239,7 @@
             wrapper.style.cssText = `
               position: absolute;
               visibility: hidden;
-              width: ${pageWidth - paddingPx * 2}px;
+              width: ${377 - paddingPx * 2}px;
             `;
             wrapper.appendChild(clone);
             document.body.appendChild(wrapper);
@@ -4299,7 +4256,6 @@
               currentPage.setAttribute('data-page-type', 'detail');
               currentPage.setAttribute('data-order-index', orderIndex);
               currentPage.setAttribute('data-order-no', orderInfo.orderNo || '');
-              currentPage.setAttribute('data-paper-size', state.currentPaperSize);
               
               currentPageContent = document.createElement('div');
               currentPageContent.className = 'bv-page-content';
@@ -4388,43 +4344,6 @@
     if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH && state.matchingResults) {
       showMatchingResults();
     }
-  }
-  
-  // 新增：偵測紙張尺寸
-  function detectPaperSize() {
-    // 檢查是否有足夠的內容需要 10×10 尺寸
-    const orderContents = document.querySelectorAll('.order-content');
-    let needSmallSize = false;
-    
-    orderContents.forEach(content => {
-      const contentClone = content.cloneNode(true);
-      
-      // 處理精簡模式
-      if (state.hideExtraInfo) {
-        processExtraInfoHiding(contentClone);
-      }
-      
-      // 檢查內容高度
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = `
-        position: absolute;
-        visibility: hidden;
-        width: ${377 - 18.9 * 2}px;
-      `;
-      wrapper.appendChild(contentClone);
-      document.body.appendChild(wrapper);
-      
-      const totalHeight = wrapper.offsetHeight;
-      document.body.removeChild(wrapper);
-      
-      // 如果內容小於 10×10 可容納的高度，使用小尺寸
-      if (totalHeight < 340) { // 約 94mm - padding
-        needSmallSize = true;
-      }
-    });
-    
-    // 根據偵測結果設定紙張尺寸
-    state.currentPaperSize = needSmallSize ? '10x10' : '10x15';
   }
   
   // 修改數量標示處理函數
