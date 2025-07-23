@@ -2991,7 +2991,7 @@
       // 使用 html2canvas 截圖（只截圖單個元素）
       html2canvas(element, {
         backgroundColor: '#ffffff',
-        scale: 1, // 提高解析度
+        scale: 5, // 提高解析度
         logging: false,
         useCORS: true,
         allowTaint: true
