@@ -3194,7 +3194,17 @@
         timestamp: new Date().toISOString()
       };
       
-      // 處理 PDF 檔案...（原有的 PDF 處理邏輯）
+      // 設定 PDF.js
+      if (typeof pdfjsLib !== 'undefined') {
+        if (chrome && chrome.runtime && chrome.runtime.getURL) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
+        } else {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+          pdfjsLib.GlobalWorkerOptions.isEvalSupported = false;
+        }
+      }
+      
+      // 處理每個 PDF 檔案
       for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
         const file = files[fileIndex];
         
@@ -3204,61 +3214,121 @@
         const arrayBuffer = await file.arrayBuffer();
         const typedArray = new Uint8Array(arrayBuffer);
         
-        if (typeof pdfjsLib !== 'undefined') {
-          if (chrome && chrome.runtime && chrome.runtime.getURL) {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
-          } else {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-            pdfjsLib.GlobalWorkerOptions.isEvalSupported = false;
-          }
-        } else {
-          console.error('PDF.js 尚未載入');
-          throw new Error('PDF.js library not loaded');
-        }
+        // 載入 PDF
+        const loadingTask = pdfjsLib.getDocument({
+          data: typedArray,
+          cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+          cMapPacked: true,
+          standardFontDataUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/',
+          verbosity: 0,
+          disableFontFace: false,
+          useSystemFonts: true
+        });
         
-        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+        const pdf = await loadingTask.promise;
         const numPages = pdf.numPages;
         totalPages += numPages;
         
-        for (let i = 1; i <= numPages; i++) {
-          statusEl.textContent = `檔案 ${fileIndex + 1}/${files.length} - 第 ${i}/${numPages} 頁...`;
-          const progress = (fileIndex / files.length + (i / numPages) / files.length) * 100;
+        // 處理每一頁
+        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+          statusEl.textContent = `檔案 ${fileIndex + 1}/${files.length} - 第 ${pageNum}/${numPages} 頁...`;
+          const progress = (fileIndex / files.length + (pageNum / numPages) / files.length) * 100;
           progressFill.style.width = `${progress}%`;
           
-          const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 2 });
+          const page = await pdf.getPage(pageNum);
           
+          // 使用高解析度渲染（但不要太高，避免記憶體問題）
+          const scale = 3; // 3倍解析度通常足夠
+          const viewport = page.getViewport({ scale: scale });
+          
+          // 創建 canvas
           const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
+          const context = canvas.getContext('2d', {
+            alpha: false,
+            desynchronized: true,
+            willReadFrequently: false
+          });
+          
           canvas.width = viewport.width;
           canvas.height = viewport.height;
           
-          await page.render({
+          // 設定高品質渲染參數
+          context.imageSmoothingEnabled = true;
+          context.imageSmoothingQuality = 'high';
+          
+          // 白色背景
+          context.fillStyle = 'white';
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // 渲染 PDF 頁面
+          const renderContext = {
             canvasContext: context,
-            viewport: viewport
-          }).promise;
+            viewport: viewport,
+            intent: 'display',
+            enableWebGL: false, // WebGL 在某些情況下可能導致問題
+            renderInteractiveForms: true,
+            annotationMode: pdfjsLib.AnnotationMode.ENABLE_FORMS
+          };
           
-          const imageData = canvas.toDataURL('image/png');
+          await page.render(renderContext).promise;
           
-          // 嘗試提取文字以匹配訂單
+          // 轉換為 WebP 格式
+          let imageData;
+          
+          // 檢查瀏覽器是否支援 WebP
+          if (canvas.toDataURL('image/webp').indexOf('image/webp') > -1) {
+            // 使用 toBlob 以獲得更好的品質控制
+            const blob = await new Promise(resolve => {
+              canvas.toBlob(
+                resolve, 
+                'image/webp', 
+                0.95  // 95% 品質，在品質和檔案大小之間取得平衡
+              );
+            });
+            
+            imageData = await new Promise(resolve => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(blob);
+            });
+          } else {
+            // 降級到 PNG（如果瀏覽器不支援 WebP）
+            imageData = canvas.toDataURL('image/png', 1.0);
+          }
+          
+          // 釋放 canvas 記憶體
+          canvas.width = 0;
+          canvas.height = 0;
+          
+          // 提取文字內容
           const textContent = await page.getTextContent();
           const text = textContent.items.map(item => item.str).join(' ');
           const shippingNo = extractShippingNumberFromText(text);
           
+          // 儲存頁面資料
           newBatch.data.push({
             provider: 'DELIVERY',
             subType: state.deliverySubType || 'UNKNOWN',
-            orderNo: shippingNo || `PDF_${totalPages}`,
-            pageNumber: i,
+            orderNo: shippingNo || `PDF_${fileIndex + 1}_P${pageNum}`,
+            pageNumber: pageNum,
             fileIndex: fileIndex,
             fileName: file.name,
             imageData: imageData,
             width: viewport.width,
             height: viewport.height,
             timestamp: new Date().toISOString(),
-            extractedText: text
+            extractedText: text,
+            imageFormat: 'webp',
+            scale: scale
           });
+          
+          // 清理頁面資源
+          await page.cleanup();
         }
+        
+        // 清理 PDF 資源
+        await pdf.cleanup();
+        await pdf.destroy();
       }
       
       if (pagesEl) pagesEl.textContent = `共 ${totalPages} 頁`;
@@ -3280,7 +3350,7 @@
         shippingSubType: state.deliverySubType,
         shippingTimestamp: new Date().toISOString()
       }, () => {
-        showNotification(`成功轉換 ${totalPages} 頁 PDF`);
+        showNotification(`成功轉換 ${totalPages} 頁 PDF (WebP 格式)`);
         checkShippingDataStatus();
         updateBatchList();
         updatePreview();
@@ -3294,7 +3364,7 @@
           if (uploadPrompt) uploadPrompt.style.display = 'flex';
           if (pdfInfo) pdfInfo.style.display = 'none';
           if (pdfUploadArea) pdfUploadArea.classList.remove('has-file');
-          if (pdfInput) pdfInput.value = ''; // 清空輸入，允許重新選擇相同檔案
+          if (pdfInput) pdfInput.value = '';
         }, 1000);
       });
       
