@@ -1807,35 +1807,34 @@
       display: none !important;
     }
         
-    /* 表格邊框改為實心黑色 */
-    .bv-label-page table,
-    .bv-label-page .list-title,
-    .bv-label-page .list-item,
-    .bv-label-page td,
-    .bv-label-page th {
-      border-color: #000 !important;
-      border-style: solid !important;
-    }
-    
-    .bv-label-page .list-title td,
-    .bv-label-page .list-item td {
-      border: 1px solid #000 !important;
-    }
-    
+    /* 只保留橫向分隔線，不要外框與內框線 */
     .bv-label-page table {
       border-collapse: collapse !important;
-      border: 1px solid #000 !important;
+      border: none !important; /* 移除表格外框 */
     }
     
-    /* 確保列印時也是黑色 */
+    .bv-label-page td,
+    .bv-label-page th {
+      border: none !important; /* 移除儲存格邊框 */
+      border-bottom: 1px solid #000 !important; /* 只保留底部橫線 */
+    }
+    
+    /* 移除標題列與項目列的額外框線 */
+    .bv-label-page .list-title td,
+    .bv-label-page .list-item td {
+      border: none !important;
+      border-bottom: 1px solid #000 !important;
+    }
+    
+    /* 列印時也套用相同效果 */
     @media print {
-      .bv-label-page table,
-      .bv-label-page .list-title,
-      .bv-label-page .list-item,
+      .bv-label-page table {
+        border: none !important;
+      }
       .bv-label-page td,
       .bv-label-page th {
-        border-color: #000 !important;
-        border-style: solid !important;
+        border: none !important;
+        border-bottom: 1px solid #000 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
