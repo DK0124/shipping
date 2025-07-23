@@ -142,10 +142,10 @@
   };
   
   let state = {
-    selectedLabelSize: '10x15', // 預設紙張尺寸
+    selectedLabelSize: '10x15',
     isConverted: false,
     highlightQuantity: false,
-    hideExtraInfo: true,  // 預設開啟精簡模式
+    hideExtraInfo: true,
     hideTableHeader: false,
     originalBodyStyle: null,
     isPanelMinimized: false,
