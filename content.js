@@ -132,6 +132,12 @@
       INDEX: 'index',
       ORDER: 'order',
       LOGISTICS: 'logistics'
+    },
+    
+    // 新增紙張尺寸設定
+    PAPER_SIZES: {
+      '10x15': { width: 100, height: 150, padding: 5 },
+      '10x10': { width: 100, height: 100, padding: 3 }
     }
   };
   
@@ -174,7 +180,10 @@
     sevenBatchCache: new Map(),
     
     // 新增自動檢查 interval
-    autoCheckInterval: null
+    autoCheckInterval: null,
+    
+    // 新增：當前紙張尺寸
+    currentPaperSize: '10x15'
   };
 
   const fontLink = document.createElement('link');
@@ -1095,22 +1104,20 @@
       }
     }
     
+    /* 修改數量標示樣式，避免換行 */
     .bv-qty-star {
       font-weight: 700;
       color: inherit;
       position: relative;
-      padding-left: 1.2em;
-    }
-    
-    .bv-qty-star {
-      font-weight: 700;
-      color: inherit;
+      white-space: nowrap;
     }
     
     .bv-qty-star::before {
-      content: "▲ ";
-      color: #000;
-      font-weight: normal;
+      content: "★";
+      color: #ff6b6b;
+      font-size: 0.8em;
+      margin-right: 2px;
+      vertical-align: baseline;
     }
     
     @media print {
@@ -1121,8 +1128,8 @@
       }
       
       .bv-qty-star::before {
-        content: "▲ " !important;
-        color: #000 !important;
+        content: "★" !important;
+        color: #ff6b6b !important;
       }
     }
     
@@ -1273,25 +1280,35 @@
         width: fit-content;
       }
       
+      /* 動態頁面大小 */
       .bv-label-page {
-        width: 377px !important;
-        height: 566px !important;
         background: white;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         margin-bottom: 20px;
         position: relative;
         overflow: hidden;
         box-sizing: border-box;
+      }
+      
+      .bv-label-page[data-paper-size="10x15"] {
+        width: 377px !important;
+        height: 566px !important;
         padding: 18.9px !important;
       }
       
+      .bv-label-page[data-paper-size="10x10"] {
+        width: 377px !important;
+        height: 377px !important;
+        padding: 11.3px !important;
+      }
+      
       .bv-label-page.bv-shipping-page {
-        padding: 3mm !important;  /* 改為 3mm */
+        padding: 3mm !important;
         background: #f5f5f5 !important;
       }
       
       .bv-shipping-content {
-        width: calc(100% - 6mm);  /* 扣除兩邊的 3mm */
+        width: calc(100% - 6mm);
         height: calc(100% - 6mm);
         position: relative;
         overflow: hidden;
@@ -1305,8 +1322,15 @@
       }
     }
     
-    @page {
+    /* 動態 @page 規則 */
+    @page label-10x15 {
       size: 100mm 150mm;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    @page label-10x10 {
+      size: 100mm 100mm;
       margin: 0 !important;
       padding: 0 !important;
     }
@@ -1358,11 +1382,23 @@
         padding: 0 !important;
       }
       
-      body.bv-converted .bv-label-page {
+      /* 動態列印尺寸 */
+      body.bv-converted .bv-label-page[data-paper-size="10x15"] {
         width: 100mm !important;
         height: 150mm !important;
-        margin: 0 !important;
         padding: 5mm !important;
+        page: label-10x15;
+      }
+      
+      body.bv-converted .bv-label-page[data-paper-size="10x10"] {
+        width: 100mm !important;
+        height: 100mm !important;
+        padding: 3mm !important;
+        page: label-10x10;
+      }
+      
+      body.bv-converted .bv-label-page {
+        margin: 0 !important;
         box-sizing: border-box !important;
         page-break-after: always !important;
         page-break-inside: avoid !important;
@@ -1384,13 +1420,21 @@
       body.bv-converted .bv-page-content {
         position: relative !important;
         page-break-inside: avoid !important;
+      }
+      
+      body.bv-converted .bv-label-page[data-paper-size="10x15"] .bv-page-content {
         width: 90mm !important;
         height: 140mm !important;
       }
       
+      body.bv-converted .bv-label-page[data-paper-size="10x10"] .bv-page-content {
+        width: 94mm !important;
+        height: 94mm !important;
+      }
+      
       body.bv-converted .bv-shipping-page .bv-page-content {
-        width: 100mm !important;
-        height: 150mm !important;
+        width: 100% !important;
+        height: 100% !important;
       }
       
       body.bv-converted > *:not(.bv-page-container) {
@@ -2108,6 +2152,7 @@
     
     document.head.appendChild(labelStyles);
   }
+  
   
   function getPanelContent() {
     const collapseIcon = '<span class="bv-collapse-icon"><span class="material-icons">expand_more</span></span>';
@@ -4156,9 +4201,14 @@
     document.querySelectorAll('.bv-page-container').forEach(container => container.remove());
     document.querySelectorAll('.bv-label-page').forEach(page => page.remove());
     
-    const paddingMm = 5;
+    // 偵測當前紙張尺寸
+    detectPaperSize();
+    
+    const paperSize = CONFIG.PAPER_SIZES[state.currentPaperSize];
+    const paddingMm = paperSize.padding;
     const paddingPx = paddingMm * 3.78;
-    const pageHeight = 566;
+    const pageWidth = paperSize.width * 3.78;
+    const pageHeight = paperSize.height * 3.78;
     const contentHeight = pageHeight - (paddingPx * 2);
     
     const orderContents = document.querySelectorAll('.order-content');
@@ -4232,7 +4282,7 @@
             wrapper.style.cssText = `
               position: absolute;
               visibility: hidden;
-              width: ${377 - paddingPx * 2}px;
+              width: ${pageWidth - paddingPx * 2}px;
             `;
             wrapper.appendChild(clone);
             document.body.appendChild(wrapper);
@@ -4249,6 +4299,7 @@
               currentPage.setAttribute('data-page-type', 'detail');
               currentPage.setAttribute('data-order-index', orderIndex);
               currentPage.setAttribute('data-order-no', orderInfo.orderNo || '');
+              currentPage.setAttribute('data-paper-size', state.currentPaperSize);
               
               currentPageContent = document.createElement('div');
               currentPageContent.className = 'bv-page-content';
@@ -4337,6 +4388,76 @@
     if (state.printMode === CONFIG.PRINT_MODES.MANUAL_MATCH && state.matchingResults) {
       showMatchingResults();
     }
+  }
+  
+  // 新增：偵測紙張尺寸
+  function detectPaperSize() {
+    // 檢查是否有足夠的內容需要 10×10 尺寸
+    const orderContents = document.querySelectorAll('.order-content');
+    let needSmallSize = false;
+    
+    orderContents.forEach(content => {
+      const contentClone = content.cloneNode(true);
+      
+      // 處理精簡模式
+      if (state.hideExtraInfo) {
+        processExtraInfoHiding(contentClone);
+      }
+      
+      // 檢查內容高度
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = `
+        position: absolute;
+        visibility: hidden;
+        width: ${377 - 18.9 * 2}px;
+      `;
+      wrapper.appendChild(contentClone);
+      document.body.appendChild(wrapper);
+      
+      const totalHeight = wrapper.offsetHeight;
+      document.body.removeChild(wrapper);
+      
+      // 如果內容小於 10×10 可容納的高度，使用小尺寸
+      if (totalHeight < 340) { // 約 94mm - padding
+        needSmallSize = true;
+      }
+    });
+    
+    // 根據偵測結果設定紙張尺寸
+    state.currentPaperSize = needSmallSize ? '10x10' : '10x15';
+  }
+  
+  // 修改數量標示處理函數
+  function applyQuantityHighlight() {
+    const containers = state.isConverted ? 
+      document.querySelectorAll('.bv-label-page') : 
+      document.querySelectorAll('.order-content');
+    
+    containers.forEach(container => {
+      container.querySelectorAll('.list-item').forEach(item => {
+        let qtyCell = null;
+        const cells = item.querySelectorAll('td');
+        
+        // 從右往左數第二個開始尋找純數字的欄位（排除最右邊的價格欄位）
+        for (let i = cells.length - 2; i >= 0; i--) {
+          const text = cells[i].textContent.trim();
+          if (/^\d+$/.test(text) && parseInt(text) > 0) {
+            qtyCell = cells[i];
+            break;
+          }
+        }
+        
+        if (qtyCell && !qtyCell.querySelector('.bv-qty-star')) {
+          const qty = parseInt(qtyCell.textContent.trim());
+          
+          if (qty >= 2) {
+            // 確保不會換行
+            qtyCell.style.whiteSpace = 'nowrap';
+            qtyCell.innerHTML = `<span class="bv-qty-star">${qty}</span>`;
+          }
+        }
+      });
+    });
   }
   
   function createSevenElevenBatchPages(shippingInfo, orderNo, showOrderLabel, orderIndex, pageContainer) {
