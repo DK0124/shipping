@@ -3194,7 +3194,7 @@
   
   async function captureElementWithOptimization(element, data) {
     try {
-      const scale = 4;
+      const scale = 5;
       
       const canvas = await html2canvas(element, {
         backgroundColor: '#ffffff',
@@ -3510,7 +3510,7 @@
           const page = await pdf.getPage(pageNum);
           
           // 使用與截圖相同的參數
-          const scale = 4;
+          const scale = 5;
           const viewport = page.getViewport({ scale: scale });
           
           // 創建 canvas
