@@ -1130,6 +1130,9 @@
           padding: 0 !important;
           background: white !important;
           position: relative !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
         }
         
         .bv-converted .order-content.bv-original {
@@ -1147,11 +1150,10 @@
         margin: 0 !important;
         box-sizing: border-box !important;
         display: flex !important;
-        flex-direction: column !important;
         align-items: center !important;
-        justify-content: flex-start !important;
-        padding-top: 20px !important;
+        justify-content: center !important;
       }
+    }
       
       .bv-shipping-wrapper-inner {
         position: relative !important;
@@ -2079,15 +2081,19 @@
         /* 物流單列印 - 重點修改 */
         body.bv-converted .bv-label-page.bv-shipping-page {
           padding: 0 !important;
-          display: block !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
           page-break-after: always !important;
           page-break-inside: avoid !important;
-          height: 150mm !important;
-          width: 100mm !important;
-          max-width: 100mm !important;
-          max-height: 150mm !important;
           position: relative !important;
           background: white !important;
+          
+          /* 使用 viewport 單位自動適應任何紙張大小 */
+          width: 100vw !important;
+          height: 100vh !important;
+          max-width: 100vw !important;
+          max-height: 100vh !important;
         }
         
         body.bv-converted .bv-label-page:last-child {
@@ -2118,26 +2124,30 @@
           width: 100% !important;
           height: 100% !important;
           display: flex !important;
-          flex-direction: column !important;
           align-items: center !important;
-          justify-content: flex-start !important;
-          padding-top: 20px !important;
+          justify-content: center !important;
           position: relative !important;
           background: white !important;
+          box-sizing: border-box !important;
+          padding: 10px !important;
         }
         
         .bv-shipping-wrapper-inner,
         .bv-store-shipping-content {
           display: flex !important;
-          align-items: flex-start !important;
+          align-items: center !important;
           justify-content: center !important;
         }
         
+        /* 物流單圖片置中並保持比例 */
         .bv-shipping-content img {
           max-width: 90% !important;
-          max-height: 85% !important;
+          max-height: 90% !important;
+          width: auto !important;
+          height: auto !important;
           object-fit: contain !important;
           display: block !important;
+          margin: auto !important;
         }
         
         /* 列印時訂單標籤一致性 */
@@ -2147,10 +2157,10 @@
           left: 50% !important;
           transform: translateX(-50%) !important;
           background: white !important;
-          padding: 10px 20px !important;
+          padding: 8px 16px !important;
           border: 2px solid #333 !important;
           border-radius: 6px !important;
-          font-size: 15px !important;
+          font-size: 14px !important;
           font-weight: bold !important;
           z-index: 1000 !important;
           color: #000 !important;
@@ -2158,6 +2168,7 @@
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
+      }
         
         /* 數量標示列印 */
         .bv-qty-star {
