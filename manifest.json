@@ -5,8 +5,7 @@
   "description": "BV SHOP 出貨標籤列印輔助工具",
   "author": "Derek Yu",
   "permissions": [
-    "storage",
-    "activeTab"
+    "storage"
   ],
   "content_scripts": [
     {
