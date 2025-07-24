@@ -1172,7 +1172,7 @@
       /* 訂單標籤 - 統一樣式 */
       .bv-order-label {
         position: absolute !important;
-        bottom: 10px !important;
+        bottom: 5px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
         background: white !important;
@@ -2153,7 +2153,7 @@
         /* 列印時訂單標籤一致性 */
         .bv-order-label {
           position: absolute !important;
-          bottom: 10px !important;
+          bottom: 5px !important;
           left: 50% !important;
           transform: translateX(-50%) !important;
           background: white !important;
