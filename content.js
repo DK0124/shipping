@@ -1103,41 +1103,46 @@
       }
       
       /* ===== 頁面容器與標籤頁 ===== */
-      body.bv-converted {
-        background: white;
-        padding: 20px 0;
+      @media screen {
+        body.bv-converted {
+          background: white;
+          padding: 20px 0;
+        }
+        
+        .bv-page-container {
+          margin: 0 auto 20px;
+          width: fit-content;
+        }
+        
+        /* 出貨明細保持內距 */
+        .bv-label-page {
+          width: 377px !important;
+          height: 566px !important;
+          background: white;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+          margin-bottom: 20px;
+          position: relative;
+          overflow: hidden;
+          box-sizing: border-box;
+          padding: 18.9px !important; /* 保持原有內距 */
+        }
+        
+        /* 物流單移除內距 */
+        .bv-label-page.bv-shipping-page {
+          padding: 0 !important;
+          background: white !important;
+          position: relative !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        
+        .bv-converted .order-content.bv-original {
+          display: none !important;
+        }
       }
       
-      .bv-page-container {
-        margin: 0 auto 20px;
-        width: fit-content;
-      }
-      
-      /* 預覽時保持原始尺寸，但移除內距 */
-      .bv-label-page {
-        width: 377px !important;
-        height: 566px !important;
-        background: white;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-        position: relative;
-        overflow: hidden;
-        box-sizing: border-box;
-        padding: 0 !important; /* 移除內距 */
-      }
-      
-      .bv-label-page.bv-shipping-page {
-        padding: 0 !important;
-        background: white !important;
-        position: relative !important;
-      }
-      
-      .bv-converted .order-content.bv-original {
-        display: none !important;
-      }
-    }
-      
-      /* ===== 物流單樣式 - 靠上顯示 ===== */
+      /* ===== 物流單樣式 - 置中顯示 ===== */
       .bv-shipping-content {
         width: 100% !important;
         height: 100% !important;
@@ -1149,13 +1154,13 @@
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        padding: 0 !important;
       }
-    }
       
       .bv-shipping-wrapper-inner {
         position: relative !important;
         display: flex !important;
-        align-items: flex-start !important;
+        align-items: center !important;
         justify-content: center !important;
       }
       
@@ -1164,6 +1169,7 @@
         max-height: 100% !important;
         object-fit: contain !important;
         display: block !important;
+        margin: auto !important;
       }
       
       /* 訂單標籤 - 統一樣式 */
@@ -1188,13 +1194,13 @@
       /* 超商物流單特殊處理 */
       .bv-store-shipping-content {
         transform: scale(0.9);
-        transform-origin: center top;
+        transform-origin: center center;
         display: flex !important;
-        align-items: flex-start !important;
+        align-items: center !important;
         justify-content: center !important;
         width: 100% !important;
         height: 100% !important;
-        padding-top: 10px !important;
+        padding: 0 !important;
       }
       
       .bv-store-shipping-content .div_frame,
@@ -2056,14 +2062,14 @@
           padding: 0 !important;
         }
         
-        /* 出貨明細列印 - 無內距 */
+        /* 出貨明細列印 - 保持內距 */
         body.bv-converted .bv-label-page {
           width: 100% !important;
           max-width: 100mm !important;
           height: auto !important;
           max-height: 150mm !important;
           margin: 0 !important;
-          padding: 0 !important; /* 移除內距 */
+          padding: 5mm !important; /* 保持內距 */
           box-sizing: border-box !important;
           page-break-after: always !important;
           page-break-inside: avoid !important;
@@ -2074,7 +2080,7 @@
           background: white !important;
         }
         
-        /* 物流單列印 - 無內距 */
+        /* 物流單列印 - 無內距自動置中 */
         body.bv-converted .bv-label-page.bv-shipping-page {
           padding: 0 !important;
           display: flex !important;
@@ -2089,26 +2095,33 @@
           max-width: 100vw !important;
           max-height: 100vh !important;
         }
-                              
-        .bv-shipping-content {
-          width: 100% !important;
-          height: 100% !important;
-          position: relative !important;
-          overflow: hidden !important;
-          background: white !important;
-          margin: 0 !important;
-          box-sizing: border-box !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          padding: 0 !important; /* 移除內距 */
+        
+        body.bv-converted .bv-label-page:last-child {
+          page-break-after: auto !important;
         }
-
+        
+        /* 出貨明細內容區域 - 保持原有寬度 */
+        body.bv-converted .bv-page-content {
+          position: relative !important;
+          page-break-inside: avoid !important;
+          width: auto !important;
+          max-width: 90mm !important;
+          height: auto !important;
+        }
+        
+        /* 物流單內容區域 - 使用全寬 */
+        body.bv-converted .bv-shipping-page .bv-page-content {
+          width: 100% !important;
+          max-width: 100% !important;
+          height: auto !important;
+          max-height: 100% !important;
+        }
+        
         body.bv-converted > *:not(.bv-page-container) {
           display: none !important;
         }
         
-        /* 列印時物流單靠上顯示 */
+        /* 物流單內容置中 - 無內距 */
         .bv-shipping-content {
           width: 100% !important;
           height: 100% !important;
@@ -2118,7 +2131,7 @@
           position: relative !important;
           background: white !important;
           box-sizing: border-box !important;
-          padding: 10px !important;
+          padding: 0 !important;
         }
         
         .bv-shipping-wrapper-inner,
@@ -2126,19 +2139,10 @@
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-        }
-        
-        .bv-store-shipping-content {
-          transform: scale(0.9);
-          transform-origin: center center;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
           width: 100% !important;
           height: 100% !important;
-          padding: 0 !important; /* 移除內距 */
         }
-
+        
         /* 物流單圖片置中並保持比例 */
         .bv-shipping-content img {
           max-width: 100% !important;
@@ -2150,10 +2154,22 @@
           margin: auto !important;
         }
         
+        /* 超商物流單特殊處理 - 無內距 */
+        .bv-store-shipping-content {
+          transform: scale(0.9);
+          transform-origin: center center;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          width: 100% !important;
+          height: 100% !important;
+          padding: 0 !important;
+        }
+        
         /* 列印時訂單標籤一致性 */
         .bv-order-label {
           position: absolute !important;
-          bottom: 5px !important;
+          bottom: 20px !important;
           left: 50% !important;
           transform: translateX(-50%) !important;
           background: white !important;
@@ -2163,12 +2179,16 @@
           font-size: 15px !important;
           font-weight: bold !important;
           z-index: 1000 !important;
-          white-space: nowrap !important;
-          line-height: 1.3 !important;
           color: #000 !important;
           font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          white-space: nowrap !important;
+          max-width: 80% !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
         }
-              
+        
         /* 數量標示列印 */
         .bv-qty-star {
           font-weight: 700 !important;
@@ -2199,8 +2219,8 @@
           print-color-adjust: exact !important;
         }
       }
-      `;
-    }
+    `;
+  }
   
   function getPanelContent() {
     const collapseIcon = '<span class="bv-collapse-icon"><span class="material-icons">expand_more</span></span>';
