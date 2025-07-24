@@ -2153,7 +2153,7 @@
         /* 列印時訂單標籤一致性 */
         .bv-order-label {
           position: absolute !important;
-          bottom: 20px !important;
+          bottom: 10px !important;
           left: 50% !important;
           transform: translateX(-50%) !important;
           background: white !important;
