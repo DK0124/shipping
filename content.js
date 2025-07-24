@@ -1163,8 +1163,8 @@
       }
       
       .bv-shipping-content img {
-        max-width: 90% !important;
-        max-height: 85% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
         object-fit: contain !important;
         display: block !important;
       }
@@ -2141,8 +2141,8 @@
         
         /* 物流單圖片置中並保持比例 */
         .bv-shipping-content img {
-          max-width: 90% !important;
-          max-height: 90% !important;
+          max-width: 100% !important;
+          max-height: 100% !important;
           width: auto !important;
           height: auto !important;
           object-fit: contain !important;
