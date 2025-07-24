@@ -1182,7 +1182,6 @@
         font-size: 15px !important;
         font-weight: bold !important;
         z-index: 1000 !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
         white-space: nowrap !important;
         line-height: 1.3 !important;
         color: #000 !important;
@@ -2157,19 +2156,18 @@
           left: 50% !important;
           transform: translateX(-50%) !important;
           background: white !important;
-          padding: 8px 16px !important;
+          padding: 10px 20px !important;
           border: 2px solid #333 !important;
           border-radius: 6px !important;
-          font-size: 14px !important;
+          font-size: 15px !important;
           font-weight: bold !important;
           z-index: 1000 !important;
+          white-space: nowrap !important;
+          line-height: 1.3 !important;
           color: #000 !important;
           font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
         }
-      }
-        
+              
         /* 數量標示列印 */
         .bv-qty-star {
           font-weight: 700 !important;
