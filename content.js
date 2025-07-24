@@ -3642,30 +3642,30 @@
   
   // 從文字中提取物流編號
   function extractShippingNumberFromText(text) {
-    // 各物流商的編號模式
-    const patterns = {
-      // 一般物流單號格式
-      general: [
-        /物流編號[：:]\s*([A-Z0-9-]+)/i,
-        /配送單號[：:]\s*([A-Z0-9-]+)/i,
-        /託運單號[：:]\s*([A-Z0-9-]+)/i,
-        /運單號碼[：:]\s*([A-Z0-9-]+)/i,
-        /追蹤號碼[：:]\s*([A-Z0-9-]+)/i,
-        /Tracking\s*No[：:]\s*([A-Z0-9-]+)/i,
-        /貨運單號[：:]\s*([A-Z0-9-]+)/i
-      ]
-    };
-    
-    // 嘗試所有模式
-    for (const patternList of Object.values(patterns)) {
-      for (const pattern of patternList) {
-        const match = text.match(pattern);
-        if (match && match[1]) {
-          return match[1].trim();
+    // 支援各家物流格式
+    const patterns = [
+      /託運單號[：:]\s*([\d\-]+)/i,           // 大榮
+      /貨運單號[：:]\s*([\d\-]+)/i,           // 大榮/其他
+      /運單號碼[：:]\s*([\d\-]+)/i,
+      /配送單號[：:]\s*([\d\-]+)/i,           // 新竹
+      /物流編號[：:]\s*([\d\-]+)/i,
+      /\b\d{3}-\d{3}-\d{4}\b/g,               // 新竹/黑貓常見
+      /\b\d{4}-\d{4}-\d{4}\b/g,               // 黑貓常見
+      /\b\d{3}-\d{4}-\d{4}\b/g,               // 各家可能
+      /\b\d{3}-\d{3}-\d{3,4}\b/g,             // 其他組合
+      /9072-\d{4}-\d{4}/g,                    // 黑貓（部分固定開頭）
+    ];
+    for (const pattern of patterns) {
+      let match = text.match(pattern);
+      if (match) {
+        // 若是 global flag（g）只取第一個
+        if (Array.isArray(match)) {
+          return match[0].replace(/[^0-9\-]/g, '').trim();
+        } else {
+          return match[1].replace(/[^0-9\-]/g, '').trim();
         }
       }
     }
-    
     return null;
   }
   
@@ -4828,41 +4828,28 @@
   
   function findMatchingShippingDataByLogisticsNo(logisticsNo, shippingDataArray) {
     if (!logisticsNo) return null;
-    
-    // 使用傳入的資料陣列，如果沒有則使用預設
+    const cleanLogisticsNo = logisticsNo.replace(/[^0-9]/g, '');
     const allShippingData = shippingDataArray || [...state.shippingData, ...state.pdfShippingData];
-    
-    // 清理物流編號格式（保留連字號）
-    const cleanLogisticsNo = logisticsNo.trim().toUpperCase();
-    
-    // 尋找交貨便服務代碼相符的資料
     const match = allShippingData.find(data => {
-      // 檢查各種可能的欄位
       const candidates = [
-        data.orderNo,      // 7-11 的服務代碼存在這裡
-        data.logisticsNo,  // 也可能存在專門的物流編號欄位
+        data.orderNo,
+        data.logisticsNo,
         data.barcode,
         data.storeId
       ];
-      
-      for (const candidate of candidates) {
-        if (candidate) {
-          const cleanCandidate = candidate.trim().toUpperCase();
-          if (cleanCandidate === cleanLogisticsNo) {
-            return true;
-          }
+      for (let candidate of candidates) {
+        if (candidate && candidate.replace(/[^0-9]/g, '') === cleanLogisticsNo) {
+          return true;
         }
       }
       return false;
     });
-    
     if (match) {
       return {
         type: match.imageData ? 'pdf' : 'html',
         data: match
       };
     }
-    
     return null;
   }
   
