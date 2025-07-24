@@ -2219,6 +2219,49 @@
           print-color-adjust: exact !important;
         }
       }
+
+      /* ===== 列印優化 ===== */
+      @media print {
+        /* 確保圖片不被瀏覽器自動縮放 */
+        .bv-shipping-content img {
+          image-rendering: -webkit-optimize-contrast !important;
+          image-rendering: pixelated !important;
+          image-rendering: crisp-edges !important;
+          -ms-interpolation-mode: nearest-neighbor !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        /* 保護條碼品質 */
+        img[src*="barcode"],
+        img[src*="qr"],
+        img[src*="QR"],
+        .barcode,
+        .qrcode {
+          image-rendering: pixelated !important;
+          image-rendering: -moz-crisp-edges !important;
+          image-rendering: crisp-edges !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        /* 300 DPI 時調整頁面大小 */
+        @media print and (min-resolution: 300dpi) {
+          .bv-label-page.bv-shipping-page {
+            width: 100mm !important;
+            height: 150mm !important;
+          }
+        }
+        
+        /* 防止任何縮放 */
+        * {
+          -webkit-transform: none !important;
+          -moz-transform: none !important;
+          -ms-transform: none !important;
+          transform: none !important;
+          zoom: 1 !important;
+        }
+      }
     `;
   }
   
@@ -2327,6 +2370,22 @@
               </h4>
               
               <div class="bv-card-content">
+                <!-- 新增 DPI 選擇器 -->
+                <div class="bv-setting-item" style="margin-bottom: 16px;">
+                  <div class="bv-setting-info">
+                    <span class="material-icons">print</span>
+                    <div class="bv-setting-text">
+                      <span class="bv-setting-label">標籤機解析度</span>
+                      <span class="bv-setting-desc">選擇您的標籤機規格</span>
+                    </div>
+                  </div>
+                  <select id="bv-printer-dpi" class="bv-glass-input" style="width: 120px;">
+                    <option value="203">203 DPI</option>
+                    <option value="300">300 DPI</option>
+                    <option value="auto" selected>自動最佳</option>
+                  </select>
+                </div>
+                
                 <div class="bv-integration-status" id="bv-integration-status">
                   <span class="material-icons">info</span>
                   <div class="bv-status-info">
@@ -3194,7 +3253,9 @@
   
   async function captureElementWithOptimization(element, data) {
     try {
-      const scale = 5;
+      // 取得選擇的 DPI
+      const selectedDpi = document.getElementById('bv-printer-dpi')?.value || 'auto';
+      const scale = calculateOptimalScale(selectedDpi);
       
       const canvas = await html2canvas(element, {
         backgroundColor: '#ffffff',
@@ -3209,7 +3270,7 @@
         windowHeight: element.scrollHeight
       });
       
-      // 直接使用 WebP 格式
+      // 使用 WebP 格式，100% 品質
       return new Promise((resolve) => {
         canvas.toBlob(blob => {
           if (!blob) {
@@ -3225,15 +3286,16 @@
             data.width = canvas.width;
             data.height = canvas.height;
             data.scale = scale;
+            data.dpi = selectedDpi; // 儲存 DPI 資訊
             
             // 計算檔案大小
             const sizeKB = (reader.result.length / 1024).toFixed(2);
-            console.log(`物流單 ${data.orderNo} 大小: ${sizeKB}KB (WebP)`);
+            console.log(`物流單 ${data.orderNo} 大小: ${sizeKB}KB (WebP 100%)`);
             
             resolve(data);
           };
           reader.readAsDataURL(blob);
-        }, 'image/webp', 0.8);
+        }, 'image/webp', 1.0); // 改為 100% 品質
       });
     } catch (error) {
       console.error('截圖錯誤:', error);
@@ -3328,6 +3390,16 @@
         saveSettings();
         updateLabelStyles();
         updatePreview();
+      });
+    }
+
+    // 新增 DPI 選擇器監聽
+    const printerDpiSelect = document.getElementById('bv-printer-dpi');
+    if (printerDpiSelect) {
+      printerDpiSelect.addEventListener('change', function() {
+        state.printerDpi = this.value;
+        saveSettings();
+        showNotification(`已切換為 ${this.value === 'auto' ? '自動最佳' : this.value + ' DPI'} 模式`);
       });
     }
     
@@ -3476,6 +3548,10 @@
         }
       }
       
+      // 取得選擇的 DPI
+      const selectedDpi = document.getElementById('bv-printer-dpi')?.value || 'auto';
+      const scale = calculateOptimalScale(selectedDpi);
+      
       // 處理每個 PDF 檔案
       for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
         const file = files[fileIndex];
@@ -3508,9 +3584,6 @@
           progressFill.style.width = `${progress}%`;
           
           const page = await pdf.getPage(pageNum);
-          
-          // 使用與截圖相同的參數
-          const scale = 5;
           const viewport = page.getViewport({ scale: scale });
           
           // 創建 canvas
@@ -3544,9 +3617,9 @@
           
           await page.render(renderContext).promise;
           
-          // 轉換為 WebP 格式，使用相同參數
+          // 轉換為 WebP 格式，100% 品質
           const blob = await new Promise(resolve => {
-            canvas.toBlob(resolve, 'image/webp', 0.8);
+            canvas.toBlob(resolve, 'image/webp', 1.0); // 改為 100% 品質
           });
           
           const imageData = await new Promise(resolve => {
@@ -3557,7 +3630,7 @@
           
           // 計算檔案大小
           const sizeKB = (imageData.length / 1024).toFixed(2);
-          console.log(`PDF 頁面 ${pageNum} 大小: ${sizeKB}KB (WebP)`);
+          console.log(`PDF 頁面 ${pageNum} 大小: ${sizeKB}KB (WebP 100%)`);
           
           // 釋放 canvas 記憶體
           canvas.width = 0;
@@ -3582,7 +3655,8 @@
             timestamp: new Date().toISOString(),
             extractedText: text,
             imageFormat: 'webp',
-            scale: scale
+            scale: scale,
+            dpi: selectedDpi // 儲存 DPI 資訊
           });
           
           // 清理頁面資源
@@ -3613,7 +3687,7 @@
         shippingSubType: state.deliverySubType,
         shippingTimestamp: new Date().toISOString()
       }, () => {
-        showNotification(`成功轉換 ${totalPages} 頁 PDF (WebP 格式)`);
+        showNotification(`成功轉換 ${totalPages} 頁 PDF (WebP 100% 品質)`);
         checkShippingDataStatus();
         updateBatchList();
         updatePreview();
@@ -3637,6 +3711,26 @@
       progressEl.classList.remove('active');
       
       resetPdfUploadArea();
+    }
+  }
+
+  function calculateOptimalScale(dpiSetting) {
+    const LABEL_WIDTH_MM = 100;  // 10cm
+    const LABEL_WIDTH_INCH = LABEL_WIDTH_MM / 25.4;
+    
+    switch(dpiSetting) {
+      case '203':
+        // 203 DPI：目標寬度約 800px
+        return 3.5;
+        
+      case '300':
+        // 300 DPI：目標寬度約 1180px
+        return 5;
+        
+      case 'auto':
+      default:
+        // 自動最佳：產生高解析度，讓印表機自己縮放
+        return 5;
     }
   }
   
